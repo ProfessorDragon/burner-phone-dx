@@ -1,9 +1,28 @@
 # Untitled Game
 
-Our submission for the [Pirate Software - Game Jam 16](https://itch.io/jam/pirate)
+Our submission for the [Pirate Software - Game Jam 16](https://itch.io/jam/pirate)  
+
+## Before running the project
+Setting up a virtual environment is a good idea (helpful resource below)  
+Install the project requirements
+```
+pip install -r requirements.txt
+```
+## Running the project on your machine
+Simply run the `main.py` file located in `src/`
+```
+python3 main.py
+```
+## Assembling the project for web
+To run a web build of the project locally run this command inside the `src/` folder  
+```
+pygbag --template custom.tmpl .
+```
+Then go to http://localhost:8000/ to test the web build
+A web build has been created in a new folder `build/`  
+Just compress the `web/` directory inside of `build/` and upload this compressed file to Itch.io
 
 ## Resources
-
 Virtual Environments:  
 https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/  
 
