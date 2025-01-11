@@ -21,6 +21,7 @@ WINDOW_SETUP = {
 
 CAPTION = "Pirate Software - Game Jam 16"
 FPS = 0  # 0 = Uncapped -> let VSYNC decide best tick speed if enabled
+MAX_DT = 1/60
 
 # Colour constants
 WHITE = pygame.Color(255, 255, 255)
@@ -62,7 +63,10 @@ pygame.display.set_icon(ICON)
 
 
 async def main() -> None:
-    DEBUG_THEME.play(loops=-1)
+    pygame.mixer.Channel(0).play(DEBUG_THEME, -1)
+
+    MAX_X = WINDOW_WIDTH - DEBUG_SPRITE.get_width()
+    MAX_Y = WINDOW_HEIGHT - DEBUG_SPRITE.get_height()
 
     pirate_x = 0
     pirate_y = 0
@@ -73,6 +77,7 @@ async def main() -> None:
     while True:
         elapsed_time = clock.tick(FPS)
         dt = elapsed_time / 1000.0  # Convert to seconds
+        dt = min(dt, MAX_DT)  # Clamp delta time
 
         # INPUT
         for event in pygame.event.get():
@@ -86,12 +91,12 @@ async def main() -> None:
         pirate_x += pirate_vx * pirate_speed * dt
         pirate_y += pirate_vy * pirate_speed * dt
 
-        if pirate_vx > 0 and pirate_x > (WINDOW_WIDTH - DEBUG_SPRITE.width):
+        if pirate_vx > 0 and pirate_x > MAX_X:
             pirate_vx = -1
         elif pirate_vx < 0 and pirate_x < 0:
             pirate_vx = 1
 
-        if pirate_vy > 0 and pirate_y > (WINDOW_HEIGHT - DEBUG_SPRITE.height):
+        if pirate_vy > 0 and pirate_y > MAX_Y:
             pirate_vy = -1
         elif pirate_vy < 0 and pirate_y < 0:
             pirate_vy = 1
