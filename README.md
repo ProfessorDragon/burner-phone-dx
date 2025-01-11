@@ -14,11 +14,15 @@ Simply run the `main.py` file located in `src/`
 python3 main.py
 ```
 ## Assembling the project for web
-To run a web build of the project locally run this command inside the `src/` folder  
+Install pygbag (not in requirements.txt as it is not needed to run the project)
+```
+pip install pygbag
+```
+To run a web build of the project locally run this command inside the `src/` folder
 ```
 pygbag --template custom.tmpl .
 ```
-Then go to http://localhost:8000/ to test the web build
+Then go to http://localhost:8000/ to test the web build  
 A web build has been created in a new folder `build/`  
 Just compress the `web/` directory inside of `build/` and upload this compressed file to Itch.io
 
