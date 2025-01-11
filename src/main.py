@@ -120,6 +120,8 @@ async def main() -> None:
 
 
 def terminate() -> None:
+    window.fill(BLACK)
+    pygame.mixer.stop()
     pygame.quit()
     raise SystemExit
 
