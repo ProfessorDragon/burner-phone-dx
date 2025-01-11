@@ -1,4 +1,4 @@
-# Pirate-Software-Game-Jam-16
+# Untitled Game
 
 Our submission for the [Pirate Software - Game Jam 16](https://itch.io/jam/pirate)
 
