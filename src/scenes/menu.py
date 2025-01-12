@@ -4,14 +4,15 @@ import core.constants as const
 import core.input as input
 import core.assets as assets
 from components.animation import AnimationPlayer
+from components.camera import Camera
+from components.camera import SimulatedObject
 
 from scenes.scene import Scene
 import scenes.game
 
 
 DEBUG = AnimationPlayer("spin", assets.DEBUG_FRAMES, 0.1)
-DEBUG_X = const.WINDOW_CENTRE[0] - DEBUG.get_frame().get_width() // 2
-DEBUG_Y = const.WINDOW_CENTRE[1] - DEBUG.get_frame().get_height() // 2
+CAMERA = Camera(SimulatedObject())
 
 
 class Menu(Scene):
@@ -32,10 +33,20 @@ class Menu(Scene):
             self.statemachine.change_state(scenes.game.Game)
             return
 
-        DEBUG.update(dt)
+        if action_buffer[input.Action.SELECT] == input.InputState.HELD:
+            CAMERA.add_camera_shake(dt)
 
-        surface.fill(const.GREEN)
-        surface.blit(DEBUG.get_frame(), (DEBUG_X, DEBUG_Y))
+        DEBUG.update(dt)
+        CAMERA.update(dt)
+
+        surface.fill(const.CYAN)
+        surface.blit(DEBUG.get_frame(), CAMERA.world_to_screen_shake(-32, -32))
+        trauma_text = assets.DEBUG_FONT.render(
+            f"TRAUMA {CAMERA.trauma:.2f}", False, const.RED, const.BLACK)
+        shake_text = assets.DEBUG_FONT.render(
+            f"SHAKE {CAMERA.shake:.2f}", False, const.BLUE, const.BLACK)
+        surface.blit(trauma_text, (0, 24))
+        surface.blit(shake_text, (0, 36))
 
     def exit(self) -> None:
         pass

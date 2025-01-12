@@ -4,14 +4,17 @@ import core.constants as const
 import core.assets as asset
 import core.input as input
 from components.object import SimulatedObject
+from components.camera import Camera
 
 from scenes.scene import Scene
 import scenes.menu
 
+
 MAX_X = const.WINDOW_WIDTH - asset.DEBUG_SPRITE.get_width()
 MAX_Y = const.WINDOW_HEIGHT - asset.DEBUG_SPRITE.get_height()
 
-PIRATE = SimulatedObject(0, 0, 64, 64, 0, 0)
+PIRATE = SimulatedObject(0, 0, 64, 64)
+CAMERA = Camera(SimulatedObject(*const.WINDOW_CENTRE))
 
 
 class Game(Scene):
@@ -41,17 +44,21 @@ class Game(Scene):
             PIRATE.vx < 0 and PIRATE.x < 0
         ):
             PIRATE.vx *= -1
+            CAMERA.add_camera_shake(0.4)
 
         if (
             PIRATE.vy > 0 and PIRATE.y > MAX_Y or
             PIRATE.vy < 0 and PIRATE.y < 0
         ):
             PIRATE.vy *= -1
+            CAMERA.add_camera_shake(0.4)
 
         PIRATE.update(dt)
+        CAMERA.update(dt)
 
         surface.fill(const.MAGENTA)
-        surface.blit(asset.DEBUG_SPRITE, PIRATE.get_pos())
+        surface.blit(asset.DEBUG_SPRITE,
+                     CAMERA.world_to_screen_shake(*PIRATE.get_pos()))
 
     def exit(self) -> None:
         pygame.mixer.Channel(0).stop()

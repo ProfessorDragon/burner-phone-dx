@@ -3,12 +3,12 @@ from dataclasses import dataclass
 
 @dataclass
 class SimulatedObject:
-    x: float
-    y: float
-    vx: float
-    vy: float
-    ax: float
-    ay: float
+    x: float = 0
+    y: float = 0
+    vx: float = 0
+    vy: float = 0
+    ax: float = 0
+    ay: float = 0
 
     def update(self, dt: float) -> None:
         self.vx += self.ax * dt
