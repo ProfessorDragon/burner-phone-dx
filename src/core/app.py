@@ -1,9 +1,8 @@
-import sys
-import platform
 import asyncio
 import pygame
 
 import core.constants as const
+import core.setup as setup
 import core.assets as asset
 import core.input as input
 from components.statemachine import StateMachine
@@ -11,22 +10,10 @@ from scenes.menu import Menu
 
 
 def run() -> None:
-    if sys.platform == "emscripten":  # If running in browser
-        platform.window.canvas.style.imageRendering = "pixelated"
-        window = pygame.display.set_mode(const.WINDOW_SETUP["size"])
-    else:
-        window = pygame.display.set_mode(**const.WINDOW_SETUP)
-
     pygame.display.set_caption(const.CAPTION)
     pygame.display.set_icon(asset.ICON)
-
-    clock = pygame.time.Clock()
-
     scene_manager = StateMachine(Menu)
-
-    print("Setup complete")
-
-    asyncio.run(game_loop(window, clock, scene_manager))
+    asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
 async def game_loop(

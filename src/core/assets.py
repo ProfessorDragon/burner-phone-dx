@@ -1,12 +1,12 @@
 import pygame
 
-
-pygame.init()
+from utilities.sprite import slice_sheet
 
 
 # Load sprites (png, webp or jpg for web compatibility)
 ICON = pygame.image.load("assets/icon.png")
 DEBUG_SPRITE = pygame.image.load("assets/img/icon_pirate.png")
+DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 
 # Load audio (ogg for web compatibility)
 DEBUG_THEME = pygame.mixer.Sound("assets/sfx/theme.ogg")
