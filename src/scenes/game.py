@@ -31,7 +31,7 @@ class Game(Scene):
             obj.vx = 64
             obj.vy = 64
             self.objects.append(obj)
-        # pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
+        pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
 
     def execute(
         self,

@@ -27,11 +27,11 @@ class GameObject(SimulatedObject):
     def __init__(self, graphic: Graphic, x: float = 0, y: float = 0):
         super().__init__(x, y)
         self.graphic = graphic
-    
+
     def update(self, dt: float) -> None:
         super().update(dt)
         self.graphic.update(dt)
-    
+
     def draw(self, scene) -> None:
         scene.surface.blit(
             self.graphic.get_frame(),

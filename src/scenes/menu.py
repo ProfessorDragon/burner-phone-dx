@@ -1,5 +1,3 @@
-import pygame
-
 from components.object import GameObject
 import core.constants as const
 import core.input as input

@@ -14,7 +14,7 @@ class Graphic(ABC):
 class StaticImage(Graphic):
     def __init__(self, image: pygame.Surface):
         self.image = image
-    
+
     def update(self, dt: float) -> None:
         pass
 
@@ -58,9 +58,6 @@ class AnimationPlayer(Graphic):
         self.animations[unique_identifier] = (frames, duration)
 
     def switch_animation(self, unique_identifier: Hashable) -> None:
-        if self.state == unique_identifier:
-            return
-
         self.state = unique_identifier
         self.frames = self.animations[unique_identifier][0]
         self.frame_duration = self.animations[unique_identifier][1]

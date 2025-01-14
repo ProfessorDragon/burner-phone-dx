@@ -30,7 +30,8 @@ class StateMachine:
         # Perform state change
         if self.next_state is not None:
             self.current_state.exit()
-            self.current_state = self.next_state(self, *self.construct_args, **self.construct_kwargs)
+            self.current_state = self.next_state(
+                self, *self.construct_args, **self.construct_kwargs)
             self.next_state = None
             self.current_state.enter()
 
