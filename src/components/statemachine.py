@@ -17,9 +17,11 @@ class State(ABC):
 
 
 class StateMachine:
-    def __init__(self, initial_state: State) -> None:
+    def __init__(self, initial_state: State, *args, **kwargs) -> None:
         self.next_state = None
-        self.current_state = initial_state(self)
+        self.construct_args = args
+        self.construct_kwargs = kwargs
+        self.current_state = initial_state(self, *args, **kwargs)
         self.current_state.enter()
 
     def execute(self, *args, **kwargs) -> None:
@@ -28,7 +30,7 @@ class StateMachine:
         # Perform state change
         if self.next_state is not None:
             self.current_state.exit()
-            self.current_state = self.next_state(self)
+            self.current_state = self.next_state(self, *self.construct_args, **self.construct_kwargs)
             self.next_state = None
             self.current_state.enter()
 

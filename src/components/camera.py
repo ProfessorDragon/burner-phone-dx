@@ -42,6 +42,9 @@ class Camera:
 
     def add_camera_shake(self, damage: float) -> None:
         self.trauma += damage
+        
+    def set_camera_shake(self, damage: float) -> None:
+        self.trauma = damage
 
     def world_to_screen(self, x: float, y: float) -> tuple[int, int]:
         return (int(x - self.pos.x + OFFSET_X),

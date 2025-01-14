@@ -12,7 +12,7 @@ from scenes.menu import Menu
 def run() -> None:
     pygame.display.set_caption(const.CAPTION)
     pygame.display.set_icon(asset.ICON)
-    scene_manager = StateMachine(Menu)
+    scene_manager = StateMachine(Menu, setup.window)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -48,7 +48,7 @@ async def game_loop(
         update_action_buffer(action_buffer, last_action_mapping_pressed)
         update_mouse_buffer(mouse_buffer)
 
-        scene_manager.execute(surface, dt, action_buffer, mouse_buffer)
+        scene_manager.execute(dt, action_buffer, mouse_buffer)
 
         debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
         debug_text = asset.DEBUG_FONT.render(
@@ -86,7 +86,7 @@ def input_event_queue() -> bool:
 
 def update_action_buffer(
     action_buffer: input.InputBuffer,
-    last_action_mapping_pressed: list[pygame.key]
+    last_action_mapping_pressed: list[int]
 ) -> None:
     # get_just_pressed() and get_just_released() do not work with web ;(
     keys_held = pygame.key.get_pressed()

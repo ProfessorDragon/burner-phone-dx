@@ -1,64 +1,66 @@
 import pygame
+import random
 
+from components.graphic import StaticImage
 import core.constants as const
 import core.assets as asset
 import core.input as input
-from components.object import SimulatedObject
+from components.object import SimulatedObject, GameObject
 from components.camera import Camera
 
 from scenes.scene import Scene
 import scenes.menu
 
 
-MAX_X = const.WINDOW_WIDTH - asset.DEBUG_SPRITE.get_width()
-MAX_Y = const.WINDOW_HEIGHT - asset.DEBUG_SPRITE.get_height()
-
-PIRATE = SimulatedObject(0, 0, 64, 64)
-CAMERA = Camera(SimulatedObject(*const.WINDOW_CENTRE))
-
-
 class Game(Scene):
+    REBOUND_X = const.WINDOW_WIDTH - asset.DEBUG_SPRITE.get_width()
+    REBOUND_Y = const.WINDOW_HEIGHT - asset.DEBUG_SPRITE.get_height()
+
     def enter(self) -> None:
-        pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
-        PIRATE.x = 0
-        PIRATE.y = 0
-        PIRATE.vx = 64
-        PIRATE.vy = 64
+        self.camera = Camera(SimulatedObject(*const.WINDOW_CENTRE))
+        self.objects = []
+        for i in range(10):
+            obj = GameObject(StaticImage(asset.DEBUG_SPRITE))
+            obj.x = random.randint(0, self.REBOUND_X)
+            obj.y = random.randint(0, self.REBOUND_Y)
+            obj.vx = 64
+            obj.vy = 64
+            self.objects.append(obj)
+        # pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
 
     def execute(
         self,
-        surface: pygame.Surface,
         dt: float,
         action_buffer: input.InputBuffer,
         mouse_buffer: input.InputBuffer
     ) -> None:
-        if (
-            action_buffer[input.Action.START] == input.InputState.PRESSED or
-            mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED
-        ):
+        if action_buffer[input.Action.START] == input.InputState.PRESSED:
             self.statemachine.change_state(scenes.menu.Menu)
             return
 
-        if (
-            PIRATE.vx > 0 and PIRATE.x > MAX_X or
-            PIRATE.vx < 0 and PIRATE.x < 0
-        ):
-            PIRATE.vx *= -1
-            CAMERA.add_camera_shake(0.4)
+        for obj in self.objects:
+            if (
+                obj.vx > 0 and obj.x > self.REBOUND_X or
+                obj.vx < 0 and obj.x < 0
+            ):
+                obj.vx *= -1
+                self.camera.set_camera_shake(0.4)
 
-        if (
-            PIRATE.vy > 0 and PIRATE.y > MAX_Y or
-            PIRATE.vy < 0 and PIRATE.y < 0
-        ):
-            PIRATE.vy *= -1
-            CAMERA.add_camera_shake(0.4)
+            if (
+                obj.vy > 0 and obj.y > self.REBOUND_Y or
+                obj.vy < 0 and obj.y < 0
+            ):
+                obj.vy *= -1
+                self.camera.set_camera_shake(0.4)
 
-        PIRATE.update(dt)
-        CAMERA.update(dt)
+            obj.update(dt)
 
-        surface.fill(const.MAGENTA)
-        surface.blit(asset.DEBUG_SPRITE,
-                     CAMERA.world_to_screen_shake(*PIRATE.get_pos()))
+        self.camera.update(dt)
+
+        self.surface.fill(const.MAGENTA)
+
+        for obj in self.objects:
+            obj.draw(self)
 
     def exit(self) -> None:
         pygame.mixer.Channel(0).stop()

@@ -1,8 +1,28 @@
+from abc import ABC, abstractmethod
 from typing import Hashable
 import pygame
 
 
-class AnimationPlayer:
+class Graphic(ABC):
+    @abstractmethod
+    def update(self, dt: float) -> None: ...
+
+    @abstractmethod
+    def get_frame(self) -> pygame.Surface: ...
+
+
+class StaticImage(Graphic):
+    def __init__(self, image: pygame.Surface):
+        self.image = image
+    
+    def update(self, dt: float) -> None:
+        pass
+
+    def get_frame(self):
+        return self.image
+
+
+class AnimationPlayer(Graphic):
     def __init__(
         self,
         unique_identifier: Hashable,
