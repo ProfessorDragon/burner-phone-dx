@@ -16,6 +16,11 @@ class Game(Scene):
     REBOUND_X = const.WINDOW_WIDTH - asset.DEBUG_SPRITE.get_width()
     REBOUND_Y = const.WINDOW_HEIGHT - asset.DEBUG_SPRITE.get_height()
 
+    paused = False
+    pause_overlay = pygame.Surface(const.WINDOW_SIZE)
+    pause_overlay.fill(const.WHITE)
+    pause_overlay.set_alpha(128)
+
     def enter(self) -> None:
         self.camera = Camera(SimulatedObject(*const.WINDOW_CENTRE))
         self.objects = []
@@ -38,29 +43,40 @@ class Game(Scene):
             self.statemachine.change_state(scenes.menu.Menu)
             return
 
-        for obj in self.objects:
-            if (
-                obj.vx > 0 and obj.x > self.REBOUND_X or
-                obj.vx < 0 and obj.x < 0
-            ):
-                obj.vx *= -1
-                self.camera.set_camera_shake(0.4)
+        if action_buffer[input.Action.SELECT] == input.InputState.PRESSED:
+            self.paused = not self.paused
+            # Might want to enable pause UI here
+            # Set Pause UI overlay to top option
 
-            if (
-                obj.vy > 0 and obj.y > self.REBOUND_Y or
-                obj.vy < 0 and obj.y < 0
-            ):
-                obj.vy *= -1
-                self.camera.set_camera_shake(0.4)
+        if self.paused:
+            pass
+        else:
+            for obj in self.objects:
+                if (
+                    obj.vx > 0 and obj.x > self.REBOUND_X or
+                    obj.vx < 0 and obj.x < 0
+                ):
+                    obj.vx *= -1
+                    self.camera.set_camera_shake(0.4)
 
-            obj.update(dt)
+                if (
+                    obj.vy > 0 and obj.y > self.REBOUND_Y or
+                    obj.vy < 0 and obj.y < 0
+                ):
+                    obj.vy *= -1
+                    self.camera.set_camera_shake(0.4)
 
-        self.camera.update(dt)
+                obj.update(dt)
+
+            self.camera.update(dt)
 
         self.surface.fill(const.MAGENTA)
 
         for obj in self.objects:
             obj.draw(self)
+
+        if self.paused:
+            self.surface.blit(self.pause_overlay, (0, 0))
 
     def exit(self) -> None:
         pygame.mixer.Channel(0).stop()

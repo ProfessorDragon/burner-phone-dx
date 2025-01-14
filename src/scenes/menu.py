@@ -15,7 +15,8 @@ import scenes.game
 class Menu(Scene):
     def enter(self) -> None:
         self.camera = Camera(SimulatedObject())
-        self.DEBUG = GameObject(AnimationPlayer("spin", assets.DEBUG_FRAMES, 0.1), -32, -32)
+        self.DEBUG = GameObject(AnimationPlayer(
+            "spin", assets.DEBUG_FRAMES, 0.1), -32, -32)
 
     def execute(
         self,
@@ -27,7 +28,7 @@ class Menu(Scene):
             self.statemachine.change_state(scenes.game.Game)
             return
 
-        if action_buffer[input.Action.SELECT] == input.InputState.HELD:
+        if action_buffer[input.Action.A] == input.InputState.HELD:
             self.camera.add_camera_shake(dt)
 
         self.camera.update(dt)
