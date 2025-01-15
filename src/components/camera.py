@@ -21,8 +21,8 @@ class Camera:
     max_shake_offset_y: float = 30
     max_screenshake_duration: float = 2.0  # In seconds
 
-    def update(self, dt: float) -> None:
-        self.trauma -= dt / self.max_screenshake_duration
+    def update(self, scene) -> None:
+        self.trauma -= scene.dt / self.max_screenshake_duration
 
         if self.trauma > 0:
             self.shake = self.trauma ** 3  # Can square trauma too
@@ -36,7 +36,7 @@ class Camera:
             self.shake_offset_y = 0
 
         self.trauma = clamp(self.trauma, 0, 1)
-        self.pos.update(dt)
+        self.pos.update(scene)
 
     def add_camera_shake(self, damage: float) -> None:
         self.trauma += damage

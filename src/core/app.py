@@ -48,7 +48,10 @@ async def game_loop(
         update_action_buffer(action_buffer, last_action_mapping_pressed)
         update_mouse_buffer(mouse_buffer)
 
-        scene_manager.execute(dt, action_buffer, mouse_buffer)
+        scene_manager.current_state.dt = dt
+        scene_manager.current_state.action_buffer = action_buffer
+        scene_manager.current_state.mouse_buffer = mouse_buffer
+        scene_manager.execute()
 
         debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
         debug_text = asset.DEBUG_FONT.render(

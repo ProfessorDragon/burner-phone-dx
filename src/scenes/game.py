@@ -33,17 +33,12 @@ class Game(Scene):
             self.objects.append(obj)
         pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
 
-    def execute(
-        self,
-        dt: float,
-        action_buffer: input.InputBuffer,
-        mouse_buffer: input.InputBuffer
-    ) -> None:
-        if action_buffer[input.Action.START] == input.InputState.PRESSED:
+    def execute(self) -> None:
+        if self.action_buffer[input.Action.START] == input.InputState.PRESSED:
             self.statemachine.change_state(scenes.menu.Menu)
             return
 
-        if action_buffer[input.Action.SELECT] == input.InputState.PRESSED:
+        if self.action_buffer[input.Action.SELECT] == input.InputState.PRESSED:
             self.paused = not self.paused
             # Might want to enable pause UI here
             # Set Pause UI overlay to top option
@@ -66,9 +61,9 @@ class Game(Scene):
                     obj.vy *= -1
                     self.camera.set_camera_shake(0.4)
 
-                obj.update(dt)
+                obj.update(self)
 
-            self.camera.update(dt)
+            self.camera.update(self)
 
         self.surface.fill(const.MAGENTA)
 

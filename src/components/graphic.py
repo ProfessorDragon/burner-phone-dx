@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Hashable
 import pygame
+import core.constants as const
 
 
 class Graphic(ABC):
@@ -12,7 +13,7 @@ class Graphic(ABC):
 
 
 class StaticImage(Graphic):
-    def __init__(self, image: pygame.Surface):
+    def __init__(self, image: pygame.Surface) -> None:
         self.image = image
 
     def update(self, dt: float) -> None:
@@ -20,6 +21,18 @@ class StaticImage(Graphic):
 
     def get_frame(self):
         return self.image
+
+
+class StaticText(StaticImage):
+    def __init__(
+        self,
+        text: str,
+        font: pygame.Font,
+        fg: pygame.Color = const.WHITE,
+        bg: pygame.Color = const.BLACK
+    ) -> None:
+        self.text = text
+        super().__init__(font.render(text, False, fg, bg))
 
 
 class AnimationPlayer(Graphic):
