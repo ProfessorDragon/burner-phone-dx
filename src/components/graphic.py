@@ -19,7 +19,7 @@ class StaticImage(Graphic):
     def update(self, dt: float) -> None:
         pass
 
-    def get_frame(self):
+    def get_frame(self) -> pygame.Surface:
         return self.image
 
 
@@ -33,6 +33,26 @@ class StaticText(StaticImage):
     ) -> None:
         self.text = text
         super().__init__(font.render(text, False, fg, bg))
+
+
+class DynamicText(Graphic):
+    def __init__(
+        self,
+        text: str,
+        font: pygame.Font,
+        fg: pygame.Color = const.WHITE,
+        bg: pygame.Color = const.BLACK
+    ) -> None:
+        self.text = text
+        self.font = font
+        self.fg = fg
+        self.bg = bg
+
+    def update(self, dt: float) -> None:
+        pass
+
+    def get_frame(self) -> pygame.Surface:
+        return self.font.render(self.text, False, self.fg, self.bg)
 
 
 class AnimationPlayer(Graphic):

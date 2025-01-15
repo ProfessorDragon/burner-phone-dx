@@ -72,7 +72,7 @@ def input_event_queue() -> bool:
         if event.type == pygame.QUIT:
             return False
 
-        elif event.type == pygame.WINDOWFOCUSLOST:
+        if event.type == pygame.WINDOWFOCUSLOST:
             pass
         elif event.type == pygame.WINDOWFOCUSGAINED:
             pass

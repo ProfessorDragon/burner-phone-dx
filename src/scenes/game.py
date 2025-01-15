@@ -5,7 +5,7 @@ from components.graphic import StaticImage
 import core.constants as const
 import core.assets as asset
 import core.input as input
-from components.object import SimulatedObject, GameObject
+from components.object import AbstractObject, SimulatedObject, GameObject
 from components.camera import Camera
 
 from scenes.scene import Scene
@@ -23,13 +23,13 @@ class Game(Scene):
 
     def enter(self) -> None:
         self.camera = Camera(SimulatedObject(*const.WINDOW_CENTRE))
-        self.objects = []
+        self.objects: list[AbstractObject] = []
         for i in range(10):
             obj = GameObject(StaticImage(asset.DEBUG_SPRITE))
             obj.x = random.randint(0, self.REBOUND_X)
             obj.y = random.randint(0, self.REBOUND_Y)
-            obj.vx = 64
-            obj.vy = 64
+            obj.vx = random.randint(-64, 64)
+            obj.vy = random.randint(-64, 64)
             self.objects.append(obj)
         pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
 
@@ -45,7 +45,10 @@ class Game(Scene):
 
         if self.paused:
             pass
+    
         else:
+            self.update()
+
             for obj in self.objects:
                 if (
                     obj.vx > 0 and obj.x > self.REBOUND_X or
@@ -62,8 +65,6 @@ class Game(Scene):
                     self.camera.set_camera_shake(0.4)
 
                 obj.update(self)
-
-            self.camera.update(self)
 
         self.surface.fill(const.MAGENTA)
 
