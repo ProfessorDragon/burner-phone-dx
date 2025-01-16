@@ -1,8 +1,8 @@
 import core.constants as const
 import core.input as input
 import core.assets as assets
-from components.object import AbstractObject, GameObject, ScreenObject, UIObject
-from components.ui import Selection
+from components.object import AbstractObject, GameObject
+from components.ui import Checkbox, Selection, ScreenObject, Slider, UIObject
 from components.graphic import AnimationPlayer, DynamicText, StaticImage, StaticText
 from components.camera import Camera
 from components.camera import SimulatedObject
@@ -14,41 +14,31 @@ import scenes.game
 class Menu(Scene):
     def enter(self) -> None:
         self.camera = Camera(SimulatedObject())
-        self.selection = Selection(3, 2) # creates a simulated 3x2 grid of ui objects
-        self.selection.empty_spaces.append((2, 0)) # indicates there is nothing in this space and should be skipped over
+        self.selection = Selection(1, 5)
 
         self.objects: list[AbstractObject] = []
-        self.debug_anim_g = AnimationPlayer("spin", assets.DEBUG_FRAMES, 0.2)
-        self.objects.append( # 1
-            UIObject(self.debug_anim_g, .1,  .2, (0, 0))
-            .bind(lambda: self.debug_text("Pressed 1"))
+        self.objects.append(
+            Slider("Music", .5, .1,  .2, (0, 0))
+            .bind_change(lambda value: self.debug_text(str(value)))
         )
-        self.objects.append( # 2
-            UIObject(StaticText("""\
-<-- animated button
-   text button ^^
-vv random object vv""", assets.DEBUG_FONT), .5, .2, (1, 0))
-            .bind(lambda: self.debug_text("Pressed 2"))
+        self.objects.append(
+            Slider("SFX", .5, .1,  .25, (0, 1))
+            .bind_change(lambda value: self.debug_text(str(value)))
         )
-        self.objects.append( # 3
-            UIObject(StaticText("""\
-THESE ARE BUTTONS! ACTIVATE ME USING Z OR LEFT CLICK.
-move the mouse and hover over buttons!
-use wasd/arrows to select buttons with the keyboard!""", assets.DEBUG_FONT), 0, .8, (0, 1), (2, 1))
-            .bind(lambda: self.debug_text("Pressed 3"))
+        self.objects.append(
+            Checkbox("Fullscreen", False, .1, .3, (0, 2))
+            .bind_change(lambda enabled: self.debug_text(str(enabled)))
         )
-        self.objects.append( # 4
-            UIObject(StaticImage(assets.DEBUG_SPRITE), 1, .8, (2, 1))
-            .bind(lambda: self.debug_text("this text is dynamically sized and positioned"))
+        self.objects.append(
+            Checkbox("Vsync", False, .1, .35, (0, 3))
+            .bind_change(lambda enabled: self.debug_text(str(enabled)))
         )
-        # creates a ui grid as such:
-        # 1 | 2 | E
-        # --+---+--
-        # [ 3 ] | 4
-        # making submenus should also be achievable with a state machine...
-        # will implement a method of disabling the old ui objects if this is the case
+        self.objects.append(
+            Checkbox("Show FPS", False, .1, .4, (0, 4))
+            .bind_change(lambda enabled: self.debug_text(str(enabled)))
+        )
 
-        self.objects.append(GameObject(self.debug_anim_g, -32, -32))
+        self.objects.append(GameObject(AnimationPlayer("spin", assets.DEBUG_FRAMES, 0.2), -32, -32))
 
         self.debug_text_g = DynamicText("", assets.DEBUG_FONT)
         self.objects.append(ScreenObject(self.debug_text_g, .5, 1))
@@ -59,7 +49,7 @@ use wasd/arrows to select buttons with the keyboard!""", assets.DEBUG_FONT), 0, 
             self.set_timer("debug_text", 1.0, self.debug_text, "")
 
     def execute(self) -> None:
-        if self.action_buffer[input.Action.START] == input.InputState.PRESSED:
+        if self.is_pressed(input.Action.START):
             self.statemachine.change_state(scenes.game.Game)
             return
 
@@ -70,7 +60,7 @@ use wasd/arrows to select buttons with the keyboard!""", assets.DEBUG_FONT), 0, 
         for obj in self.objects:
             obj.update(self)
 
-        self.surface.fill(const.CYAN)
+        self.surface.fill(const.WHITE)
         for obj in self.objects:
             obj.draw(self)
 

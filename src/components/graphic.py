@@ -31,7 +31,6 @@ class StaticText(StaticImage):
         fg: pygame.Color = const.WHITE,
         bg: pygame.Color = const.BLACK
     ) -> None:
-        self.text = text
         super().__init__(font.render(text, False, fg, bg))
 
 

@@ -34,11 +34,11 @@ class Game(Scene):
         pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
 
     def execute(self) -> None:
-        if self.action_buffer[input.Action.START] == input.InputState.PRESSED:
+        if self.is_pressed(input.Action.START):
             self.statemachine.change_state(scenes.menu.Menu)
             return
 
-        if self.action_buffer[input.Action.SELECT] == input.InputState.PRESSED:
+        if self.is_pressed(input.Action.SELECT):
             self.paused = not self.paused
             # Might want to enable pause UI here
             # Set Pause UI overlay to top option

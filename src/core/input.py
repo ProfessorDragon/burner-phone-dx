@@ -3,10 +3,11 @@ from enum import IntEnum, auto
 
 
 class InputState(IntEnum):
-    NOTHING = 0
-    PRESSED = auto()
-    HELD = auto()
-    RELEASED = auto()
+    NOTHING = 0 # released for >1 frame
+    PRESSED = auto() # just pressed, active for 1 frame
+    HELD = auto() # pressed for >1 frame
+    RELEASED = auto() # just released, active for 1 frame
+    REPEATED = auto() # virtual state that represents being held for a given time
 
 
 class MouseButton(IntEnum):
