@@ -37,3 +37,4 @@ https://pyga.me/docs/
 Pygbag:  
 https://github.com/pygame-web/pygbag  
 https://pygame-web.github.io/wiki/pygbag/  
+https://pygame-web.github.io/wiki/pygbag-code/#handling-persistent-data-across-sessions  
