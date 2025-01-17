@@ -1,60 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import Hashable
+from collections.abc import Hashable
+from dataclasses import dataclass
+
 import pygame
-import core.constants as const
 
 
-class Graphic(ABC):
-    @abstractmethod
-    def update(self, dt: float) -> None: ...
-
-    @abstractmethod
-    def get_frame(self) -> pygame.Surface: ...
-
-
-class StaticImage(Graphic):
-    def __init__(self, image: pygame.Surface) -> None:
-        self.image = image
-
-    def update(self, dt: float) -> None:
-        pass
-
-    def get_frame(self) -> pygame.Surface:
-        return self.image
-
-
-class StaticText(StaticImage):
-    def __init__(
-        self,
-        text: str,
-        font: pygame.Font,
-        fg: pygame.Color = const.WHITE,
-        bg: pygame.Color = const.BLACK
-    ) -> None:
-        super().__init__(font.render(text, False, fg, bg))
-
-
-class DynamicText(Graphic):
-    def __init__(
-        self,
-        text: str,
-        font: pygame.Font,
-        fg: pygame.Color = const.WHITE,
-        bg: pygame.Color = const.BLACK
-    ) -> None:
-        self.text = text
-        self.font = font
-        self.fg = fg
-        self.bg = bg
-
-    def update(self, dt: float) -> None:
-        pass
-
-    def get_frame(self) -> pygame.Surface:
-        return self.font.render(self.text, False, self.fg, self.bg)
-
-
-class AnimationPlayer(Graphic):
+@dataclass(slots=True)
+class AnimationPlayer:
     def __init__(
         self,
         unique_identifier: Hashable,

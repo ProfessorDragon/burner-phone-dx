@@ -5,14 +5,18 @@ import core.constants as const
 import core.setup as setup
 import core.assets as asset
 import core.input as input
-from components.statemachine import StateMachine
-from scenes.menu import Menu
+from components.statemachine import (
+    StateMachine, statemachine_initialise, statemachine_execute
+)
+import scenes.scenemapping as scene
 
 
 def run() -> None:
     pygame.display.set_caption(const.CAPTION)
     pygame.display.set_icon(asset.ICON)
-    scene_manager = StateMachine(Menu, setup.window)
+    scene_manager = StateMachine()
+    statemachine_initialise(
+        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -43,15 +47,15 @@ async def game_loop(
         running = input_event_queue()
 
         if not running:
-            terminate(surface)
+            pygame.mixer.stop()
+            surface.fill(const.BLACK)
+            terminate()
 
         update_action_buffer(action_buffer, last_action_mapping_pressed)
         update_mouse_buffer(mouse_buffer)
 
-        scene_manager.current_state.dt = dt
-        scene_manager.current_state.action_buffer = action_buffer
-        scene_manager.current_state.mouse_buffer = mouse_buffer
-        scene_manager.execute()
+        statemachine_execute(scene_manager, surface, dt,
+                             action_buffer, mouse_buffer)
 
         debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
         debug_text = asset.DEBUG_FONT.render(
@@ -65,8 +69,8 @@ async def game_loop(
 
 def input_event_queue() -> bool:
     '''
-    Pumps the event queue and handle application events
-    Return: False if should terminate, else True
+    Pumps the event queue and handles application events
+    Returns False if application should terminate, else True
     '''
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -137,11 +141,7 @@ def update_mouse_buffer(mouse_buffer: input.InputBuffer) -> None:
                 mouse_buffer[button] = input.InputState.NOTHING
 
 
-def terminate(surface: pygame.Surface) -> None:
+def terminate() -> None:
     print("Terminated application")
-
-    pygame.mixer.stop()
-    surface.fill(const.BLACK)
-
     pygame.quit()
     raise SystemExit
