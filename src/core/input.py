@@ -27,6 +27,21 @@ class Action(IntEnum):
     START = auto()
 
 
+InputBuffer = list[InputState]
+
+def is_pressed(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
+    return action_buffer[input_enum] == InputState.PRESSED
+
+def is_held(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
+    return action_buffer[input_enum] == InputState.HELD
+
+def is_released(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
+    return action_buffer[input_enum] == InputState.RELEASED
+
+def is_nothing(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
+    return action_buffer[input_enum] == InputState.NOTHING
+
+
 action_mappings = {
     Action.LEFT: [pygame.K_a, pygame.K_LEFT],
     Action.RIGHT: [pygame.K_d, pygame.K_RIGHT],
@@ -37,6 +52,3 @@ action_mappings = {
     Action.SELECT: [pygame.K_LSHIFT, pygame.K_RSHIFT],
     Action.START: [pygame.K_RETURN, pygame.K_SPACE],
 }
-
-
-InputBuffer = list[InputState]

@@ -1,6 +1,6 @@
 import pygame
-import random
 
+from components.player import Player, player_update
 import core.input as input
 import core.constants as const
 import core.assets as asset
@@ -30,7 +30,9 @@ class Game(Scene):
             Vector2(30, 30)
         )
 
-        self.player = Motion.empty()
+        self.player = Player(
+            Motion.empty()
+        )
         # self.enemies: list[Enemy] = []
 
     def enter(self) -> None:
@@ -59,7 +61,7 @@ class Game(Scene):
             pass
 
         else:
-            # player_update
+            player_update(self.player, dt, action_buffer)
             # for enemy in self.enemies: enemy_update
 
             camera_update(self.camera, dt)
@@ -67,7 +69,7 @@ class Game(Scene):
         # RENDER
         surface.fill(const.MAGENTA)
 
-        # player_draw
+        surface.blit(asset.DEBUG_IMAGE, camera_to_screen_shake(self.camera, *self.player.motion.position))
         # for enemy in self.enemies: enemy_draw
 
         if self.paused:
