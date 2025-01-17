@@ -1,15 +1,22 @@
 import pygame
 
-import core.constants as const
+import core.constants as c
 import core.input as input
 import core.assets as asset
 from components.camera import (
-    Camera, camera_update, camera_to_screen_shake, camera_reset
+    Camera,
+    camera_update,
+    camera_to_screen_shake,
+    camera_reset,
 )
 from components.motion import Vector2, Motion
 from components.animation import (
-    Animator, Animation, animator_get_frame, animator_update,
-    animator_initialise, animator_switch_animation
+    Animator,
+    Animation,
+    animator_get_frame,
+    animator_update,
+    animator_initialise,
+    animator_switch_animation,
 )
 from components.settings import Settings, settings_render, settings_update
 
@@ -22,12 +29,7 @@ class Menu(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
 
-        self.camera = Camera(
-            Motion.empty(),
-            Vector2(),
-            Vector2(),
-            Vector2(30, 30)
-        )
+        self.camera = Camera(Motion.empty(), Vector2(), Vector2(), Vector2(30, 30))
 
         self.debug = Animator()
         debug_animation_mapping = {0: Animation(asset.DEBUG_FRAMES, 0.1)}
@@ -35,8 +37,8 @@ class Menu(Scene):
 
         debug_size = animator_get_frame(self.debug).get_size()
         self.debug_pos = Vector2(
-            const.WINDOW_CENTRE[0] - debug_size[0] // 2,
-            const.WINDOW_CENTRE[1] - debug_size[1] // 2
+            c.WINDOW_CENTRE[0] - debug_size[0] // 2,
+            c.WINDOW_CENTRE[1] - debug_size[1] // 2,
         )
 
         self.settings = Settings()
@@ -51,7 +53,7 @@ class Menu(Scene):
         surface: pygame.Surface,
         dt: float,
         action_buffer: input.InputBuffer,
-        mouse_buffer: input.InputBuffer
+        mouse_buffer: input.InputBuffer,
     ) -> None:
         # INPUT
         if action_buffer[input.Action.START] == input.InputState.PRESSED:
@@ -67,10 +69,10 @@ class Menu(Scene):
         settings_update(self.settings, dt, action_buffer, mouse_buffer)
 
         # RENDER
-        surface.fill(const.WHITE)
+        surface.fill(c.WHITE)
         surface.blit(
             animator_get_frame(self.debug),
-            camera_to_screen_shake(self.camera, *self.debug_pos)
+            camera_to_screen_shake(self.camera, *self.debug_pos),
         )
         settings_render(self.settings, surface)
 

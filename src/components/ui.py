@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import pygame
 
-import core.constants as const
+import core.constants as c
 from utilities.math import clamp
 
 
@@ -40,8 +40,10 @@ def slider_percent(slider: Slider) -> float:
 def slider_set_value(slider: Slider, value: int) -> None:
     slider.value = clamp(value, slider.min_value, slider.max_value)
     slider.filled_rect = (
-        slider.rect.x, slider.rect.y,
-        slider_percent(slider) * slider.rect.w, slider.rect.h
+        slider.rect.x,
+        slider.rect.y,
+        slider_percent(slider) * slider.rect.w,
+        slider.rect.h,
     )
 
 
@@ -60,25 +62,19 @@ def slider_set_value_mouse(slider: Slider, x: int) -> None:
     slider_set_value(slider, value)
 
 
-def button_render(
-    surface: pygame.Surface, button: Button
-) -> None:
-    pygame.draw.rect(surface, const.BLACK, button.rect)
+def button_render(surface: pygame.Surface, button: Button) -> None:
+    pygame.draw.rect(surface, c.BLACK, button.rect)
     surface.blit(button.graphic, (button.rect.x, button.rect.y))
 
 
 def slider_render(surface: pygame.Surface, slider: Slider) -> None:
-    pygame.draw.rect(surface, const.BLACK, slider.rect)
-    pygame.draw.rect(surface, const.MAGENTA, slider.filled_rect)
+    pygame.draw.rect(surface, c.BLACK, slider.rect)
+    pygame.draw.rect(surface, c.MAGENTA, slider.filled_rect)
 
 
 def checkbox_render(surface: pygame.Surface, checkbox: Checkbox) -> None:
-    pygame.draw.rect(surface, const.BLACK, checkbox.rect)
+    pygame.draw.rect(surface, c.BLACK, checkbox.rect)
     if checkbox.enabled:
-        surface.blit(
-            checkbox.graphic_enabled, (checkbox.rect.x, checkbox.rect.y)
-        )
+        surface.blit(checkbox.graphic_enabled, (checkbox.rect.x, checkbox.rect.y))
     else:
-        surface.blit(
-            checkbox.graphic_disabled, (checkbox.rect.x, checkbox.rect.y)
-        )
+        surface.blit(checkbox.graphic_disabled, (checkbox.rect.x, checkbox.rect.y))
