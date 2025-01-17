@@ -1,24 +1,24 @@
-import random
 from dataclasses import dataclass
+import random
 
 import core.constants as const
-from components.motion import Vector2, Motion, update_motion
+from components.motion import Vector2, Motion, motion_update
 from utilities.math import clamp
 
 
 @dataclass(slots=True)
 class Camera:
     motion: Motion
-    offset: Vector2 = Vector2(*const.WINDOW_CENTRE)
-    trauma: float = 0.0  # Value between 0 and 1
-    max_shake_duration: float = 2.0  # In seconds
-    shake_offset: Vector2 = Vector2(0, 0)
-    max_shake_offset: Vector2 = Vector2(30, 30)
+    offset: Vector2
+    shake_offset: Vector2
+    max_shake_offset: Vector2
+    trauma: float = 0.0
+    max_shake_duration: float = 2.0
 
 
 def camera_update(camera: Camera, dt: float) -> None:
     # Update shake
-    camera.trauma -= dt / camera.max_screenshake_duration
+    camera.trauma -= dt / camera.max_shake_duration
 
     if camera.trauma > 0:
         shake = camera.trauma ** 3  # Can square trauma too
@@ -33,16 +33,24 @@ def camera_update(camera: Camera, dt: float) -> None:
     camera.trauma = clamp(camera.trauma, 0, 1)
 
     # Update motion
-    update_motion(camera.motion, dt)
+    motion_update(camera.motion, dt)
 
 
 def camera_to_screen(camera: Camera, x: float, y: float) -> tuple[int, int]:
-    return (int(x - camera.motion.x + camera.offset.x),
-            int(y - camera.position.y + camera.offset.y))
+    return (int(x - camera.motion.position.x + camera.offset.x),
+            int(y - camera.motion.position.y + camera.offset.y))
 
 
 def camera_to_screen_shake(
     camera: Camera, x: float, y: float
 ) -> tuple[int, int]:
-    return (int(x - camera.motion.x + camera.offset.x + camera.shake_offset.x),
-            int(y - camera.motion.y + camera.offset.y + camera.shake_offset.y))
+    screen_x = x - camera.motion.position.x + camera.offset.x
+    screen_y = y - camera.motion.position.y + camera.offset.y
+    return (int(screen_x + camera.shake_offset.x),
+            int(screen_y + camera.shake_offset.y))
+
+
+def camera_reset(camera: Camera) -> None:
+    camera.trauma = 0.0
+    camera.shake_offset.x = 0.0
+    camera.shake_offset.y = 0.0

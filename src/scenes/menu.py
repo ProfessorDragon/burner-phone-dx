@@ -1,55 +1,93 @@
+import pygame
+
 import core.constants as const
 import core.input as input
-# import core.assets as assets
-# from components.object import AbstractObject, GameObject
-# from components.ui import Checkbox, Selection, ScreenObject, Slider, UIObject
-# from components.graphic import AnimationPlayer, DynamicText, StaticImage, StaticText
-# from components.camera import Camera
+import core.assets as asset
+from components.camera import (
+    Camera, camera_update, camera_to_screen_shake, camera_reset
+)
+from components.motion import Vector2, Motion
+from components.animation import (
+    Animator, Animation, animator_get_frame, animator_update,
+    animator_initialise, animator_switch_animation
+)
+from components.ui import (
+    Slider, Checkbox, Button, button_render, slider_render, slider_set_value,
+    slider_set_value_mouse, checkbox_render, checkbox_toggle
+)
 
-import pygame
 from scenes.scene import Scene
 import scenes.scenemapping as scene
-from components.statemachine import statemachine_change_state
+from components.statemachine import StateMachine, statemachine_change_state
 
 
 class Menu(Scene):
-    def enter(self) -> None:
-        # self.camera = Camera(SimulatedPosition())
-        # self.selection = Selection(1, 5)
-        #
-        # self.objects: list[AbstractObject] = []
-        # self.objects.append(
-        #     Slider("Music", .5, .1,  .2, (0, 0))
-        #     .bind_change(lambda value: self.debug_text(str(value)))
-        # )
-        # self.objects.append(
-        #     Slider("SFX", .5, .1,  .25, (0, 1))
-        #     .bind_change(lambda value: self.debug_text(str(value)))
-        # )
-        # self.objects.append(
-        #     Checkbox("Fullscreen", False, .1, .3, (0, 2))
-        #     .bind_change(lambda enabled: self.debug_text(str(enabled)))
-        # )
-        # self.objects.append(
-        #     Checkbox("Vsync", False, .1, .35, (0, 3))
-        #     .bind_change(lambda enabled: self.debug_text(str(enabled)))
-        # )
-        # self.objects.append(
-        #     Checkbox("Show FPS", False, .1, .4, (0, 4))
-        #     .bind_change(lambda enabled: self.debug_text(str(enabled)))
-        # )
-        #
-        # self.objects.append(GameObject(AnimationPlayer(
-        #     "spin", assets.DEBUG_FRAMES, 0.2), -32, -32))
-        #
-        # self.debug_text_g = DynamicText("", assets.DEBUG_FONT)
-        # self.objects.append(ScreenObject(self.debug_text_g, .5, 1))
-        pass
+    def __init__(self, statemachine: StateMachine) -> None:
+        super().__init__(statemachine)
 
-    # def debug_text(self, text: str) -> None:
-    #     self.debug_text_g.text = text
-    #     if text:
-    #         self.set_timer("debug_text", 1.0, self.debug_text, "")
+        self.camera = Camera(
+            Motion(Vector2(), Vector2(), Vector2()),
+            Vector2(),
+            Vector2(),
+            Vector2(30, 30)
+        )
+
+        self.debug = Animator()
+        debug_animation_mapping = {0: Animation(asset.DEBUG_FRAMES, 0.1)}
+        animator_initialise(self.debug, debug_animation_mapping, 0)
+
+        debug_size = animator_get_frame(self.debug).get_size()
+        self.debug_pos = Vector2(
+            const.WINDOW_CENTRE[0] - debug_size[0] // 2,
+            const.WINDOW_CENTRE[1] - debug_size[1] // 2
+        )
+
+        self.graphic_enabled = asset.DEBUG_FONT.render(
+            "Y", False, const.GREEN
+        )
+        self.graphic_disabled = asset.DEBUG_FONT.render(
+            "N", False, const.RED
+        )
+
+        self.ui_music_slider = Slider(
+            pygame.Rect(10, 100, 100, 10), 0, 100
+        )
+        slider_set_value(self.ui_music_slider, 50)
+
+        self.ui_sfx_slider = Slider(pygame.Rect(10, 120, 100, 10), 0, 100)
+        slider_set_value(self.ui_sfx_slider, 50)
+
+        self.ui_fullscreen_checkbox = Checkbox(
+            pygame.Rect(10, 140, 15, 15),
+            self.graphic_enabled,
+            self.graphic_disabled,
+            True
+        )
+
+        self.ui_vsync_checkbox = Checkbox(
+            pygame.Rect(10, 190, 15, 15),
+            self.graphic_enabled,
+            self.graphic_disabled,
+            True
+        )
+
+        self.ui_screenshake_checkbox = Checkbox(
+            pygame.Rect(10, 240, 15, 15),
+            self.graphic_enabled,
+            self.graphic_disabled,
+            True
+        )
+
+        self.ui_default_button = Button(
+            pygame.Rect(10, 270, 70, 20),
+            asset.DEBUG_FONT.render("DEFAULT", False, const.WHITE)
+        )
+
+        self.selected_slider = None
+
+    def enter(self) -> None:
+        camera_reset(self.camera)
+        animator_switch_animation(self.debug, 0)
 
     def execute(
         self,
@@ -58,27 +96,58 @@ class Menu(Scene):
         action_buffer: input.InputBuffer,
         mouse_buffer: input.InputBuffer
     ) -> None:
+        # INPUT
         if action_buffer[input.Action.START] == input.InputState.PRESSED:
             statemachine_change_state(self.statemachine, scene.SceneState.GAME)
             return
 
-        # if action_buffer[input.Action.A] == input.InputState.HELD:
-        #     self.camera.add_camera_shake(self.dt)
-        #
-        # for obj in self.objects:
-        #     obj.update(self)
+        if action_buffer[input.Action.B] == input.InputState.HELD:
+            self.camera.trauma += 0.01
 
+        # UPDATE
+        mouse_position = pygame.mouse.get_pos()
+
+        camera_update(self.camera, dt)
+        animator_update(self.debug, dt)
+
+        if self.ui_music_slider.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                self.selected_slider = self.ui_music_slider
+        elif self.ui_sfx_slider.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                self.selected_slider = self.ui_sfx_slider
+        elif self.ui_vsync_checkbox.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                checkbox_toggle(self.ui_vsync_checkbox)
+        elif self.ui_fullscreen_checkbox.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                checkbox_toggle(self.ui_fullscreen_checkbox)
+        elif self.ui_screenshake_checkbox.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                checkbox_toggle(self.ui_screenshake_checkbox)
+        elif self.ui_default_button.rect.collidepoint(mouse_position):
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.PRESSED:
+                print("Pressed button")
+
+        if self.selected_slider:
+            if mouse_buffer[input.MouseButton.LEFT] == input.InputState.RELEASED:
+                self.selected_slider = None
+                # TODO: This is where we write/save value and apply setting
+            else:
+                slider_set_value_mouse(self.selected_slider, mouse_position[0])
+
+        # RENDER
         surface.fill(const.WHITE)
-
-        # for obj in self.objects:
-        #     obj.draw(self)
-        #
-        # trauma_text = assets.DEBUG_FONT.render(
-        #     f"TRAUMA {self.camera.trauma:.2f}", False, const.RED, const.BLACK)
-        # shake_text = assets.DEBUG_FONT.render(
-        #     f"SHAKE {self.camera.shake:.2f}", False, const.BLUE, const.BLACK)
-        # self.surface.blit(trauma_text, (0, 24))
-        # self.surface.blit(shake_text, (0, 36))
+        surface.blit(
+            animator_get_frame(self.debug),
+            camera_to_screen_shake(self.camera, *self.debug_pos)
+        )
+        slider_render(surface, self.ui_sfx_slider)
+        slider_render(surface, self.ui_music_slider)
+        checkbox_render(surface, self.ui_vsync_checkbox)
+        checkbox_render(surface, self.ui_fullscreen_checkbox)
+        checkbox_render(surface, self.ui_screenshake_checkbox)
+        button_render(surface, self.ui_default_button)
 
     def exit(self) -> None:
         pass
