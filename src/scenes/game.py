@@ -44,7 +44,7 @@ class Game(Scene):
             logo.velocity.x = random.randint(-64, 64)
             logo.velocity.y = random.randint(-64, 64)
 
-        pygame.mixer.Channel(0).play(asset.DEBUG_THEME, -1)
+        pygame.mixer.Channel(0).play(asset.DEBUG_THEME_GAME, -1)
 
     def execute(
         self,
@@ -73,6 +73,7 @@ class Game(Scene):
 
                 if bounce(logo, 0, self.REBOUND_X, 0, self.REBOUND_Y):
                     self.camera.trauma = 0.5
+                    pygame.mixer.Channel(1).play(asset.DEBUG_BONK)
 
             camera_update(self.camera, dt)
 
@@ -90,6 +91,7 @@ class Game(Scene):
 
     def exit(self) -> None:
         pygame.mixer.Channel(0).stop()
+        pygame.mixer.Channel(1).stop()
 
 
 def bounce(

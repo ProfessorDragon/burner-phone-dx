@@ -10,7 +10,9 @@ DEBUG_SPRITE = pygame.image.load("assets/img/icon_pirate.png")
 DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 
 # Load audio (ogg for web compatibility)
-DEBUG_THEME = pygame.mixer.Sound("assets/sfx/theme.ogg")
+DEBUG_THEME_GAME = pygame.mixer.Sound("assets/sfx/theme.ogg")
+DEBUG_THEME_MENU = pygame.mixer.Sound("assets/sfx/menu.ogg")
+DEBUG_BONK = pygame.mixer.Sound("assets/sfx/bonk.ogg")
 
 # Load fonts (ttf for web compatibility)
 DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)

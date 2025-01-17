@@ -16,7 +16,7 @@ def run() -> None:
     pygame.display.set_icon(asset.ICON)
     scene_manager = StateMachine()
     statemachine_initialise(
-        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
+        scene_manager, scene.SCENE_MAPPING, scene.SceneState.GAME)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 

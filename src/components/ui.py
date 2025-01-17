@@ -32,12 +32,16 @@ def checkbox_toggle(checkbox: Checkbox) -> None:
     checkbox.enabled = not checkbox.enabled
 
 
+def slider_percent(slider: Slider) -> float:
+    difference = slider.max_value - slider.min_value
+    return (slider.value - slider.min_value) / difference
+
+
 def slider_set_value(slider: Slider, value: int) -> None:
     slider.value = clamp(value, slider.min_value, slider.max_value)
-    difference = slider.max_value - slider.min_value
-    percent = (slider.value - slider.min_value) / difference
     slider.filled_rect = (
-        slider.rect.x, slider.rect.y, percent * slider.rect.w, slider.rect.h
+        slider.rect.x, slider.rect.y,
+        slider_percent(slider) * slider.rect.w, slider.rect.h
     )
 
 
