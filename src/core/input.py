@@ -3,11 +3,10 @@ from enum import IntEnum, auto
 
 
 class InputState(IntEnum):
-    NOTHING = 0 # released for >1 frame
-    PRESSED = auto() # just pressed, active for 1 frame
-    HELD = auto() # pressed for >1 frame
-    RELEASED = auto() # just released, active for 1 frame
-    REPEATED = auto() # virtual state that represents being held for a given time
+    NOTHING = 0  # released for >1 frame
+    PRESSED = auto()  # just pressed, active for 1 frame
+    HELD = auto()  # pressed for >1 frame
+    RELEASED = auto()  # just released, active for 1 frame
 
 
 class MouseButton(IntEnum):
@@ -29,14 +28,18 @@ class Action(IntEnum):
 
 InputBuffer = list[InputState]
 
+
 def is_pressed(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
     return action_buffer[input_enum] == InputState.PRESSED
+
 
 def is_held(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
     return action_buffer[input_enum] == InputState.HELD
 
+
 def is_released(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
     return action_buffer[input_enum] == InputState.RELEASED
+
 
 def is_nothing(action_buffer: InputBuffer, input_enum: IntEnum) -> bool:
     return action_buffer[input_enum] == InputState.NOTHING

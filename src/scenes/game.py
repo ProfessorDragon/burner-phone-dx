@@ -69,7 +69,10 @@ class Game(Scene):
         # RENDER
         surface.fill(const.MAGENTA)
 
-        surface.blit(asset.DEBUG_IMAGE, camera_to_screen_shake(self.camera, *self.player.motion.position))
+        surface.blit(
+            asset.DEBUG_IMAGE,
+            camera_to_screen_shake(self.camera, *self.player.motion.position)
+        )
         # for enemy in self.enemies: enemy_draw
 
         if self.paused:
