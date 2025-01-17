@@ -16,6 +16,13 @@ class Camera:
     max_shake_duration: float = 2.0
 
 
+def camera_follow(camera: Camera, x: float, y: float, speed: float = 5) -> None:
+    camera.motion.velocity = Vector2(
+        (x - camera.motion.position.x) * speed,
+        (y - camera.motion.position.y) * speed,
+    )
+
+
 def camera_update(camera: Camera, dt: float) -> None:
     # Update shake
     camera.trauma -= dt / camera.max_shake_duration

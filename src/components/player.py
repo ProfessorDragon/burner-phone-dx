@@ -12,12 +12,16 @@ class Player:
     motion: Motion
 
 
+def player_rect(motion: Motion):
+    return pygame.Rect(*motion.position, c.TILE_SIZE, c.TILE_SIZE)
+
+
 def player_update(
     player: Player,
     dt: float,
     action_buffer: input.InputBuffer,
     walls: list[pygame.Rect],
-):
+) -> None:
     # lateral movement
     dx = (
         input.is_held(action_buffer, input.Action.RIGHT)
@@ -47,11 +51,11 @@ def player_update(
         m = player.motion.copy()
         m.velocity.y = 0
         motion_update(m, dt)
-        player_rect = pygame.Rect(*m.position, c.TILE_SIZE, c.TILE_SIZE)
+        rect = player_rect(m)
         for wall in walls:
-            if player_rect.colliderect(wall):
+            if rect.colliderect(wall):
                 if m.velocity.x > 0:
-                    player.motion.position.x = wall.left - player_rect.w
+                    player.motion.position.x = wall.left - rect.w
                 else:
                     player.motion.position.x = wall.right
                 player.motion.velocity.x = 0
@@ -63,11 +67,11 @@ def player_update(
         m = player.motion.copy()
         m.velocity.x = 0
         motion_update(m, dt)
-        player_rect = pygame.Rect(*m.position, c.TILE_SIZE, c.TILE_SIZE)
+        rect = player_rect(m)
         for wall in walls:
-            if player_rect.colliderect(wall):
+            if rect.colliderect(wall):
                 if m.velocity.y > 0:
-                    player.motion.position.y = wall.top - player_rect.h
+                    player.motion.position.y = wall.top - rect.h
                 else:
                     player.motion.position.y = wall.bottom
                 player.motion.velocity.y = 0

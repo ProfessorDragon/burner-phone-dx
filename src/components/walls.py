@@ -18,7 +18,8 @@ def draw_wall(surface: pygame.Surface, camera: Camera, wall: pygame.Rect):
         c.BLUE,
         (
             *camera_to_screen_shake(camera, wall.x, wall.y),
-            *camera_to_screen_shake(camera, wall.w + 1, wall.h + 1),
+            wall.w + 1,
+            wall.h + 1,
         ),
         1,
     )

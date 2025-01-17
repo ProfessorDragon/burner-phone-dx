@@ -1,6 +1,6 @@
 import pygame
 
-from components.player import Player, player_update
+from components.player import Player, player_rect, player_update
 from components.walls import draw_wall, tile_size_rect
 import core.input as input
 import core.constants as c
@@ -8,6 +8,7 @@ import core.assets as asset
 from components.motion import Vector2, Motion
 from components.camera import (
     Camera,
+    camera_follow,
     camera_update,
     camera_to_screen_shake,
     camera_reset,
@@ -27,9 +28,19 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.camera = Camera(Motion.empty(), Vector2(), Vector2(), Vector2(30, 30))
-
         self.player = Player(Motion.empty())
+
+        self.camera = Camera(
+            Motion(
+                Vector2(*player_rect(self.player.motion).center), Vector2(), Vector2()
+            ),
+            Vector2(),
+            Vector2(),
+            Vector2(30, 30),
+        )
+        # not sure why this was removed?
+        self.camera.offset = Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+
         self.walls = [
             tile_size_rect(4, 5),
             tile_size_rect(5, 5),
@@ -67,6 +78,7 @@ class Game(Scene):
             player_update(self.player, dt, action_buffer, self.walls)
             # for enemy in self.enemies: enemy_update
 
+            camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
 
         # RENDER
