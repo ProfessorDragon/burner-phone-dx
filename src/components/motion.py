@@ -16,6 +16,10 @@ class Motion:
     velocity: Vector2
     acceleration: Vector2
 
+    @staticmethod
+    def empty():
+        return Motion(Vector2(), Vector2(), Vector2())
+
 
 def motion_update(motion: Motion, dt: float) -> None:
     motion.velocity.x += motion.acceleration.x * dt

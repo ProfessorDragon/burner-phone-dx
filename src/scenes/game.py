@@ -18,32 +18,23 @@ class Game(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
 
-        self.REBOUND_X = const.WINDOW_WIDTH - asset.DEBUG_SPRITE.get_width()
-        self.REBOUND_Y = const.WINDOW_HEIGHT - asset.DEBUG_SPRITE.get_height()
-
         self.paused = False
         self.pause_overlay = pygame.Surface(const.WINDOW_SIZE)
         self.pause_overlay.fill(const.WHITE)
         self.pause_overlay.set_alpha(128)
 
         self.camera = Camera(
-            Motion(Vector2(), Vector2(), Vector2()),
+            Motion.empty(),
             Vector2(),
             Vector2(),
             Vector2(30, 30)
         )
-        self.bouncing_logos: list[Motion] = [
-            Motion(Vector2(), Vector2(), Vector2()) for _ in range(10)]
+
+        self.player = Motion.empty()
+        # self.enemies: list[Enemy] = []
 
     def enter(self) -> None:
         camera_reset(self.camera)
-
-        for logo in self.bouncing_logos:
-            logo.position.x = random.randint(0, self.REBOUND_X)
-            logo.position.y = random.randint(0, self.REBOUND_Y)
-            logo.velocity.x = random.randint(-64, 64)
-            logo.velocity.y = random.randint(-64, 64)
-
         pygame.mixer.Channel(0).play(asset.DEBUG_THEME_GAME, -1)
 
     def execute(
@@ -68,23 +59,16 @@ class Game(Scene):
             pass
 
         else:
-            for logo in self.bouncing_logos:
-                motion_update(logo, dt)
-
-                if bounce(logo, 0, self.REBOUND_X, 0, self.REBOUND_Y):
-                    self.camera.trauma = 0.5
-                    pygame.mixer.Channel(1).play(asset.DEBUG_BONK)
+            # player_update
+            # for enemy in self.enemies: enemy_update
 
             camera_update(self.camera, dt)
 
         # RENDER
         surface.fill(const.MAGENTA)
 
-        for logo in self.bouncing_logos:
-            surface.blit(
-                asset.DEBUG_SPRITE,
-                camera_to_screen_shake(self.camera, *logo.position)
-            )
+        # player_draw
+        # for enemy in self.enemies: enemy_draw
 
         if self.paused:
             self.surface.blit(self.pause_overlay, (0, 0))

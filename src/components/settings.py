@@ -54,6 +54,7 @@ class Settings:
             asset.DEBUG_FONT.render("DEFAULT", False, const.WHITE)
         )
 
+        # the slider currently being dragged by the mouse
         self.selected_slider = None
 
         pygame.mixer.Channel(0).set_volume(

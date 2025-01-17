@@ -23,7 +23,7 @@ class Menu(Scene):
         super().__init__(statemachine)
 
         self.camera = Camera(
-            Motion(Vector2(), Vector2(), Vector2()),
+            Motion.empty(),
             Vector2(),
             Vector2(),
             Vector2(30, 30)
