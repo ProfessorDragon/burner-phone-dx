@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pygame
 
-import core.input as input
+import core.input as i
 import core.constants as c
 from components.motion import Motion, Motion3D, motion3d_update, motion_update
 
@@ -19,17 +19,17 @@ def player_rect(motion: Motion):
 def player_update(
     player: Player,
     dt: float,
-    action_buffer: input.InputBuffer,
+    action_buffer: i.InputBuffer,
     walls: list[pygame.Rect],
 ) -> None:
     # lateral movement
     dx = (
-        input.is_held(action_buffer, input.Action.RIGHT)
-        - input.is_held(action_buffer, input.Action.LEFT)
+        i.is_held(action_buffer, i.Action.RIGHT)
+        - i.is_held(action_buffer, i.Action.LEFT)
     ) * 200
     dy = (
-        input.is_held(action_buffer, input.Action.DOWN)
-        - input.is_held(action_buffer, input.Action.UP)
+        i.is_held(action_buffer, i.Action.DOWN)
+        - i.is_held(action_buffer, i.Action.UP)
     ) * 200
     if dx != 0 and dy != 0:
         # trig shortcut, multiply by 1/sqrt(2) for accurate diagonal movement speeds

@@ -2,9 +2,9 @@ import pygame
 
 from components.player import Player, player_rect, player_update
 from components.walls import draw_wall, tile_size_rect
-import core.input as input
+import core.input as i
 import core.constants as c
-import core.assets as asset
+import core.assets as a
 from components.motion import Vector2, Motion
 from components.camera import (
     Camera,
@@ -32,7 +32,8 @@ class Game(Scene):
 
         self.camera = Camera(
             Motion(
-                Vector2(*player_rect(self.player.motion).center), Vector2(), Vector2()
+                Vector2(
+                    *player_rect(self.player.motion).center), Vector2(), Vector2()
             ),
             Vector2(),
             Vector2(),
@@ -51,21 +52,21 @@ class Game(Scene):
 
     def enter(self) -> None:
         camera_reset(self.camera)
-        pygame.mixer.Channel(0).play(asset.DEBUG_THEME_GAME, -1)
+        pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1)
 
     def execute(
         self,
         surface: pygame.Surface,
         dt: float,
-        action_buffer: input.InputBuffer,
-        mouse_buffer: input.InputBuffer,
+        action_buffer: i.InputBuffer,
+        mouse_buffer: i.InputBuffer,
     ) -> None:
         # INPUT
-        if action_buffer[input.Action.START] == input.InputState.PRESSED:
+        if action_buffer[i.Action.START] == i.InputState.PRESSED:
             statemachine_change_state(self.statemachine, scene.SceneState.MENU)
             return
 
-        if action_buffer[input.Action.SELECT] == input.InputState.PRESSED:
+        if action_buffer[i.Action.SELECT] == i.InputState.PRESSED:
             # Might want to enable pause UI here
             # Set Pause UI overlay to top option
             self.paused = not self.paused
@@ -103,7 +104,7 @@ class Game(Scene):
             draw_wall(surface, self.camera, wall)
 
         surface.blit(
-            asset.DEBUG_IMAGE,
+            a.DEBUG_IMAGE,
             camera_to_screen_shake(self.camera, *self.player.motion.position),
             (0, 0, 32, 32),
         )

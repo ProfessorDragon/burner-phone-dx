@@ -7,6 +7,7 @@ from utilities.sprite import slice_sheet
 ICON = pygame.image.load("assets/icon.png")
 DEBUG_IMAGE = pygame.image.load("assets/img/debug_image.png")
 DEBUG_SPRITE = pygame.image.load("assets/img/icon_pirate.png")
+DEBUG_SPRITE_SMALL = pygame.image.load("assets/img/icon_pirate_small.png")
 DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 
 # Load audio (ogg for web compatibility)

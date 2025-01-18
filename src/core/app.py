@@ -3,8 +3,8 @@ import pygame
 
 import core.constants as c
 import core.setup as setup
-import core.assets as asset
-import core.input as input
+import core.assets as a
+import core.input as i
 from components.statemachine import (
     StateMachine,
     statemachine_initialise,
@@ -15,23 +15,24 @@ import scenes.scenemapping as scene
 
 def run() -> None:
     pygame.display.set_caption(c.CAPTION)
-    pygame.display.set_icon(asset.ICON)
+    pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
-    statemachine_initialise(scene_manager, scene.SCENE_MAPPING, scene.SceneState.GAME)
+    statemachine_initialise(
+        scene_manager, scene.SCENE_MAPPING, scene.SceneState.GAME)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
 async def game_loop(
     surface: pygame.Surface, clock: pygame.Clock, scene_manager: StateMachine
 ) -> None:
-    mouse_buffer: input.InputBuffer = [
-        input.InputState.NOTHING for _ in input.MouseButton
+    mouse_buffer: i.InputBuffer = [
+        i.InputState.NOTHING for _ in i.MouseButton
     ]
 
-    action_buffer: input.InputBuffer = [input.InputState.NOTHING for _ in input.Action]
+    action_buffer: i.InputBuffer = [i.InputState.NOTHING for _ in i.Action]
 
     last_action_mapping_pressed = [
-        input.action_mappings[action][0] for action in input.Action
+        i.action_mappings[action][0] for action in i.Action
     ]
 
     print("Starting game loop")
@@ -51,10 +52,12 @@ async def game_loop(
         update_action_buffer(action_buffer, last_action_mapping_pressed)
         update_mouse_buffer(mouse_buffer)
 
-        statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
+        statemachine_execute(scene_manager, surface, dt,
+                             action_buffer, mouse_buffer)
 
         debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
-        debug_text = asset.DEBUG_FONT.render(debug_str, False, c.WHITE, c.BLACK)
+        debug_text = a.DEBUG_FONT.render(
+            debug_str, False, c.WHITE, c.BLACK)
         surface.blit(debug_text, (0, 0))
 
         # Keep these calls together in this order
@@ -87,14 +90,14 @@ def input_event_queue() -> bool:
 
 
 def update_action_buffer(
-    action_buffer: input.InputBuffer, last_action_mapping_pressed: list[int]
+    action_buffer: i.InputBuffer, last_action_mapping_pressed: list[int]
 ) -> None:
     # get_just_pressed() and get_just_released() do not work with web ;(
     keys_held = pygame.key.get_pressed()
-    for action in input.Action:
-        if action_buffer[action] == input.InputState.NOTHING:
+    for action in i.Action:
+        if action_buffer[action] == i.InputState.NOTHING:
             # Check if any alternate keys for the action were just pressed
-            for mapping in input.action_mappings[action]:
+            for mapping in i.action_mappings[action]:
                 if mapping == last_action_mapping_pressed[action]:
                     continue
 
@@ -105,42 +108,42 @@ def update_action_buffer(
 
         if keys_held[last_action_mapping_pressed[action]]:
             if (
-                action_buffer[action] == input.InputState.NOTHING
-                or action_buffer[action] == input.InputState.RELEASED
+                action_buffer[action] == i.InputState.NOTHING
+                or action_buffer[action] == i.InputState.RELEASED
             ):
-                action_buffer[action] = input.InputState.PRESSED
-            elif action_buffer[action] == input.InputState.PRESSED:
-                action_buffer[action] = input.InputState.HELD
+                action_buffer[action] = i.InputState.PRESSED
+            elif action_buffer[action] == i.InputState.PRESSED:
+                action_buffer[action] = i.InputState.HELD
         else:
             if (
-                action_buffer[action] == input.InputState.PRESSED
-                or action_buffer[action] == input.InputState.HELD
+                action_buffer[action] == i.InputState.PRESSED
+                or action_buffer[action] == i.InputState.HELD
             ):
-                action_buffer[action] = input.InputState.RELEASED
-            elif action_buffer[action] == input.InputState.RELEASED:
-                action_buffer[action] = input.InputState.NOTHING
+                action_buffer[action] = i.InputState.RELEASED
+            elif action_buffer[action] == i.InputState.RELEASED:
+                action_buffer[action] = i.InputState.NOTHING
 
 
-def update_mouse_buffer(mouse_buffer: input.InputBuffer) -> None:
+def update_mouse_buffer(mouse_buffer: i.InputBuffer) -> None:
     # get_just_pressed() and get_just_released() do not work with web ;(
     mouse_pressed = pygame.mouse.get_pressed()
-    for button in input.MouseButton:
+    for button in i.MouseButton:
         if mouse_pressed[button]:
             if (
-                mouse_buffer[button] == input.InputState.NOTHING
-                or mouse_buffer[button] == input.InputState.RELEASED
+                mouse_buffer[button] == i.InputState.NOTHING
+                or mouse_buffer[button] == i.InputState.RELEASED
             ):
-                mouse_buffer[button] = input.InputState.PRESSED
-            elif mouse_buffer[button] == input.InputState.PRESSED:
-                mouse_buffer[button] = input.InputState.HELD
+                mouse_buffer[button] = i.InputState.PRESSED
+            elif mouse_buffer[button] == i.InputState.PRESSED:
+                mouse_buffer[button] = i.InputState.HELD
         else:
             if (
-                mouse_buffer[button] == input.InputState.PRESSED
-                or mouse_buffer[button] == input.InputState.HELD
+                mouse_buffer[button] == i.InputState.PRESSED
+                or mouse_buffer[button] == i.InputState.HELD
             ):
-                mouse_buffer[button] = input.InputState.RELEASED
-            elif mouse_buffer[button] == input.InputState.RELEASED:
-                mouse_buffer[button] = input.InputState.NOTHING
+                mouse_buffer[button] = i.InputState.RELEASED
+            elif mouse_buffer[button] == i.InputState.RELEASED:
+                mouse_buffer[button] = i.InputState.NOTHING
 
 
 def terminate() -> None:

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Timer:
-    duration: float
+    duration: float = 0
     remaining: float = 0
     elapsed: float = 0
 
