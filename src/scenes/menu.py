@@ -1,7 +1,7 @@
 import pygame
 
 import core.constants as c
-import core.input as i
+import core.input as t
 import core.assets as a
 from components.camera import (
     Camera,
@@ -20,8 +20,13 @@ from components.animation import (
 )
 from components.settings import Settings, settings_render, settings_update
 from components.dialogue import (
-    DialogueSystem, dialogue_initialise, dialogue_update, dialogue_add_packet,
-    dialogue_render, dialogue_try_reset, dialogue_packet_create
+    DialogueSystem,
+    dialogue_initialise,
+    dialogue_update,
+    dialogue_add_packet,
+    dialogue_render,
+    dialogue_try_reset,
+    dialogue_packet_create,
 )
 
 from scenes.scene import Scene
@@ -33,8 +38,7 @@ class Menu(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
 
-        self.camera = Camera(Motion.empty(), Vector2(),
-                             Vector2(), Vector2(30, 30))
+        self.camera = Camera(Motion.empty(), Vector2(), Vector2(), Vector2(30, 30))
 
         self.debug = Animator()
         debug_animation_mapping = {0: Animation(a.DEBUG_FRAMES, 0.1)}
@@ -49,21 +53,30 @@ class Menu(Scene):
         self.settings = Settings()
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
-        dialogue_add_packet(self.dialogue, dialogue_packet_create(
-            a.DEBUG_SPRITE_SMALL,
-            "Unknown",
-            "TEsting. Testing? 1, 2, 3!\nbest\ndialogue\nEVER!!!"
-        ))
-        dialogue_add_packet(self.dialogue, dialogue_packet_create(
-            a.DEBUG_SPRITE_SMALL,
-            "nwonknu",
-            "Dialogue can even be queued!?\nThis is\nAweSOME!"
-        ))
-        dialogue_add_packet(self.dialogue, dialogue_packet_create(
-            a.DEBUG_SPRITE_SMALL,
-            "Unknown",
-            f"Press <SELECT> to fast skip to end\n!!?!.!?>@?@>./.21\n{'!'*40}"
-        ))
+        dialogue_add_packet(
+            self.dialogue,
+            dialogue_packet_create(
+                a.DEBUG_SPRITE_SMALL,
+                "Unknown",
+                "TEsting. Testing? 1, 2, 3!\nbest\ndialogue\nEVER!!!",
+            ),
+        )
+        dialogue_add_packet(
+            self.dialogue,
+            dialogue_packet_create(
+                a.DEBUG_SPRITE_SMALL,
+                "nwonknu",
+                "Dialogue can even be queued!?\nThis is\nAweSOME!",
+            ),
+        )
+        dialogue_add_packet(
+            self.dialogue,
+            dialogue_packet_create(
+                a.DEBUG_SPRITE_SMALL,
+                "Unknown",
+                f"Press <SELECT> to fast skip to end\n!!?!.!?>@?@>./.21\n{'!'*40}",
+            ),
+        )
 
     def enter(self) -> None:
         dialogue_try_reset(self.dialogue)
@@ -75,23 +88,21 @@ class Menu(Scene):
         self,
         surface: pygame.Surface,
         dt: float,
-        action_buffer: i.InputBuffer,
-        mouse_buffer: i.InputBuffer,
+        action_buffer: t.InputBuffer,
+        mouse_buffer: t.InputBuffer,
     ) -> None:
         # INPUT
-        if action_buffer[i.Action.START] == i.InputState.PRESSED:
+        if action_buffer[t.Action.START] == t.InputState.PRESSED:
             statemachine_change_state(self.statemachine, scene.SceneState.GAME)
             return
 
-        if action_buffer[i.Action.B] == i.InputState.HELD:
+        if action_buffer[t.Action.B] == t.InputState.HELD:
             self.camera.trauma += 0.01
 
         # UPDATE
         camera_update(self.camera, dt)
         animator_update(self.debug, dt)
-        in_dialogue = dialogue_update(
-            self.dialogue, dt, action_buffer, mouse_buffer
-        )
+        in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
         if not in_dialogue:
             settings_update(self.settings, dt, action_buffer, mouse_buffer)

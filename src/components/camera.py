@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import random
 
 from components.motion import Vector2, Motion, motion_update
-from utilities.math import clamp
+from utilities.math import clamp, vec_size
 
 
 @dataclass(slots=True)
@@ -15,13 +15,16 @@ class Camera:
     max_shake_duration: float = 2.0
 
 
-def camera_follow(
-    camera: Camera, x: float, y: float, speed: float = 8
-) -> None:
-    camera.motion.velocity = Vector2(
-        (x - camera.motion.position.x) * speed,
-        (y - camera.motion.position.y) * speed,
-    )
+def camera_follow(camera: Camera, x: float, y: float, speed: float = 8) -> None:
+    dist = Vector2(x - camera.motion.position.x, y - camera.motion.position.y)
+    if vec_size(dist) < 1:
+        camera.motion.position = Vector2(x, y)
+        camera.motion.velocity = Vector2()
+    else:
+        camera.motion.velocity = Vector2(
+            dist.x * speed,
+            dist.y * speed,
+        )
 
 
 def camera_update(camera: Camera, dt: float) -> None:
@@ -47,20 +50,26 @@ def camera_update(camera: Camera, dt: float) -> None:
 
 
 def camera_to_screen(camera: Camera, x: float, y: float) -> tuple[int, int]:
+    # round to reduce jitter.
     return (
-        int(x - camera.motion.position.x + camera.offset.x),
-        int(y - camera.motion.position.y + camera.offset.y),
+        round(x - camera.motion.position.x + camera.offset.x),
+        round(y - camera.motion.position.y + camera.offset.y),
     )
 
 
-def camera_to_screen_shake(
-    camera: Camera, x: float, y: float
-) -> tuple[int, int]:
+def camera_to_screen_shake(camera: Camera, x: float, y: float) -> tuple[int, int]:
     screen_x = x - camera.motion.position.x + camera.offset.x
     screen_y = y - camera.motion.position.y + camera.offset.y
     return (
-        int(screen_x + camera.shake_offset.x),
-        int(screen_y + camera.shake_offset.y),
+        round(screen_x + camera.shake_offset.x),
+        round(screen_y + camera.shake_offset.y),
+    )
+
+
+def camera_from_screen(camera: Camera, x: float, y: float) -> tuple[int, int]:
+    return (
+        round(x + camera.motion.position.x - camera.offset.x),
+        round(y + camera.motion.position.y - camera.offset.y),
     )
 
 

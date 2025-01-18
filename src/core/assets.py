@@ -4,15 +4,25 @@ from utilities.sprite import slice_sheet
 
 
 # Load sprites (png, webp or jpg for web compatibility)
+
+# icon
 ICON = pygame.image.load("assets/icon.png")
+
+# debug
 DEBUG_IMAGE = pygame.image.load("assets/img/debug_image.png")
 DEBUG_SPRITE = pygame.image.load("assets/img/icon_pirate.png")
 DEBUG_SPRITE_SMALL = pygame.image.load("assets/img/icon_pirate_small.png")
 DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
-PLAYER_FRAMES_RIGHT = slice_sheet("assets/img/player-sheet.png", 32, 32)
+
+# player
+PLAYER_FRAMES_RIGHT = slice_sheet("assets/img/player_sheet.png", 32, 32)
 PLAYER_FRAMES_LEFT = [
     pygame.transform.flip(frame, True, False) for frame in PLAYER_FRAMES_RIGHT
 ]
+
+# terrain (don't slice bc some use custom dimensions)
+TERRAIN_SHEET = pygame.image.load("assets/img/terrain_sheet.png")
+
 
 # Load audio (ogg for web compatibility)
 DEBUG_THEME_GAME = pygame.mixer.Sound("assets/sfx/theme.ogg")

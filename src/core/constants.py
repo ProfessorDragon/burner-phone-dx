@@ -1,6 +1,7 @@
 import pygame
 
 TILE_SIZE = 32
+HALF_TILE_SIZE = 16
 
 # Pygame constants
 WINDOW_WIDTH = 16 * TILE_SIZE

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import pygame
 
 import core.constants as c
-import core.input as i
+import core.input as t
 import core.assets as a
 from components.ui import (
     Slider,
@@ -59,43 +59,42 @@ class Settings:
         # the slider currently being dragged by the mouse
         self.selected_slider = None
 
-        pygame.mixer.Channel(0).set_volume(
-            slider_percent(self.ui_music_slider))
+        pygame.mixer.Channel(0).set_volume(slider_percent(self.ui_music_slider))
         pygame.mixer.Channel(1).set_volume(slider_percent(self.ui_sfx_slider))
 
 
 def settings_update(
     settings: Settings,
     dt: float,
-    action_buffer: i.InputBuffer,
-    mouse_buffer: i.InputBuffer,
+    action_buffer: t.InputBuffer,
+    mouse_buffer: t.InputBuffer,
 ) -> None:
     mouse_position = pygame.mouse.get_pos()
 
     if settings.ui_music_slider.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             settings.selected_slider = settings.ui_music_slider
     elif settings.ui_sfx_slider.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             settings.selected_slider = settings.ui_sfx_slider
     elif settings.ui_vsync_checkbox.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             checkbox_toggle(settings.ui_vsync_checkbox)
             pygame.mixer.Channel(1).play(a.DEBUG_BONK)
     elif settings.ui_fullscreen_checkbox.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             checkbox_toggle(settings.ui_fullscreen_checkbox)
             pygame.mixer.Channel(1).play(a.DEBUG_BONK)
     elif settings.ui_screenshake_checkbox.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             checkbox_toggle(settings.ui_screenshake_checkbox)
             pygame.mixer.Channel(1).play(a.DEBUG_BONK)
     elif settings.ui_default_button.rect.collidepoint(mouse_position):
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.PRESSED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
             pygame.mixer.Channel(1).play(a.DEBUG_BONK)
 
     if settings.selected_slider:
-        if mouse_buffer[i.MouseButton.LEFT] == i.InputState.RELEASED:
+        if mouse_buffer[t.MouseButton.LEFT] == t.InputState.RELEASED:
             pygame.mixer.Channel(1).play(a.DEBUG_BONK)
             # TODO: This is where we write/save value and apply setting
             if settings.selected_slider == settings.ui_music_slider:

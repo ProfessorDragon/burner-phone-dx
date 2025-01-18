@@ -1,3 +1,4 @@
+from math import sqrt
 from components.motion import Vector2
 
 
@@ -13,3 +14,7 @@ def lerp(a: int | float, b: int | float, t: int | float) -> int | float:
 
 def vec_midpoint(a: Vector2, b: Vector2) -> Vector2:
     return Vector2((a.x + b.x) / 2, (a.y + b.y) / 2)
+
+
+def vec_size(a: Vector2) -> float:
+    return sqrt(a.x * a.x + a.y * a.y)

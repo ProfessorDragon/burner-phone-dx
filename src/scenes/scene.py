@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from components.statemachine import State
-import core.input as i
+import core.input as t
 
 import pygame
 
@@ -14,8 +14,8 @@ class Scene(State):
         self,
         surface: pygame.Surface,
         dt: float,
-        action_buffer: i.InputBuffer,
-        mouse_buffer: i.InputBuffer
+        action_buffer: t.InputBuffer,
+        mouse_buffer: t.InputBuffer,
     ) -> None: ...
 
     @abstractmethod
