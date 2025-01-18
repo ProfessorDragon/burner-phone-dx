@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import random
 
-import core.constants as c
 from components.motion import Vector2, Motion, motion_update
 from utilities.math import clamp
 
@@ -16,7 +15,9 @@ class Camera:
     max_shake_duration: float = 2.0
 
 
-def camera_follow(camera: Camera, x: float, y: float, speed: float = 5) -> None:
+def camera_follow(
+    camera: Camera, x: float, y: float, speed: float = 8
+) -> None:
     camera.motion.velocity = Vector2(
         (x - camera.motion.position.x) * speed,
         (y - camera.motion.position.y) * speed,
@@ -52,7 +53,9 @@ def camera_to_screen(camera: Camera, x: float, y: float) -> tuple[int, int]:
     )
 
 
-def camera_to_screen_shake(camera: Camera, x: float, y: float) -> tuple[int, int]:
+def camera_to_screen_shake(
+    camera: Camera, x: float, y: float
+) -> tuple[int, int]:
     screen_x = x - camera.motion.position.x + camera.offset.x
     screen_y = y - camera.motion.position.y + camera.offset.y
     return (

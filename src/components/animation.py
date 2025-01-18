@@ -37,6 +37,10 @@ def animator_reset(animator: Animator) -> None:
 
 
 def animator_switch_animation(animator: Animator, id: Hashable) -> None:
+    # Cannot switch to current animation
+    if id == animator.state_id:
+        return
+
     if id not in animator.animations:
         print(f"ERROR: id: {id} does not exist in animator")
         return

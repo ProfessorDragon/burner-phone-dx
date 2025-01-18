@@ -1,10 +1,10 @@
 import pygame
 
-from components.player import Player, player_rect, player_update
-from components.walls import draw_wall, tile_size_rect
 import core.input as i
 import core.constants as c
 import core.assets as a
+from components.player import player_rect, player_update, player_render, player_initialise
+from components.walls import draw_wall, tile_size_rect
 from components.motion import Vector2, Motion
 from components.camera import (
     Camera,
@@ -28,7 +28,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player(Motion.empty())
+        self.player = player_initialise()
 
         self.camera = Camera(
             Motion(
@@ -78,12 +78,11 @@ class Game(Scene):
         else:
             player_update(self.player, dt, action_buffer, self.walls)
             # for enemy in self.enemies: enemy_update
-
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
 
         # RENDER
-        surface.fill(c.MAGENTA)
+        surface.fill(c.WHITE)
 
         for y in range(1, int(surface.get_height() / c.TILE_SIZE)):
             pygame.draw.line(
@@ -103,11 +102,7 @@ class Game(Scene):
         for wall in self.walls:
             draw_wall(surface, self.camera, wall)
 
-        surface.blit(
-            a.DEBUG_IMAGE,
-            camera_to_screen_shake(self.camera, *self.player.motion.position),
-            (0, 0, 32, 32),
-        )
+        player_render(self.player, surface, self.camera)
         # for enemy in self.enemies: enemy_draw
 
         if self.paused:
@@ -116,26 +111,3 @@ class Game(Scene):
     def exit(self) -> None:
         pygame.mixer.Channel(0).stop()
         pygame.mixer.Channel(1).stop()
-
-
-def bounce(motion: Motion, min_x: int, max_x: int, min_y: int, max_y: int) -> bool:
-    bounced = False
-    if (
-        motion.velocity.x > 0
-        and motion.position.x > max_x
-        or motion.velocity.x < 0
-        and motion.position.x < min_x
-    ):
-        motion.velocity.x *= -1
-        bounced = True
-
-    if (
-        motion.velocity.y > 0
-        and motion.position.y > max_y
-        or motion.velocity.y < 0
-        and motion.position.y < min_y
-    ):
-        motion.velocity.y *= -1
-        bounced = True
-
-    return bounced
