@@ -10,7 +10,7 @@ from components.player import (
     player_render,
     player_initialise,
 )
-from components.walls import draw_wall, tile_size_rect
+from components.walls import draw_wall
 from components.motion import Vector2, Motion
 from components.camera import (
     Camera,
@@ -23,6 +23,14 @@ from components.camera import (
 from scenes.scene import Scene
 import scenes.scenemapping as scene
 from components.statemachine import StateMachine, statemachine_change_state
+
+
+def tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
+    return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, w * c.TILE_SIZE, h * c.TILE_SIZE)
+
+
+def tile_size_vec(x: float, y: float) -> Vector2:
+    return Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
 class Game(Scene):
@@ -74,9 +82,9 @@ class Game(Scene):
 
         enemy = PatrolEnemy()
         enemy.path = [
-            Vector2(5 * c.TILE_SIZE, 5 * c.TILE_SIZE),
-            Vector2(5 * c.TILE_SIZE, 7 * c.TILE_SIZE),
-            Vector2(4 * c.TILE_SIZE, 6 * c.TILE_SIZE),
+            tile_size_vec(3, 5),
+            tile_size_vec(3, 7),
+            tile_size_vec(2, 6),
         ]
         enemy.motion.position = enemy.path[0].copy()
         self.enemies: list[PatrolEnemy] = [enemy]
@@ -124,16 +132,17 @@ class Game(Scene):
         surface.fill(c.WHITE)
         surface.blit(self.background, camera_to_screen_shake(self.camera, 0, 0))
 
-        py = round(self.player.motion.position.y)
+        # player feet
+        terrain_cutoff = round(self.player.motion.position.y) + 8
 
         # behind player
         surface.blit(
             self.player_layer,
             camera_to_screen_shake(self.camera, 0, -c.HALF_TILE_SIZE),
-            (0, 0, self.player_layer.get_width(), py + 8),
+            (0, 0, self.player_layer.get_width(), terrain_cutoff),
         )
         for enemy in self.enemies:
-            if enemy.motion.position.y <= py:
+            if enemy.motion.position.y <= terrain_cutoff:
                 enemy_render(enemy, surface, self.camera)
 
         # player
@@ -145,17 +154,17 @@ class Game(Scene):
             camera_to_screen_shake(
                 self.camera,
                 0,
-                -c.HALF_TILE_SIZE + py + 8,
+                -c.HALF_TILE_SIZE + terrain_cutoff,
             ),
             (
                 0,
-                py + 8,
+                terrain_cutoff,
                 self.player_layer.get_width(),
-                self.player_layer.get_height() - py - 8,
+                self.player_layer.get_height() - terrain_cutoff,
             ),
         )
         for enemy in self.enemies:
-            if enemy.motion.position.y > py:
+            if enemy.motion.position.y > terrain_cutoff:
                 enemy_render(enemy, surface, self.camera)
 
         # hitboxes

@@ -22,7 +22,7 @@ def enemy_update(enemy: PatrolEnemy, dt: float):
         target = enemy.path[enemy.active_point]
         dist = target - enemy.motion.position
         target_facing = dist.angle_to(Vector2())
-        turn = (target_facing - enemy.facing + 180) % 360 - 180  # will always turn clockwise
+        turn = round(target_facing - enemy.facing + 180) % 360 - 180
         # not facing in correct direction, turn
         if turn != 0:
             if abs(turn) < 5:
@@ -43,7 +43,7 @@ def enemy_update(enemy: PatrolEnemy, dt: float):
 
 def enemy_render(enemy: PatrolEnemy, surface: pygame.Surface, camera: Camera):
     sprite = a.DEBUG_SPRITE_SMALL
-    render_position = (enemy.motion.position.x, enemy.motion.position.y)
+    render_position = (enemy.motion.position.x, enemy.motion.position.y - 32)
     center_position = camera_to_screen_shake(
         camera,
         render_position[0] + 16,

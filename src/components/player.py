@@ -135,8 +135,27 @@ def player_update(
 
 
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
+    frame = animator_get_frame(player.animator)
     render_position = (player.motion.position.x - 8, player.motion.position.y - 24)
+    # if we want a 'real' shadow:
+    # shadow = pygame.transform.flip(pygame.transform.scale_by(frame, (1, 0.5)), False, True)
+    # surface.blit(
+    #     shadow,
+    #     camera_to_screen_shake(camera, render_position[0], render_position[1] + frame.get_height()),
+    # )
+    shadow = pygame.Surface((frame.get_width(), 6), pygame.SRCALPHA)
+    pygame.draw.ellipse(
+        shadow,
+        (0, 0, 0, 50),
+        pygame.Rect(5, 0, frame.get_width() - 10, 6),
+    )
     surface.blit(
-        animator_get_frame(player.animator),
+        shadow,
+        camera_to_screen_shake(
+            camera, render_position[0], render_position[1] + frame.get_height() - 3
+        ),
+    )
+    surface.blit(
+        frame,
         camera_to_screen_shake(camera, *render_position),
     )
