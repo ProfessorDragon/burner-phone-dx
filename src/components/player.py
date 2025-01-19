@@ -4,7 +4,6 @@ from enum import IntEnum, auto
 import pygame
 
 import core.input as t
-import core.constants as c
 import core.assets as a
 from components.motion import Motion, motion_update
 from components.camera import Camera, camera_to_screen_shake
@@ -65,13 +64,8 @@ def player_update(
     walls: list[pygame.Rect],
 ) -> None:
     # lateral movement
-    dx = (
-        t.is_held(action_buffer, t.Action.RIGHT)
-        - t.is_held(action_buffer, t.Action.LEFT)
-    ) * 200
-    dy = (
-        t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)
-    ) * 200
+    dx = (t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)) * 200
+    dy = (t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)) * 200
     if dx != 0 and dy != 0:
         # trig shortcut, normalizing the vector
         dx *= 0.707

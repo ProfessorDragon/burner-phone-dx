@@ -1,9 +1,9 @@
 import pygame
 
 from components.editor import Editor, editor_update
+from components.enemy import PatrolEnemy, enemy_render, enemy_update
 import core.input as t
 import core.constants as c
-import core.assets as a
 from components.player import (
     player_rect,
     player_update,
@@ -15,7 +15,6 @@ from components.motion import Vector2, Motion
 from components.camera import (
     Camera,
     camera_follow,
-    camera_from_screen,
     camera_update,
     camera_to_screen_shake,
     camera_reset,
@@ -38,14 +37,11 @@ class Game(Scene):
         self.player = player_initialise()
 
         self.camera = Camera(
-            Motion(
-                Vector2(*player_rect(self.player.motion).center), Vector2(), Vector2()
-            ),
+            Motion(Vector2(*player_rect(self.player.motion).center), Vector2(), Vector2()),
             Vector2(),
             Vector2(),
             Vector2(30, 30),
         )
-        # not sure why this was removed?
         self.camera.offset = Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
 
         self.background = pygame.Surface((500, 300), pygame.SRCALPHA)
@@ -67,7 +63,7 @@ class Game(Scene):
                 (x * c.TILE_SIZE, self.background.get_height()),
             )
 
-        self.walls = [
+        self.walls: list[pygame.Rect] = [
             tile_size_rect(4, 5),
             tile_size_rect(5, 5),
             tile_size_rect(5, 4),
@@ -75,7 +71,15 @@ class Game(Scene):
             tile_size_rect(7, 6),
             tile_size_rect(6, 7),
         ]
-        # self.enemies: list[Enemy] = []
+
+        enemy = PatrolEnemy()
+        enemy.path = [
+            Vector2(5 * c.TILE_SIZE, 5 * c.TILE_SIZE),
+            Vector2(5 * c.TILE_SIZE, 7 * c.TILE_SIZE),
+            Vector2(4 * c.TILE_SIZE, 6 * c.TILE_SIZE),
+        ]
+        enemy.motion.position = enemy.path[0].copy()
+        self.enemies: list[PatrolEnemy] = [enemy]
 
     def enter(self) -> None:
         camera_reset(self.camera)
@@ -88,6 +92,7 @@ class Game(Scene):
         action_buffer: t.InputBuffer,
         mouse_buffer: t.InputBuffer,
     ) -> None:
+
         # INPUT
         if action_buffer[t.Action.START] == t.InputState.PRESSED:
             statemachine_change_state(self.statemachine, scene.SceneState.MENU)
@@ -98,36 +103,43 @@ class Game(Scene):
             # Set Pause UI overlay to top option
             self.paused = not self.paused
 
+        # UPDATE
+
         editor_update(self, action_buffer, mouse_buffer)
 
-        # UPDATE
         if self.paused:
             pass
 
         else:
             if not Editor.enabled:
                 player_update(self.player, dt, action_buffer, self.walls)
-            # for enemy in self.enemies: enemy_update
+            for enemy in self.enemies:
+                enemy_update(enemy, dt)
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
 
         # RENDER
+
+        # background
         surface.fill(c.WHITE)
-
-        px, py = round(self.player.motion.position.x), round(
-            self.player.motion.position.y
-        )
-
         surface.blit(self.background, camera_to_screen_shake(self.camera, 0, 0))
 
+        py = round(self.player.motion.position.y)
+
+        # behind player
         surface.blit(
             self.player_layer,
             camera_to_screen_shake(self.camera, 0, -c.HALF_TILE_SIZE),
             (0, 0, self.player_layer.get_width(), py + 8),
         )
+        for enemy in self.enemies:
+            if enemy.motion.position.y <= py:
+                enemy_render(enemy, surface, self.camera)
 
+        # player
         player_render(self.player, surface, self.camera)
 
+        # in front
         surface.blit(
             self.player_layer,
             camera_to_screen_shake(
@@ -142,11 +154,13 @@ class Game(Scene):
                 self.player_layer.get_height() - py - 8,
             ),
         )
+        for enemy in self.enemies:
+            if enemy.motion.position.y > py:
+                enemy_render(enemy, surface, self.camera)
 
+        # hitboxes
         for i, wall in enumerate(self.walls):
             draw_wall(surface, self.camera, i, wall)
-
-        # for enemy in self.enemies: enemy_draw
 
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))

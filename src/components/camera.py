@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import random
 
 from components.motion import Vector2, Motion, motion_update
-from utilities.math import clamp, vec_size
+from utilities.math import clamp
 
 
 @dataclass(slots=True)
@@ -17,7 +17,7 @@ class Camera:
 
 def camera_follow(camera: Camera, x: float, y: float, speed: float = 8) -> None:
     dist = Vector2(x - camera.motion.position.x, y - camera.motion.position.y)
-    if vec_size(dist) < 1:
+    if dist.magnitude() < 1:
         camera.motion.position = Vector2(x, y)
         camera.motion.velocity = Vector2()
     else:
@@ -33,12 +33,8 @@ def camera_update(camera: Camera, dt: float) -> None:
 
     if camera.trauma > 0:
         shake = camera.trauma**3  # Can square trauma too
-        camera.shake_offset.x = (
-            camera.max_shake_offset.x * shake * random.uniform(-1, 1)
-        )
-        camera.shake_offset.y = (
-            camera.max_shake_offset.y * shake * random.uniform(-1, 1)
-        )
+        camera.shake_offset.x = camera.max_shake_offset.x * shake * random.uniform(-1, 1)
+        camera.shake_offset.y = camera.max_shake_offset.y * shake * random.uniform(-1, 1)
     elif camera.trauma < 0:
         camera.shake_offset.x = 0
         camera.shake_offset.y = 0
