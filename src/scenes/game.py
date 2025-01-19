@@ -1,7 +1,7 @@
 import pygame
 
 from components.editor import Editor, editor_update
-from components.enemy import PatrolEnemy, enemy_render, enemy_update
+from components.enemy import PatrolEnemy, SpotlightEnemy, enemy_render, enemy_update
 import core.input as t
 import core.constants as c
 from components.player import (
@@ -11,7 +11,7 @@ from components.player import (
     player_initialise,
 )
 from components.walls import draw_wall
-from components.motion import Vector2, Motion
+from components.motion import Motion
 from components.camera import (
     Camera,
     camera_follow,
@@ -20,7 +20,7 @@ from components.camera import (
     camera_reset,
 )
 
-from scenes.scene import Scene
+from scenes.scene import RenderLayer, Scene
 import scenes.scenemapping as scene
 from components.statemachine import StateMachine, statemachine_change_state
 
@@ -29,8 +29,8 @@ def tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rec
     return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, w * c.TILE_SIZE, h * c.TILE_SIZE)
 
 
-def tile_size_vec(x: float, y: float) -> Vector2:
-    return Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
+def tile_size_vec(x: float, y: float) -> pygame.Vector2:
+    return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
 class Game(Scene):
@@ -45,23 +45,27 @@ class Game(Scene):
         self.player = player_initialise()
 
         self.camera = Camera(
-            Motion(Vector2(*player_rect(self.player.motion).center), Vector2(), Vector2()),
-            Vector2(),
-            Vector2(),
-            Vector2(30, 30),
+            Motion(
+                pygame.Vector2(*player_rect(self.player.motion).center),
+                pygame.Vector2(),
+                pygame.Vector2(),
+            ),
+            pygame.Vector2(),
+            pygame.Vector2(),
+            pygame.Vector2(30, 30),
         )
-        self.camera.offset = Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+        self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
 
         self.background = pygame.Surface((500, 300), pygame.SRCALPHA)
         self.player_layer = pygame.Surface((500, 300), pygame.SRCALPHA)
 
         # bg grid
-        for y in range(1, int(self.background.get_height() / c.TILE_SIZE)):
+        for y in range(1, int(self.background.get_height() / c.TILE_SIZE / c.PERSPECTIVE)):
             pygame.draw.line(
                 self.background,
-                c.BLACK,
-                (0, y * c.TILE_SIZE),
-                (self.background.get_width(), y * c.TILE_SIZE),
+                c.BLACK if y % 2 == 0 else c.GRAY,
+                (0, y * c.TILE_SIZE * c.PERSPECTIVE),
+                (self.background.get_width(), y * c.TILE_SIZE * c.PERSPECTIVE),
             )
         for x in range(1, int(self.background.get_width() / c.TILE_SIZE)):
             pygame.draw.line(
@@ -80,14 +84,22 @@ class Game(Scene):
             tile_size_rect(6, 7),
         ]
 
-        enemy = PatrolEnemy()
-        enemy.path = [
+        patrol = PatrolEnemy()
+        patrol.path = [
             tile_size_vec(3, 5),
             tile_size_vec(3, 7),
             tile_size_vec(2, 6),
         ]
-        enemy.motion.position = enemy.path[0].copy()
-        self.enemies: list[PatrolEnemy] = [enemy]
+        patrol.motion.position = patrol.path[0].copy()
+        spotlight = SpotlightEnemy()
+        spotlight.path = [
+            tile_size_vec(3, 0),
+            tile_size_vec(6, 0),
+            tile_size_vec(6, 3),
+            tile_size_vec(3, 3),
+        ]
+        spotlight.motion.position = spotlight.path[0].copy()
+        self.enemies: list[PatrolEnemy] = [patrol, spotlight]
 
     def enter(self) -> None:
         camera_reset(self.camera)
@@ -115,14 +127,11 @@ class Game(Scene):
 
         editor_update(self, action_buffer, mouse_buffer)
 
-        if self.paused:
-            pass
-
-        else:
+        if not self.paused:
             if not Editor.enabled:
                 player_update(self.player, dt, action_buffer, self.walls)
-            for enemy in self.enemies:
-                enemy_update(enemy, dt)
+                for enemy in self.enemies:
+                    enemy_update(enemy, dt, self.player)
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
 
@@ -142,8 +151,16 @@ class Game(Scene):
             (0, 0, self.player_layer.get_width(), terrain_cutoff),
         )
         for enemy in self.enemies:
-            if enemy.motion.position.y <= terrain_cutoff:
-                enemy_render(enemy, surface, self.camera)
+            enemy_render(
+                enemy,
+                surface,
+                self.camera,
+                (
+                    RenderLayer.PLAYER_BG
+                    if enemy.motion.position.y <= terrain_cutoff
+                    else RenderLayer.BACKGROUND
+                ),
+            )
 
         # player
         player_render(self.player, surface, self.camera)
@@ -164,8 +181,16 @@ class Game(Scene):
             ),
         )
         for enemy in self.enemies:
-            if enemy.motion.position.y > terrain_cutoff:
-                enemy_render(enemy, surface, self.camera)
+            enemy_render(
+                enemy,
+                surface,
+                self.camera,
+                (
+                    RenderLayer.PLAYER_FG
+                    if enemy.motion.position.y > terrain_cutoff
+                    else RenderLayer.FOREGROUND
+                ),
+            )
 
         # hitboxes
         for i, wall in enumerate(self.walls):

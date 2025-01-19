@@ -53,9 +53,7 @@ def editor_update(scene, action_buffer, mouse_buffer):
 
     # collision editor
     if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
-        Editor.wall_paste_start = camera_from_screen(
-            scene.camera, *pygame.mouse.get_pos()
-        )
+        Editor.wall_paste_start = camera_from_screen(scene.camera, *pygame.mouse.get_pos())
         scene.walls.append(pygame.Rect(*Editor.wall_paste_start, 1, 1))
     if mouse_buffer[t.MouseButton.RIGHT] == t.InputState.PRESSED:
         x, y = camera_from_screen(scene.camera, *pygame.mouse.get_pos())
@@ -89,7 +87,7 @@ def editor_update(scene, action_buffer, mouse_buffer):
             wall.y -= 1
             wall.height += 1
         if action_buffer[t.Action.DOWN] == t.InputState.PRESSED:
-            wall.width += 1
+            wall.height += 1
     # contract
     elif action_buffer[t.Action.B] == t.InputState.HELD:
         if action_buffer[t.Action.LEFT] == t.InputState.PRESSED:
@@ -101,7 +99,7 @@ def editor_update(scene, action_buffer, mouse_buffer):
             wall.height -= 1
         if action_buffer[t.Action.DOWN] == t.InputState.PRESSED:
             wall.y += 1
-            wall.width += 1
+            wall.height -= 1
     # move
     else:
         if action_buffer[t.Action.LEFT] == t.InputState.PRESSED:

@@ -5,8 +5,9 @@ import pygame
 
 import core.input as t
 import core.assets as a
+import core.constants as c
 from components.motion import Motion, motion_update
-from components.camera import Camera, camera_to_screen_shake
+from components.camera import Camera, camera_to_screen, camera_to_screen_shake
 from components.animation import (
     Animator,
     Animation,
@@ -28,16 +29,17 @@ class Direction(IntEnum):
     NW = auto()
 
 
-@dataclass(slots=True)
 class Player:
-    motion: Motion
-    animator: Animator = None
-    direction: IntEnum = Direction.E
+    def __init__(self):
+        self.motion = Motion.empty()
+        self.animator = Animator()
+        self.direction = Direction.E
+        self.walk_speed = 250
+        self.caught_timer = 0
 
 
 def player_initialise() -> Player:
-    player = Player(Motion.empty())
-    player.animator = Animator()
+    player = Player()
     animation_mapping = {
         "idle_left": Animation([a.PLAYER_FRAMES_LEFT[0]], 1),
         "idle_right": Animation([a.PLAYER_FRAMES_RIGHT[0]], 1),
@@ -57,15 +59,14 @@ def player_rect(motion: Motion):
     return pygame.Rect(round(motion.position.x), round(motion.position.y), 16, 8)
 
 
-def player_update(
-    player: Player,
-    dt: float,
-    action_buffer: t.InputBuffer,
-    walls: list[pygame.Rect],
-) -> None:
+def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
     # lateral movement
-    dx = (t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)) * 200
-    dy = (t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)) * 200
+    dx = (
+        t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)
+    ) * player.walk_speed
+    dy = (
+        t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)
+    ) * player.walk_speed
     if dx != 0 and dy != 0:
         # trig shortcut, normalizing the vector
         dx *= 0.707
@@ -75,11 +76,12 @@ def player_update(
     # if input.is_pressed(action_buffer, input.Action.A):
     #     player.motion.acceleration.z = 1000
 
-    # collision!!
-    # I'VE PLAYED THESE GAMES BEFOREEEE
     player.motion.velocity.x = dx
-    player.motion.velocity.y = dy
+    player.motion.velocity.y = dy * c.PERSPECTIVE
 
+
+def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
+    # I'VE PLAYED THESE GAMES BEFOREEEE
     # horizontal collision
     if player.motion.velocity.x != 0:
         m = player.motion.copy()
@@ -108,6 +110,25 @@ def player_update(
                     player.motion.position.y = wall.bottom
                 player.motion.velocity.y = 0
 
+
+def player_update(
+    player: Player,
+    dt: float,
+    action_buffer: t.InputBuffer,
+    walls: list[pygame.Rect],
+) -> None:
+
+    if player.caught_timer <= 0:
+        _player_movement(player, dt, action_buffer)
+    else:
+        player.caught_timer -= dt
+        if player.caught_timer <= 0:
+            player_kill(player)
+            return
+
+    dx, dy = player.motion.velocity
+    _player_collision(player, dt, walls)
+
     # Handle animation transitions
     if dx > 0:
         player.direction = Direction.E
@@ -134,15 +155,30 @@ def player_update(
     animator_update(player.animator, dt)
 
 
+def player_caught(player: Player):
+    if player.caught_timer > 0:
+        return
+    # todo: add screen shake here. how? idk, aside from passing the camera object through a lengthy chain of args...
+    player.caught_timer = 0.5
+    player.motion.velocity = pygame.Vector2()
+
+
+def player_kill(player: Player):
+    player.motion.position = pygame.Vector2()
+    player.motion.velocity = pygame.Vector2()
+
+
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
     frame = animator_get_frame(player.animator)
     render_position = (player.motion.position.x - 8, player.motion.position.y - 24)
+
     # if we want a 'real' shadow:
     # shadow = pygame.transform.flip(pygame.transform.scale_by(frame, (1, 0.5)), False, True)
     # surface.blit(
     #     shadow,
     #     camera_to_screen_shake(camera, render_position[0], render_position[1] + frame.get_height()),
     # )
+
     shadow = pygame.Surface((frame.get_width(), 6), pygame.SRCALPHA)
     pygame.draw.ellipse(
         shadow,
@@ -158,4 +194,25 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
     surface.blit(
         frame,
         camera_to_screen_shake(camera, *render_position),
+    )
+
+    # caught alert
+    if player.caught_timer > 0:
+        alert = a.DEBUG_FONT.render("!!", False, c.RED)
+        surface.blit(
+            alert,
+            camera_to_screen(
+                camera,
+                render_position[0] + frame.get_width() // 2 - alert.get_width() // 2,
+                render_position[1] - 16 + player.caught_timer * 8,
+            ),
+        )
+
+    # hitbox
+    hitbox = player_rect(player.motion)
+    pygame.draw.rect(
+        surface,
+        c.CYAN,
+        (*camera_to_screen_shake(camera, hitbox[0], hitbox[1]), hitbox[2], hitbox[3]),
+        1,
     )

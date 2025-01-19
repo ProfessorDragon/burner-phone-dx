@@ -1,11 +1,8 @@
 from dataclasses import dataclass
 import pygame
 
-# pygame vector (1) is faster and (2) has more calculation features
-Vector2 = pygame.Vector2
-
 # @dataclass(slots=True)
-# class Vector2:
+# class pygame.Vector2:
 #     x: float = 0.0
 #     y: float = 0.0
 #
@@ -13,21 +10,21 @@ Vector2 = pygame.Vector2
 #         return iter((self.x, self.y))
 #
 #     def copy(self):
-#         return Vector2(self.x, self.y)
+#         return pygame.Vector2(self.x, self.y)
 
 
 @dataclass
 class Motion:
-    position: Vector2
-    velocity: Vector2
-    acceleration: Vector2
+    position: pygame.Vector2
+    velocity: pygame.Vector2
+    acceleration: pygame.Vector2
 
     def copy(self):
         return Motion(self.position.copy(), self.velocity.copy(), self.acceleration.copy())
 
     @staticmethod
     def empty():
-        return Motion(Vector2(), Vector2(), Vector2())
+        return Motion(pygame.Vector2(), pygame.Vector2(), pygame.Vector2())
 
 
 def motion_update(motion: Motion, dt: float) -> None:

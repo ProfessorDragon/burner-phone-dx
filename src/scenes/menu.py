@@ -9,7 +9,7 @@ from components.camera import (
     camera_to_screen_shake,
     camera_reset,
 )
-from components.motion import Vector2, Motion
+from components.motion import Motion
 from components.animation import (
     Animator,
     Animation,
@@ -38,14 +38,16 @@ class Menu(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
 
-        self.camera = Camera(Motion.empty(), Vector2(), Vector2(), Vector2(30, 30))
+        self.camera = Camera(
+            Motion.empty(), pygame.Vector2(), pygame.Vector2(), pygame.Vector2(30, 30)
+        )
 
         self.debug = Animator()
         debug_animation_mapping = {0: Animation(a.DEBUG_FRAMES, 0.1)}
         animator_initialise(self.debug, debug_animation_mapping, 0)
 
         debug_size = animator_get_frame(self.debug).get_size()
-        self.debug_pos = Vector2(
+        self.debug_pos = pygame.Vector2(
             c.WINDOW_CENTRE[0] - debug_size[0] // 2,
             c.WINDOW_CENTRE[1] - debug_size[1] // 2,
         )

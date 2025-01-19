@@ -1,27 +1,29 @@
 from dataclasses import dataclass
 import random
 
-from components.motion import Vector2, Motion, motion_update
+import pygame
+
+from components.motion import Motion, motion_update
 from utilities.math import clamp
 
 
 @dataclass(slots=True)
 class Camera:
     motion: Motion
-    offset: Vector2
-    shake_offset: Vector2
-    max_shake_offset: Vector2
+    offset: pygame.Vector2
+    shake_offset: pygame.Vector2
+    max_shake_offset: pygame.Vector2
     trauma: float = 0.0
     max_shake_duration: float = 2.0
 
 
 def camera_follow(camera: Camera, x: float, y: float, speed: float = 8) -> None:
-    dist = Vector2(x - camera.motion.position.x, y - camera.motion.position.y)
+    dist = pygame.Vector2(x - camera.motion.position.x, y - camera.motion.position.y)
     if dist.magnitude() < 1:
-        camera.motion.position = Vector2(x, y)
-        camera.motion.velocity = Vector2()
+        camera.motion.position = pygame.Vector2(x, y)
+        camera.motion.velocity = pygame.Vector2()
     else:
-        camera.motion.velocity = Vector2(
+        camera.motion.velocity = pygame.Vector2(
             dist.x * speed,
             dist.y * speed,
         )

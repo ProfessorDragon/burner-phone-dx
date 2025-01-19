@@ -1,7 +1,9 @@
 import pygame
 
+# game constants
 TILE_SIZE = 32
 HALF_TILE_SIZE = 16
+PERSPECTIVE = 0.5  # how much to scale objects on the y axis by
 
 # Pygame constants
 WINDOW_WIDTH = 16 * TILE_SIZE
@@ -24,6 +26,7 @@ MAX_DT = 1 / 60
 # Colour constants
 WHITE = pygame.Color(255, 255, 255)
 BLACK = pygame.Color(0, 0, 0)
+GRAY = pygame.Color(128, 128, 128)
 RED = pygame.Color(255, 0, 0)
 YELLOW = pygame.Color(255, 255, 0)
 GREEN = pygame.Color(0, 255, 0)
