@@ -6,7 +6,7 @@ from components.dialogue import (
     dialogue_initialise,
     dialogue_load_script,
     dialogue_render,
-    dialogue_try_reset,
+    dialogue_reset_queue,
     dialogue_update,
 )
 from components.editor import Editor, editor_update
@@ -106,6 +106,7 @@ class Game(Scene):
 
     def enter(self) -> None:
         camera_reset(self.camera)
+        dialogue_reset_queue(self.dialogue)
         # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
 
         patrol = PatrolEnemy()
@@ -144,8 +145,10 @@ class Game(Scene):
 
         editor_update(self, action_buffer, mouse_buffer)
 
+        in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
+
         if not self.paused:
-            if not Editor.enabled:
+            if not Editor.enabled and not in_dialogue:
                 # gameplay
                 if self.player.caught_timer > 0:
                     self.player.caught_timer -= dt
@@ -159,10 +162,9 @@ class Game(Scene):
             # general
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
-            in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
             if not in_dialogue and t.is_pressed(action_buffer, t.Action.SELECT):
                 # self.paused = True
-                dialogue_execute_script_scene(self.dialogue, "OPENING VOICEMAIL")
+                dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
                 dialogue_update(self.dialogue, dt)
 
         else:

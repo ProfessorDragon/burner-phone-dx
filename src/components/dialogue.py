@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
 from queue import deque
+from typing import Callable
+from functools import partial
 import textwrap
 import pygame
 
@@ -14,10 +16,11 @@ from components.timer import Timer, timer_reset, timer_update
 LETTER_SPEED = 0.02
 SPACE_SPEED = 0.04
 END_SENTENCE_SPEED = 0.1
+COMPLETED_DELAY = 0.2
 DIALOGUE_LINE_LENGTH = 44
 
 # Continue icon
-CONTINUE = a.DEBUG_FONT.render("<SELECT> to continue", False, c.WHITE)
+CONTINUE_ICON = a.DEBUG_FONT.render("<SELECT> to continue", False, c.WHITE)
 
 
 class DialogueStyle(Enum):
@@ -27,11 +30,19 @@ class DialogueStyle(Enum):
 
 
 @dataclass
+class DialogueButton:
+    text: str
+    callback: Callable
+    selected: bool = False
+
+
+@dataclass
 class DialoguePacket:
     style: DialogueStyle = DialogueStyle.DEFAULT
     graphic: pygame.Surface = None
     name: str = ""
     message: str = ""
+    buttons: list[DialogueButton] = None
 
 
 @dataclass
@@ -41,20 +52,13 @@ class DialogueSystem:
     font: pygame.Font = None
     rect: pygame.Rect = None
     text: pygame.Surface = None
-    timer: Timer = None
+    character_timer: Timer = None
+    complete_timer: Timer = None
     script_scenes: dict[str, list[str]] = None
 
 
 def dialogue_wrap_message(message: str) -> str:
     return "\n".join([textwrap.fill(ln, DIALOGUE_LINE_LENGTH) for ln in message.split("\n")])
-
-
-def dialogue_packet_create(graphic: pygame.Surface, name: str, message: str) -> DialoguePacket:
-    packet = DialoguePacket()
-    packet.graphic = graphic
-    packet.name = name
-    packet.message = dialogue_wrap_message(message)
-    return packet
 
 
 def dialogue_initialise(dialogue: DialogueSystem) -> None:
@@ -63,7 +67,8 @@ def dialogue_initialise(dialogue: DialogueSystem) -> None:
     dialogue.font = a.DEBUG_FONT
     dialogue.rect = pygame.Rect(20, c.WINDOW_HEIGHT - 100, c.WINDOW_WIDTH - 40, 80)
     dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
-    dialogue.timer = Timer()
+    dialogue.character_timer = Timer()
+    dialogue.complete_timer = Timer()
 
 
 def dialogue_add_packet(dialogue: DialogueSystem, packet: DialoguePacket) -> None:
@@ -88,11 +93,13 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
 
 
 def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> None:
+    if not scene_name:
+        return
     if scene_name not in dialogue.script_scenes:
         print(f"ERROR: Scene {scene_name} does not exist in dialogue scenes")
         return
 
-    dialogue_force_reset(dialogue)
+    dialogue_reset_queue(dialogue)
 
     dialogue_packet = DialoguePacket()
     dialogue_packet.graphic = a.DEBUG_SPRITE_SMALL
@@ -123,11 +130,21 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 dialogue_packet.style = DialogueStyle(content)
 
             case "char":
-                dialogue_packet.name = content
+                sprite_index, char_id = content.split(" ", 1)
+                character = a.DIALOGUE_CHARACTERS[char_id]
+                dialogue_packet.graphic = character.sprites[int(sprite_index)]
+                dialogue_packet.name = character.name
 
             case "buttons":
-                options = content.split("|")
-                # todo
+                dialogue_packet.buttons = []
+                for opt in content.split("|"):
+                    text, target_scene = opt.rsplit("=")
+                    dialogue_packet.buttons.append(
+                        DialogueButton(
+                            text, partial(dialogue_execute_script_scene, dialogue, target_scene)
+                        )
+                    )
+                dialogue_packet.buttons[-1].selected = True
 
             case _:
                 print(f"ERROR: Invalid script line in scene {scene_name}:\n{ln}")
@@ -147,35 +164,76 @@ def dialogue_update(
         return False
 
     active_packet = dialogue.queue[0]
+    is_complete = dialogue.char_index >= len(active_packet.message)
+    has_buttons = active_packet.buttons is not None
 
-    if action_buffer and t.is_pressed(action_buffer, t.Action.SELECT):
-        # Go to next packet
-        if dialogue.char_index >= len(active_packet.message):
-            dialogue.queue.popleft()
-            dialogue_try_reset(dialogue)
-        # Skip writing
-        else:
-            dialogue.char_index = len(active_packet.message)
-            dialogue.text = dialogue.font.render(active_packet.message, False, c.WHITE)
+    if action_buffer:
+        if t.is_pressed(action_buffer, t.Action.SELECT):
+            if not is_complete:
+                # Skip writing
+                dialogue.char_index = len(active_packet.message)
+                dialogue.text = dialogue.font.render(active_packet.message, False, c.WHITE)
+                dialogue.complete_timer.duration = COMPLETED_DELAY
+                timer_reset(dialogue.complete_timer)
 
-    elif dialogue.char_index < len(active_packet.message):
-        timer_update(dialogue.timer, dt)
+            elif dialogue.complete_timer.remaining <= 0:
+                # Activate selected button
+                if has_buttons:
+                    selected_index = [
+                        i for i, btn in enumerate(active_packet.buttons) if btn.selected
+                    ]
+                    if len(selected_index) > 0:
+                        dialogue.queue.popleft()
+                        active_packet.buttons[selected_index[0]].callback()
+                        return True
+                # Go to next packet
+                else:
+                    dialogue.queue.popleft()
+                    dialogue_try_reset(dialogue)
+
+            return True
+
+        if has_buttons:
+            dx = t.is_pressed(action_buffer, t.Action.RIGHT) - t.is_pressed(
+                action_buffer, t.Action.LEFT
+            )
+            if dx != 0:
+                selected_index = [i for i, btn in enumerate(active_packet.buttons) if btn.selected]
+                if len(selected_index) > 0:
+                    active_packet.buttons[selected_index[0]].selected = False
+                    active_packet.buttons[
+                        (selected_index[0] + dx) % len(active_packet.buttons)
+                    ].selected = True
+                else:
+                    active_packet.buttons[0].selected = True
+                return True
+
+    if is_complete:
+        timer_update(dialogue.complete_timer, dt)
+
+    else:
+        timer_update(dialogue.character_timer, dt)
 
         # Then render next letter
-        if dialogue.timer.remaining <= 0:
+        if dialogue.character_timer.remaining <= 0:
             new_char = active_packet.message[dialogue.char_index]
             dialogue.char_index += 1
             new_string = active_packet.message[: dialogue.char_index]
             dialogue.text = dialogue.font.render(new_string, False, c.WHITE)
 
-            # Wait for time before next letter
-            if new_char == " ":
-                dialogue.timer.duration = SPACE_SPEED
-            elif new_char in "?!.":
-                dialogue.timer.duration = END_SENTENCE_SPEED
+            # now is complete
+            if dialogue.char_index >= len(active_packet.message):
+                dialogue.complete_timer.duration = COMPLETED_DELAY
+                timer_reset(dialogue.complete_timer)
             else:
-                dialogue.timer.duration = LETTER_SPEED
-            timer_reset(dialogue.timer)
+                # Wait for time before next letter
+                if new_char == " ":
+                    dialogue.character_timer.duration = SPACE_SPEED
+                elif new_char in "?!.":
+                    dialogue.character_timer.duration = END_SENTENCE_SPEED
+                else:
+                    dialogue.character_timer.duration = LETTER_SPEED
+                timer_reset(dialogue.character_timer)
 
     return True
 
@@ -192,23 +250,61 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
         case DialogueStyle.PHONE:
             pygame.draw.rect(surface, c.GRAY, dialogue.rect)
         case DialogueStyle.COMMS:
-            pygame.draw.rect(surface, c.GREEN, dialogue.rect)
+            pygame.draw.rect(surface, (0, 128, 0), dialogue.rect)
 
-    surface.blit(active_packet.graphic, (dialogue.rect.x, dialogue.rect.y), (0, 0, 64, 64))
+    graphic = active_packet.graphic
+    surface.blit(graphic, (dialogue.rect.x, dialogue.rect.y + 2), (0, 0, 64, 64))
+    name = a.DEBUG_FONT.render(active_packet.name, False, c.WHITE)
     surface.blit(
-        a.DEBUG_FONT.render(active_packet.name, False, c.WHITE),
-        (dialogue.rect.x, dialogue.rect.y + dialogue.rect.h - 15),
+        name,
+        (
+            dialogue.rect.left + 32 - name.get_width() / 2,
+            dialogue.rect.bottom - name.get_height() - 2,
+        ),
     )
+
     surface.blit(dialogue.text, (dialogue.rect.x + 80, dialogue.rect.y + 10))
-    if dialogue.char_index >= len(active_packet.message):
-        surface.blit(CONTINUE, (dialogue.rect.x + 280, dialogue.rect.y + 60))
+    if dialogue.char_index >= len(active_packet.message) and dialogue.complete_timer.remaining <= 0:
+        x = dialogue.rect.right - 10
+        y = dialogue.rect.bottom - 2
+        if active_packet.buttons is not None:
+            for button in active_packet.buttons[::-1]:
+                button_icon = dialogue.font.render(
+                    button.text, False, c.WHITE if button.selected else (200, 200, 200)
+                )
+                x -= button_icon.get_width()
+                surface.blit(button_icon, (x, y - button_icon.get_height()))
+                if button.selected:
+                    pygame.draw.polygon(
+                        surface,
+                        c.WHITE,
+                        [
+                            (x - 4, y - button_icon.get_height() // 2),
+                            (x - 7, y - button_icon.get_height() + 3),
+                            (x - 7, y - 3),
+                        ],
+                    )
+                x -= 20
+        else:
+            surface.blit(
+                CONTINUE_ICON,
+                (
+                    x - CONTINUE_ICON.get_width(),
+                    y - CONTINUE_ICON.get_height(),
+                ),
+            )
 
 
-def dialogue_force_reset(dialogue: DialogueSystem) -> None:
+def dialogue_reset_packet(dialogue: DialogueSystem) -> None:
     dialogue.char_index = 0
     dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
 
 
+def dialogue_reset_queue(dialogue: DialogueSystem) -> None:
+    dialogue_reset_packet(dialogue)
+    dialogue.queue.clear()
+
+
 def dialogue_try_reset(dialogue: DialogueSystem) -> None:
     if dialogue.queue:
-        dialogue_force_reset(dialogue)
+        dialogue_reset_packet(dialogue)

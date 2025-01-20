@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import pygame
 
 from utilities.sprite import slice_sheet
@@ -39,9 +40,22 @@ DEBUG_BONK = pygame.mixer.Sound("assets/sfx/bonk.ogg")
 DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 
 
-## MISC
+## DIALOGUE
 
 with open("assets/script.txt") as script:
     GAME_SCRIPT = script.read()
+
+
+@dataclass
+class DialogueCharacter:
+    name: str
+    sprites: list[pygame.Surface]
+
+
+DIALOGUE_CHARACTERS = {
+    "phone": DialogueCharacter("Phone", [DEBUG_IMAGE]),
+    "luke": DialogueCharacter("Luke", [DEBUG_SPRITE, DEBUG_SPRITE_SMALL]),
+    "rogan": DialogueCharacter("Rogan", [DEBUG_SPRITE]),
+}
 
 print("Loaded assets")

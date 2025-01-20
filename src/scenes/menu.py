@@ -23,10 +23,8 @@ from components.dialogue import (
     DialogueSystem,
     dialogue_initialise,
     dialogue_update,
-    dialogue_add_packet,
     dialogue_render,
-    dialogue_try_reset,
-    dialogue_packet_create,
+    dialogue_reset_queue,
 )
 
 from scenes.scene import Scene
@@ -55,33 +53,9 @@ class Menu(Scene):
         self.settings = Settings()
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
-        dialogue_add_packet(
-            self.dialogue,
-            dialogue_packet_create(
-                a.DEBUG_SPRITE_SMALL,
-                "Unknown",
-                "TEsting. Testing? 1, 2, 3!\nbest\ndialogue\nEVER!!!",
-            ),
-        )
-        dialogue_add_packet(
-            self.dialogue,
-            dialogue_packet_create(
-                a.DEBUG_SPRITE_SMALL,
-                "nwonknu",
-                "Dialogue can even be queued!?\nThis is\nAweSOME!",
-            ),
-        )
-        dialogue_add_packet(
-            self.dialogue,
-            dialogue_packet_create(
-                a.DEBUG_SPRITE_SMALL,
-                "Unknown",
-                f"Press <SELECT> to fast skip to end\n!!?!.!?>@?@>./.21\n{'!'*40}",
-            ),
-        )
 
     def enter(self) -> None:
-        dialogue_try_reset(self.dialogue)
+        dialogue_reset_queue(self.dialogue)
         camera_reset(self.camera)
         animator_switch_animation(self.debug, 0)
         pygame.mixer.Channel(0).play(a.DEBUG_THEME_MENU, -1)
@@ -94,11 +68,11 @@ class Menu(Scene):
         mouse_buffer: t.InputBuffer,
     ) -> None:
         # INPUT
-        if action_buffer[t.Action.START] == t.InputState.PRESSED:
+        if t.is_pressed(action_buffer, t.Action.START):
             statemachine_change_state(self.statemachine, scene.SceneState.GAME)
             return
 
-        if action_buffer[t.Action.B] == t.InputState.HELD:
+        if t.is_held(action_buffer, t.Action.B):
             self.camera.trauma += 0.01
 
         # UPDATE
