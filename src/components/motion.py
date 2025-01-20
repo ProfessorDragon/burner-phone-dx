@@ -1,5 +1,18 @@
 from dataclasses import dataclass
+from enum import IntEnum, auto
 import pygame
+
+
+class Direction(IntEnum):
+    N = 0
+    NE = auto()
+    E = auto()
+    SE = auto()
+    S = auto()
+    SW = auto()
+    W = auto()
+    NW = auto()
+
 
 # @dataclass(slots=True)
 # class pygame.Vector2:

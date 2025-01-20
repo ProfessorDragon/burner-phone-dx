@@ -1,12 +1,9 @@
-from dataclasses import dataclass
-from enum import IntEnum, auto
-
 import pygame
 
 import core.input as t
 import core.assets as a
 import core.constants as c
-from components.motion import Motion, motion_update
+from components.motion import Direction, Motion, motion_update
 from components.camera import Camera, camera_to_screen, camera_to_screen_shake
 from components.animation import (
     Animator,
@@ -15,18 +12,8 @@ from components.animation import (
     animator_update,
     animator_get_frame,
     animator_initialise,
+    directional_animation_mapping,
 )
-
-
-class Direction(IntEnum):
-    N = 0
-    NE = auto()
-    E = auto()
-    SE = auto()
-    S = auto()
-    SW = auto()
-    W = auto()
-    NW = auto()
 
 
 class Player:
@@ -34,23 +21,33 @@ class Player:
         self.motion = Motion.empty()
         self.animator = Animator()
         self.direction = Direction.E
-        self.walk_speed = 250
+        self.walk_speed = 150
         self.caught_timer = 0
 
 
 def player_initialise() -> Player:
     player = Player()
-    animation_mapping = {
-        "idle_left": Animation([a.PLAYER_FRAMES_LEFT[0]], 1),
-        "idle_right": Animation([a.PLAYER_FRAMES_RIGHT[0]], 1),
-        "idle_down": Animation([a.PLAYER_FRAMES_RIGHT[0]], 1),
-        "idle_up": Animation([a.PLAYER_FRAMES_RIGHT[0]], 1),
-        "walk_left": Animation(a.PLAYER_FRAMES_LEFT, 0.1),
-        "walk_right": Animation(a.PLAYER_FRAMES_RIGHT, 0.1),
-        "walk_down": Animation(a.PLAYER_FRAMES_RIGHT, 0.1),
-        "walk_up": Animation(a.PLAYER_FRAMES_RIGHT, 0.1),
-    }
-    animator_initialise(player.animator, animation_mapping, "idle_right")
+    animation_mapping = directional_animation_mapping(
+        {
+            "idle": [
+                Animation([a.PLAYER_FRAMES[4]], 1),
+                Animation([a.PLAYER_FRAMES[3]], 1),
+                Animation([a.PLAYER_FRAMES[2]], 1),
+                Animation([a.PLAYER_FRAMES[1]], 1),
+                Animation([a.PLAYER_FRAMES[0]], 1),
+                Animation([a.PLAYER_FRAMES[7]], 1),
+                Animation([a.PLAYER_FRAMES[6]], 1),
+                Animation([a.PLAYER_FRAMES[5]], 1),
+            ],
+            "walk": [
+                Animation(a.PLAYER_FRAMES[32:40], 0.07),
+                Animation(a.PLAYER_FRAMES[16:24], 0.07),
+                Animation(a.PLAYER_FRAMES[8:16], 0.07),
+                Animation(a.PLAYER_FRAMES[24:32], 0.07),
+            ],
+        }
+    )
+    animator_initialise(player.animator, animation_mapping)
     return player
 
 
@@ -130,26 +127,28 @@ def player_update(
     _player_collision(player, dt, walls)
 
     # Handle animation transitions
-    if dx > 0:
-        player.direction = Direction.E
-        animator_switch_animation(player.animator, "walk_right")
-    elif dx < 0:
-        player.direction = Direction.W
-        animator_switch_animation(player.animator, "walk_left")
-    elif dy > 0:
-        player.direction = Direction.S
-        animator_switch_animation(player.animator, "walk_down")
-    elif dy < 0:
-        player.direction = Direction.N
-        animator_switch_animation(player.animator, "walk_right")
-    elif player.direction == Direction.E:
-        animator_switch_animation(player.animator, "idle_right")
-    elif player.direction == Direction.W:
-        animator_switch_animation(player.animator, "idle_left")
-    elif player.direction == Direction.S:
-        animator_switch_animation(player.animator, "idle_down")
-    elif player.direction == Direction.N:
-        animator_switch_animation(player.animator, "idle_up")
+    if dx != 0 or dy != 0:
+        if dx > 0:
+            if dy > 0:
+                player.direction = Direction.SE
+            elif dy < 0:
+                player.direction = Direction.NE
+            else:
+                player.direction = Direction.E
+        elif dx < 0:
+            if dy > 0:
+                player.direction = Direction.SW
+            elif dy < 0:
+                player.direction = Direction.NW
+            else:
+                player.direction = Direction.W
+        elif dy > 0:
+            player.direction = Direction.S
+        else:
+            player.direction = Direction.N
+        animator_switch_animation(player.animator, f"walk_{player.direction}")
+    else:
+        animator_switch_animation(player.animator, f"idle_{player.direction}")
 
     motion_update(player.motion, dt)
     animator_update(player.animator, dt)

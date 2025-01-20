@@ -98,7 +98,7 @@ def enemy_update(enemy: Enemy, dt: float, player: Player):
                     enemy.motion.position.x, enemy.motion.position.y - 16
                 )
                 pangle = pdist.angle_to(pygame.Vector2(1, 0)) - enemy.facing
-                if abs(pangle) <= enemy.sight_angle * 0.6:
+                if abs(pangle) <= enemy.sight_angle / 2 + 1:
                     player_caught(player)
 
         case EnemyType.SPOTLIGHT:

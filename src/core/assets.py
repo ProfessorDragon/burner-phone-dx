@@ -15,10 +15,7 @@ DEBUG_SPRITE_SMALL = pygame.image.load("assets/img/icon_pirate_small.png")
 DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 
 # player
-PLAYER_FRAMES_RIGHT = slice_sheet("assets/img/player_sheet.png", 32, 32)
-PLAYER_FRAMES_LEFT = [
-    pygame.transform.flip(frame, True, False) for frame in PLAYER_FRAMES_RIGHT
-]
+PLAYER_FRAMES = slice_sheet("assets/img/player_sheet_2.png", 32, 32)
 
 # terrain (don't slice bc some use custom dimensions)
 TERRAIN_SHEET = pygame.image.load("assets/img/terrain_sheet.png")
