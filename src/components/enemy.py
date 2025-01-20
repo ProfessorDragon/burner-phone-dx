@@ -139,8 +139,8 @@ def enemy_update(enemy: Enemy, dt: float, player: Player, camera: Camera):
                 pdist = pygame.Vector2(*prect.center) - pygame.Vector2(
                     enemy.motion.position.x + 16, enemy.motion.position.y + 16
                 )
-                theta = pdist.angle_to(pygame.Vector2(1, 0)) - enemy.facing
-                if abs(theta) <= enemy.sight_angle / 2 + 1:
+                theta = (pdist.angle_to(pygame.Vector2(1, 0)) - enemy.facing) % 360
+                if theta < enemy.sight_angle / 2 + 1 or theta > 360 - (enemy.sight_angle / 2 + 1):
                     player_caught(player, camera)
 
             # animation
@@ -173,13 +173,14 @@ def enemy_update(enemy: Enemy, dt: float, player: Player, camera: Camera):
                 player_caught(player, camera)
 
         case EnemyType.SPIKE_TRAP:
-            prev_stepped = enemy.stepped_on
-            enemy.stepped_on = prect.colliderect(pygame.Rect(*enemy.motion.position, 32, 16))
-            if enemy.stepped_on and not prev_stepped:
-                if not enemy.activated:
-                    enemy.activated = True
-                else:
-                    player_caught(player, camera)
+            if player.z_position == 0:
+                prev_stepped = enemy.stepped_on
+                enemy.stepped_on = prect.colliderect(pygame.Rect(*enemy.motion.position, 32, 16))
+                if enemy.stepped_on and not prev_stepped:
+                    if not enemy.activated:
+                        enemy.activated = True
+                    else:
+                        player_caught(player, camera)
 
     motion_update(enemy.motion, dt)
 

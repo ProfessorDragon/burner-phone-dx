@@ -14,6 +14,7 @@ from components.camera import (
 from components.animation import (
     Animator,
     Animation,
+    animator_reset,
     animator_switch_animation,
     animator_update,
     animator_get_frame,
@@ -25,6 +26,8 @@ from components.animation import (
 class Player:
     def __init__(self):
         self.motion = Motion.empty()
+        self.z_position = 0
+        self.z_velocity = 0
         self.animator = Animator()
         self.direction = Direction.E
         self.walk_speed = 150
@@ -46,10 +49,16 @@ def player_initialise() -> Player:
                 Animation([a.PLAYER_FRAMES[5]], 1),
             ],
             "walk": [
-                Animation(a.PLAYER_FRAMES[32:40], 0.07),
-                Animation(a.PLAYER_FRAMES[16:24], 0.07),
-                Animation(a.PLAYER_FRAMES[8:16], 0.07),
-                Animation(a.PLAYER_FRAMES[24:32], 0.07),
+                Animation(a.PLAYER_FRAMES[32:40], 0.08),
+                Animation(a.PLAYER_FRAMES[16:24], 0.08),
+                Animation(a.PLAYER_FRAMES[8:16], 0.08),
+                Animation(a.PLAYER_FRAMES[24:32], 0.08),
+            ],
+            "jump": [
+                Animation(a.PLAYER_FRAMES[55:60], 0.08),
+                Animation(a.PLAYER_FRAMES[45:50], 0.08),
+                Animation(a.PLAYER_FRAMES[40:45], 0.08),
+                Animation(a.PLAYER_FRAMES[50:55], 0.08),
             ],
         }
     )
@@ -64,23 +73,17 @@ def player_rect(motion: Motion):
 
 def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
     # lateral movement
-    dx = (
-        t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)
-    ) * player.walk_speed
-    dy = (
-        t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)
-    ) * player.walk_speed
+    dx = t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)
+    dy = t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)
     if dx != 0 and dy != 0:
         # trig shortcut, normalizing the vector
         dx *= 0.707
         dy *= 0.707
 
-    # jumping
-    # if input.is_pressed(action_buffer, input.Action.A):
-    #     player.motion.acceleration.z = 1000
-
-    player.motion.velocity.x = dx
-    player.motion.velocity.y = dy * c.PERSPECTIVE
+    player.motion.velocity.x = dx * player.walk_speed
+    player.motion.velocity.y = dy * player.walk_speed * c.PERSPECTIVE
+    if player.z_position > 0:
+        pass  # maybe reduce air control if jumping?
 
 
 def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
@@ -121,16 +124,28 @@ def player_update(
     walls: list[pygame.Rect],
 ) -> None:
 
+    # lateral movement
     if player.caught_timer <= 0:
         _player_movement(player, dt, action_buffer)
 
+    # jumping
+    if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
+        player.z_velocity = -150
+        animator_reset(player.animator)
+
+    # collision
     dx, dy = player.motion.velocity
     _player_collision(player, dt, walls)
 
     motion_update(player.motion, dt)
+    player.z_velocity += 600 * dt
+    player.z_position = min(player.z_position + player.z_velocity * dt, 0)
 
     if dx != 0 or dy != 0:
         player.direction = direction_from_angle(degrees(atan2(-dy, dx)))
+    if player.z_position < 0:
+        animator_switch_animation(player.animator, f"jump_{player.direction}")
+    elif dx != 0 or dy != 0:
         animator_switch_animation(player.animator, f"walk_{player.direction}")
     else:
         animator_switch_animation(player.animator, f"idle_{player.direction}")
@@ -153,6 +168,7 @@ def player_kill(player: Player):
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
     frame = animator_get_frame(player.animator)
     render_position = player.motion.position
+    jump_position = player.motion.position + pygame.Vector2(0, player.z_position)
 
     # if we want a 'real' shadow:
     # shadow = pygame.transform.flip(pygame.transform.scale_by(frame, (1, 0.5)), False, True)
@@ -161,21 +177,32 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
     #     camera_to_screen_shake(camera, render_position[0], render_position[1] + frame.get_height()),
     # )
 
-    shadow = pygame.Surface((frame.get_width(), 6), pygame.SRCALPHA)
+    shadow_rect = pygame.Rect(
+        render_position[0] + 10, render_position[1] + frame.get_height() - 3, 12, 6
+    )
+    if player.motion.velocity.x < 0:
+        shadow_rect.w += 2
+    elif player.motion.velocity.x > 0:
+        shadow_rect.x -= 2
+        shadow_rect.w += 2
+    if player.z_position < -5:
+        shadow_rect.w -= 2
+        shadow_rect.h -= 2
+        shadow_rect.x += 1
+        shadow_rect.y += 1
+    shadow = pygame.Surface(shadow_rect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(
         shadow,
         (0, 0, 0, 50),
-        pygame.Rect(5, 0, frame.get_width() - 10, 6),
+        pygame.Rect(0, 0, *shadow_rect.size),
     )
     surface.blit(
         shadow,
-        camera_to_screen_shake(
-            camera, render_position[0], render_position[1] + frame.get_height() - 3
-        ),
+        camera_to_screen_shake(camera, *shadow_rect.topleft),
     )
     surface.blit(
         frame,
-        camera_to_screen_shake(camera, *render_position),
+        camera_to_screen_shake(camera, *jump_position),
     )
 
     # caught alert
