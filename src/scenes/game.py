@@ -9,7 +9,7 @@ from components.dialogue import (
     dialogue_reset_queue,
     dialogue_update,
 )
-from components.editor import Editor, editor_update
+from components.editor import Editor, editor_render, editor_update
 from components.enemy import PatrolEnemy, SpikeTrapEnemy, SpotlightEnemy, enemy_render, enemy_update
 import core.input as t
 import core.constants as c
@@ -58,6 +58,8 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
+        self.editor = Editor(self)
+
         self.player = player_initialise()
 
         self.camera = Camera(
@@ -102,21 +104,21 @@ class Game(Scene):
         dialogue_reset_queue(self.dialogue)
         # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
 
-        patrol = PatrolEnemy()
-        patrol.path = [
-            tile_size_vec(6, 5),
-            tile_size_vec(6, 7),
-            tile_size_vec(2, 6),
-        ]
-        patrol.motion.position = patrol.path[0].copy()
-        spotlight = SpotlightEnemy()
-        spotlight.path = [
-            tile_size_vec(12, 0),
-            tile_size_vec(18, 0),
-            tile_size_vec(18, 3),
-            tile_size_vec(12, 3),
-        ]
-        spotlight.motion.position = spotlight.path[0].copy()
+        patrol = PatrolEnemy(
+            [
+                tile_size_vec(6, 5),
+                tile_size_vec(6, 7),
+                tile_size_vec(2, 6),
+            ]
+        )
+        spotlight = SpotlightEnemy(
+            [
+                tile_size_vec(12, 0),
+                tile_size_vec(18, 0),
+                tile_size_vec(18, 3),
+                tile_size_vec(12, 3),
+            ]
+        )
         spike = SpikeTrapEnemy()
         spike.motion.position = tile_size_vec(0, 12)
         self.enemies: list[PatrolEnemy] = [patrol, spotlight, spike]
@@ -136,12 +138,12 @@ class Game(Scene):
 
         # UPDATE
 
-        editor_update(self, action_buffer, mouse_buffer)
+        editor_update(self.editor, dt, action_buffer, mouse_buffer)
 
         in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
         if not self.paused:
-            if not Editor.enabled and not in_dialogue:
+            if not self.editor.enabled and not in_dialogue:
                 # gameplay
                 if self.player.caught_timer > 0:
                     self.player.caught_timer -= dt
@@ -230,6 +232,7 @@ class Game(Scene):
 
         # ui
         dialogue_render(self.dialogue, surface)
+        editor_render(self.editor, surface)
 
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))

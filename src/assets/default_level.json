@@ -1,1 +1,1 @@
-[[32, 16, 96, 48]]
+{"walls":[],"enemies":[{"class":"PatrolEnemy","path":[[96,80],[96,112],[32,96]]},{"class":"SpotlightEnemy","path":[[192,0],[288,0],[288,48],[192,48]]},{"class":"SpikeTrapEnemy","pos":[0.0,192.0]}]}

@@ -49,9 +49,12 @@ async def game_loop(
 
         statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
 
-        debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
-        debug_text = a.DEBUG_FONT.render(debug_str, False, c.WHITE, c.BLACK)
-        surface.blit(debug_text, (0, 0))
+        if c.DEBUG_FPS:
+            debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
+            surface.blit(
+                a.DEBUG_FONT.render(debug_str, False, c.WHITE, c.BLACK),
+                (0, 0),
+            )
 
         # Keep these calls together in this order
         pygame.display.flip()

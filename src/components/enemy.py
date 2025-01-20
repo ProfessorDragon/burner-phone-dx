@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from math import cos, radians
+from typing import Any, Self
 
 import pygame
 from components.player import Player, player_caught, player_rect
@@ -29,10 +30,36 @@ class Enemy(ABC):
         return None
 
     @abstractmethod
+    def to_json(self) -> dict[str, Any]: ...
+
+    @staticmethod
+    @abstractmethod
+    def from_json(js: dict[str, Any]) -> Self: ...
+
+    @abstractmethod
     def update(self, dt: float, player: Player, camera: Camera) -> None: ...
 
     @abstractmethod
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None: ...
+
+
+def enemy_from_json(js: dict[str, Any]) -> Enemy:
+    for cls in [
+        PatrolEnemy,
+        SpotlightEnemy,
+        SpikeTrapEnemy,
+    ]:
+        if cls.__name__ == js["class"]:
+            return cls.from_json(js)
+    return None
+
+
+def _path_to_json(path: list[pygame.Vector2]) -> list[tuple[int, int]]:
+    return [(int(point.x), int(point.y)) for point in path]
+
+
+def _path_from_json(js_path: list[tuple[int, int]]) -> list[pygame.Vector2]:
+    return [pygame.Vector2(point) for point in js_path]
 
 
 # extension 2 mathematics put to use (kinda)
@@ -46,8 +73,9 @@ def _enemy_follow(enemy: Enemy, dist: pygame.Vector2, speed: float):
 
 
 class PatrolEnemy(Enemy):
-    def __init__(self):
+    def __init__(self, path: list[pygame.Vector2]):
         super().__init__()
+        self.motion.position = path[0].copy()
         self.animator = Animator()
         animation_mapping = directional_animation_mapping(
             {
@@ -70,15 +98,32 @@ class PatrolEnemy(Enemy):
             }
         )
         animator_initialise(self.animator, animation_mapping)
-        self.direction = Direction.E
-        self.facing = 0
-        self.path: list[pygame.Vector2] = []
-        self.active_point = 0
-        self.sight_radius = 96
-        self.sight_angle = 10
+        self.path: list[pygame.Vector2] = path
+        if len(path) > 1:
+            self.facing = (path[1] - path[0]).angle_to(pygame.Vector2(1, 0))
+            self.active_point = 1
+        else:
+            self.facing = 0
+            self.active_point = 0
+        self.direction = Direction.N
+        self.sight_radius = 80
+        self.sight_angle = 14
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(self.motion.position.x + 12, self.motion.position.y + 28, 8, 4)
+
+    def to_json(self):
+        if len(self.path) > 1:
+            return {"path": _path_to_json(self.path)}
+        return {"pos": (*self.motion.position,), "facing": self.facing}
+
+    @staticmethod
+    def from_json(js):
+        if "path" in js:
+            return PatrolEnemy(_path_from_json(js["path"]))
+        enemy = PatrolEnemy([pygame.Vector2(js["pos"])])
+        enemy.facing = js["facing"]
+        return enemy
 
     def update(self, dt: float, player: Player, camera: Camera) -> None:
         if len(self.path) > 0:
@@ -175,11 +220,19 @@ class PatrolEnemy(Enemy):
 
 
 class SpotlightEnemy(Enemy):
-    def __init__(self):
+    def __init__(self, path: list[pygame.Vector2]):
         super().__init__()
-        self.path: list[pygame.Vector2] = []
+        self.motion.position = path[0].copy()
+        self.path: list[pygame.Vector2] = path
         self.active_point = 0
         self.light_radius = 48
+
+    def to_json(self):
+        return {"path": _path_to_json(self.path)}
+
+    @staticmethod
+    def from_json(js):
+        return SpotlightEnemy(_path_from_json(js["path"]))
 
     def update(self, dt: float, player: Player, camera: Camera) -> None:
         if len(self.path) > 0:
@@ -229,6 +282,15 @@ class SpikeTrapEnemy(Enemy):
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(*self.motion.position, 32, 16)
 
+    def to_json(self):
+        return {"pos": (*self.motion.position,)}
+
+    @staticmethod
+    def from_json(js):
+        enemy = SpikeTrapEnemy()
+        enemy.motion.position = pygame.Vector2(js["pos"])
+        return enemy
+
     def update(self, dt: float, player: Player, camera: Camera) -> None:
         if player.z_position == 0:
             prect = player_rect(player.motion)
@@ -257,7 +319,21 @@ def enemy_update(enemy: Enemy, dt: float, player: Player, camera: Camera):
 def enemy_render(enemy: Enemy, surface: pygame.Surface, camera: Camera, layer: RenderLayer):
     enemy.render(surface, camera, layer)
 
-    if c.DEBUG_HITBOXES and layer > RenderLayer.PLAYER:
-        hitbox = enemy.get_hitbox()
-        if hitbox:
-            pygame.draw.rect(surface, c.RED, camera_to_screen_shake_rect(camera, *hitbox), 1)
+    if c.DEBUG_HITBOXES:
+        if layer < RenderLayer.PLAYER:
+            if hasattr(enemy, "path"):
+                pygame.draw.polygon(
+                    surface,
+                    c.RED,
+                    [camera_to_screen_shake(camera, *point) for point in enemy.path],
+                    1,
+                )
+                for i, point in enumerate(enemy.path):
+                    surface.blit(
+                        a.DEBUG_FONT.render(str(i), False, c.RED),
+                        camera_to_screen_shake(camera, *point),
+                    )
+        elif layer > RenderLayer.PLAYER:
+            hitbox = enemy.get_hitbox()
+            if hitbox:
+                pygame.draw.rect(surface, c.RED, camera_to_screen_shake_rect(camera, *hitbox), 1)

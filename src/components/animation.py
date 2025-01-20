@@ -26,7 +26,7 @@ def animator_initialise(
     initial_id: Hashable | None = None,
 ) -> None:
     animator.animations = animation_mapping
-    animator.state_id = initial_id
+    animator.state_id = initial_id if initial_id is not None else list(animation_mapping.keys())[0]
 
 
 def directional_animation_mapping(
