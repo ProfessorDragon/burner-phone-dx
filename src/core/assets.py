@@ -3,7 +3,7 @@ import pygame
 from utilities.sprite import slice_sheet
 
 
-# Load sprites (png, webp or jpg for web compatibility)
+## IMAGES (png, webp or jpg for web compatibility)
 
 # icon
 ICON = pygame.image.load("assets/icon.png")
@@ -24,12 +24,24 @@ TERRAIN_SHEET = pygame.image.load("assets/img/terrain_sheet.png")
 PATROL_FRAMES = slice_sheet("assets/img/patrol_sheet.png", 32, 32)
 
 
-# Load audio (ogg for web compatibility)
+## AUDIO (ogg for web compatibility)
+
+# music
 DEBUG_THEME_GAME = pygame.mixer.Sound("assets/sfx/theme.ogg")
 DEBUG_THEME_MENU = pygame.mixer.Sound("assets/sfx/menu.ogg")
+
+# sfx
 DEBUG_BONK = pygame.mixer.Sound("assets/sfx/bonk.ogg")
 
-# Load fonts (ttf for web compatibility)
+
+# FONTS (ttf for web compatibility)
+
 DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
+
+
+## MISC
+
+with open("assets/script.txt") as script:
+    GAME_SCRIPT = script.read()
 
 print("Loaded assets")

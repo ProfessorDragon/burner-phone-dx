@@ -77,7 +77,7 @@ def animator_switch_animation(animator: Animator, id: Hashable) -> None:
         return
 
     if id not in animator.animations:
-        print(f"ERROR: id: {id} does not exist in animator")
+        print(f"ERROR: Animation {id} does not exist in animator")
         return
 
     animator.state_id = id

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from enum import Enum
 from queue import deque
+import textwrap
 import pygame
 
 import core.assets as a
@@ -9,18 +11,26 @@ from components.timer import Timer, timer_reset, timer_update
 
 
 # These constants should go elsewhere
-LETTER_SPEED = 0.04
-SPACE_SPEED = 0.08
-END_SENTENCE_SPEED = 0.2
+LETTER_SPEED = 0.02
+SPACE_SPEED = 0.04
+END_SENTENCE_SPEED = 0.1
+DIALOGUE_LINE_LENGTH = 44
 
 # Continue icon
 CONTINUE = a.DEBUG_FONT.render("<SELECT> to continue", False, c.WHITE)
 
 
+class DialogueStyle(Enum):
+    DEFAULT = "default"
+    PHONE = "phone"
+    COMMS = "comms"
+
+
 @dataclass
 class DialoguePacket:
+    style: DialogueStyle = DialogueStyle.DEFAULT
     graphic: pygame.Surface = None
-    name: pygame.Surface = None
+    name: str = ""
     message: str = ""
 
 
@@ -32,15 +42,18 @@ class DialogueSystem:
     rect: pygame.Rect = None
     text: pygame.Surface = None
     timer: Timer = None
+    script_scenes: dict[str, list[str]] = None
 
 
-def dialogue_packet_create(
-    graphic: pygame.Surface, name: str, message: str
-) -> DialoguePacket:
+def dialogue_wrap_message(message: str) -> str:
+    return "\n".join([textwrap.fill(ln, DIALOGUE_LINE_LENGTH) for ln in message.split("\n")])
+
+
+def dialogue_packet_create(graphic: pygame.Surface, name: str, message: str) -> DialoguePacket:
     packet = DialoguePacket()
     packet.graphic = graphic
-    packet.name = a.DEBUG_FONT.render(name, False, c.WHITE)
-    packet.message = message
+    packet.name = name
+    packet.message = dialogue_wrap_message(message)
     return packet
 
 
@@ -57,11 +70,75 @@ def dialogue_add_packet(dialogue: DialogueSystem, packet: DialoguePacket) -> Non
     dialogue.queue.append(packet)
 
 
+def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
+    if dialogue.script_scenes is None:
+        dialogue.script_scenes = {}
+    scene_name = None
+    scene_content = []
+    for ln in script.split("\n"):
+        if ln.startswith("[") and ln.endswith("]"):
+            if scene_name is not None:
+                dialogue.script_scenes[scene_name] = scene_content
+            scene_name = ln[1:-1]
+            scene_content = []
+        elif ln.strip():
+            scene_content.append(ln)
+    if scene_name is not None:
+        dialogue.script_scenes[scene_name] = scene_content
+
+
+def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> None:
+    if scene_name not in dialogue.script_scenes:
+        print(f"ERROR: Scene {scene_name} does not exist in dialogue scenes")
+        return
+
+    dialogue_force_reset(dialogue)
+
+    dialogue_packet = DialoguePacket()
+    dialogue_packet.graphic = a.DEBUG_SPRITE_SMALL
+
+    for ln in dialogue.script_scenes[scene_name]:
+        if not ln.strip():
+            continue
+
+        if " " in ln:
+            cmd, content = ln.split(" ", 1)
+        else:
+            cmd, content = ln, ""
+
+        match cmd:
+            case "#":
+                continue
+
+            case "-":
+                dialogue_packet.message = dialogue_wrap_message(content.replace("\\n", "\n"))
+                dialogue_add_packet(dialogue, dialogue_packet)
+                new_packet = DialoguePacket()
+                new_packet.style = dialogue_packet.style
+                new_packet.graphic = dialogue_packet.graphic
+                new_packet.name = dialogue_packet.name
+                dialogue_packet = new_packet
+
+            case "style":
+                dialogue_packet.style = DialogueStyle(content)
+
+            case "char":
+                dialogue_packet.name = content
+
+            case "buttons":
+                options = content.split("|")
+                # todo
+
+            case _:
+                print(f"ERROR: Invalid script line in scene {scene_name}:\n{ln}")
+                continue
+
+
 def dialogue_update(
     dialogue: DialogueSystem,
     dt: float,
-    action_buffer: t.InputBuffer,
-    mouse_bufffer: t.InputBuffer,
+    action_buffer: t.InputBuffer = None,
+    mouse_bufffer: t.InputBuffer = None,
 ) -> bool:
     """
     Return true if there is dialogue playing currently
@@ -71,7 +148,7 @@ def dialogue_update(
 
     active_packet = dialogue.queue[0]
 
-    if t.is_pressed(action_buffer, t.Action.SELECT):
+    if action_buffer and t.is_pressed(action_buffer, t.Action.SELECT):
         # Go to next packet
         if dialogue.char_index >= len(active_packet.message):
             dialogue.queue.popleft()
@@ -109,17 +186,29 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
 
     active_packet = dialogue.queue[0]
 
-    pygame.draw.rect(surface, c.BLACK, dialogue.rect)
-    surface.blit(active_packet.graphic, (dialogue.rect.x, dialogue.rect.y))
+    match active_packet.style:
+        case DialogueStyle.DEFAULT:
+            pygame.draw.rect(surface, c.BLACK, dialogue.rect)
+        case DialogueStyle.PHONE:
+            pygame.draw.rect(surface, c.GRAY, dialogue.rect)
+        case DialogueStyle.COMMS:
+            pygame.draw.rect(surface, c.GREEN, dialogue.rect)
+
+    surface.blit(active_packet.graphic, (dialogue.rect.x, dialogue.rect.y), (0, 0, 64, 64))
     surface.blit(
-        active_packet.name, (dialogue.rect.x, dialogue.rect.y + dialogue.rect.h - 20)
+        a.DEBUG_FONT.render(active_packet.name, False, c.WHITE),
+        (dialogue.rect.x, dialogue.rect.y + dialogue.rect.h - 15),
     )
-    surface.blit(dialogue.text, (dialogue.rect.x + 80, dialogue.rect.y))
+    surface.blit(dialogue.text, (dialogue.rect.x + 80, dialogue.rect.y + 10))
     if dialogue.char_index >= len(active_packet.message):
         surface.blit(CONTINUE, (dialogue.rect.x + 280, dialogue.rect.y + 60))
 
 
+def dialogue_force_reset(dialogue: DialogueSystem) -> None:
+    dialogue.char_index = 0
+    dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
+
+
 def dialogue_try_reset(dialogue: DialogueSystem) -> None:
     if dialogue.queue:
-        dialogue.char_index = 0
-        dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
+        dialogue_force_reset(dialogue)

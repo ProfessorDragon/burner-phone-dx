@@ -1,9 +1,19 @@
 import pygame
 
+from components.dialogue import (
+    DialogueSystem,
+    dialogue_execute_script_scene,
+    dialogue_initialise,
+    dialogue_load_script,
+    dialogue_render,
+    dialogue_try_reset,
+    dialogue_update,
+)
 from components.editor import Editor, editor_update
 from components.enemy import PatrolEnemy, SpikeTrapEnemy, SpotlightEnemy, enemy_render, enemy_update
 import core.input as t
 import core.constants as c
+import core.assets as a
 from components.player import (
     player_kill,
     player_rect,
@@ -61,6 +71,10 @@ class Game(Scene):
             pygame.Vector2(30, 30),
         )
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+
+        self.dialogue = DialogueSystem()
+        dialogue_initialise(self.dialogue)
+        dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
         self.background = pygame.Surface((500, 300), pygame.SRCALPHA)
         self.player_layer = pygame.Surface((500, 300), pygame.SRCALPHA)
@@ -122,14 +136,9 @@ class Game(Scene):
     ) -> None:
 
         # INPUT
-        if action_buffer[t.Action.START] == t.InputState.PRESSED:
+        if t.is_pressed(action_buffer, t.Action.START):
             statemachine_change_state(self.statemachine, scene.SceneState.MENU)
             return
-
-        if action_buffer[t.Action.SELECT] == t.InputState.PRESSED:
-            # Might want to enable pause UI here
-            # Set Pause UI overlay to top option
-            self.paused = not self.paused
 
         # UPDATE
 
@@ -137,6 +146,7 @@ class Game(Scene):
 
         if not self.paused:
             if not Editor.enabled:
+                # gameplay
                 if self.player.caught_timer > 0:
                     self.player.caught_timer -= dt
                     if self.player.caught_timer <= 0:
@@ -145,8 +155,20 @@ class Game(Scene):
                 player_update(self.player, dt, action_buffer, self.walls)
                 for enemy in self.enemies:
                     enemy_update(enemy, dt, self.player, self.camera)
+
+            # general
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
+            in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
+            if not in_dialogue and t.is_pressed(action_buffer, t.Action.SELECT):
+                # self.paused = True
+                dialogue_execute_script_scene(self.dialogue, "OPENING VOICEMAIL")
+                dialogue_update(self.dialogue, dt)
+
+        else:
+            # paused
+            if t.is_pressed(action_buffer, t.Action.SELECT):
+                self.paused = False
 
         # RENDER
 
@@ -208,6 +230,9 @@ class Game(Scene):
         # hitboxes
         for i, wall in enumerate(self.walls):
             draw_wall(surface, self.camera, i, wall)
+
+        # ui
+        dialogue_render(self.dialogue, surface)
 
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))

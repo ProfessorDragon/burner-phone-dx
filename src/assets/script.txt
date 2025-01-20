@@ -1,0 +1,72 @@
+# this file will be processed by the game and split into different scenes accordingly.
+# [SCENE NAME]
+# style x - sets the dialogue style, e.g. default/phone/comms
+# char Character
+# - dialogue line
+# buttons Option 1=SCENE NAME|Option 2=SCENE NAME
+
+
+[OPENING VOICEMAIL]
+
+style phone
+char Voicemail
+- hello this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company.
+- call me back on 0200-666-391.\n**shrkckk**
+# 66639 is the phone code for MONEY
+
+
+[RETURN THE CALL]
+
+style phone
+char Phone
+- Thank you for calling Pharm-O-Rite LLC. Please wait while we transfer you to an operator.
+- Due to environmental conditions at this time, we are currently not accepting walk ins.
+- ...
+
+char Luke
+- ah, mr jones, we've been expecting you. all i'll need is a minute of your time.
+- listen, our monitoring systems detected that you're immune. we also know you can throw a ferocious punch. and that makes you extremely valuable to us.
+
+char You
+- ...
+
+char Luke
+- we're giving you an opportunity to save the world right now. maybe i can throw a bit of cash on top to sweeten the pot.
+- if you're in, start heading north. stand under the tree with no shadow, and i'll set you up.
+- **sksrkck**
+
+
+[SHADOWLESS TREE]
+
+style phone
+char Phone
+- Incoming call: Unknown number.
+buttons Accept=SETUP ACCEPT|Decline=SETUP DECLINE
+
+
+[SETUP ACCEPT]
+
+style phone
+char Rogan
+- eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
+- as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
+- and being the first one to get here, you're our prime candidate to fight this thing.
+
+# show underground lab
+
+- ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
+- simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
+
+# cut back to game environment
+
+- alright, you got what it takes? pick up that small green brick by the tree. that's your communicator.
+- it's like a phone that shows me your location. now, you won't be needing your mobile anymore. make sure to dispose of it.
+
+style comms
+- test, test.
+- well, the lab is east. get moving!
+
+
+[SETUP DECLINE]
+
+# nothing
