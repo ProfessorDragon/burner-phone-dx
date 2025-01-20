@@ -90,19 +90,12 @@ class Game(Scene):
         for x in range(1, int(self.background.get_width() / c.TILE_SIZE)):
             pygame.draw.line(
                 self.background,
-                c.BLACK,
+                c.BLACK if x % 2 == 0 else c.GRAY,
                 (x * c.TILE_SIZE, 0),
                 (x * c.TILE_SIZE, self.background.get_height()),
             )
 
-        self.walls: list[pygame.Rect] = [
-            tile_size_rect(4, 5),
-            tile_size_rect(5, 5),
-            tile_size_rect(5, 4),
-            tile_size_rect(6, 6),
-            tile_size_rect(7, 6),
-            tile_size_rect(6, 7),
-        ]
+        self.walls: list[pygame.Rect] = []
 
     def enter(self) -> None:
         camera_reset(self.camera)
@@ -111,21 +104,21 @@ class Game(Scene):
 
         patrol = PatrolEnemy()
         patrol.path = [
-            tile_size_vec(3, 5),
-            tile_size_vec(3, 7),
+            tile_size_vec(6, 5),
+            tile_size_vec(6, 7),
             tile_size_vec(2, 6),
         ]
         patrol.motion.position = patrol.path[0].copy()
         spotlight = SpotlightEnemy()
         spotlight.path = [
-            tile_size_vec(3, 0),
-            tile_size_vec(6, 0),
-            tile_size_vec(6, 3),
-            tile_size_vec(3, 3),
+            tile_size_vec(12, 0),
+            tile_size_vec(18, 0),
+            tile_size_vec(18, 3),
+            tile_size_vec(12, 3),
         ]
         spotlight.motion.position = spotlight.path[0].copy()
         spike = SpikeTrapEnemy()
-        spike.motion.position = tile_size_vec(0, 2)
+        spike.motion.position = tile_size_vec(0, 12)
         self.enemies: list[PatrolEnemy] = [patrol, spotlight, spike]
 
     def execute(
@@ -159,13 +152,15 @@ class Game(Scene):
                 for enemy in self.enemies:
                     enemy_update(enemy, dt, self.player, self.camera)
 
+                # dialogue
+                if t.is_pressed(action_buffer, t.Action.SELECT):
+                    # self.paused = True
+                    dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
+                    dialogue_update(self.dialogue, dt)
+
             # general
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
-            if not in_dialogue and t.is_pressed(action_buffer, t.Action.SELECT):
-                # self.paused = True
-                dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
-                dialogue_update(self.dialogue, dt)
 
         else:
             # paused

@@ -1,13 +1,13 @@
 import pygame
 
 # game constants
-TILE_SIZE = 32
-HALF_TILE_SIZE = 16
+TILE_SIZE = 16
+HALF_TILE_SIZE = 8
 PERSPECTIVE = 1  # 0.5  # how much to scale objects on the y axis by
 
 # Pygame constants
-WINDOW_WIDTH = 16 * TILE_SIZE
-WINDOW_HEIGHT = 9 * TILE_SIZE
+WINDOW_WIDTH = 32 * TILE_SIZE
+WINDOW_HEIGHT = 18 * TILE_SIZE
 WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
 WINDOW_CENTRE = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
 
