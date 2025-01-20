@@ -81,7 +81,8 @@ def animator_switch_animation(animator: Animator, id: Hashable) -> None:
         return
 
     animator.state_id = id
-    animator_reset(animator)
+    if id is not None:
+        animator.frame_index %= len(animator.animations[id].frames)
 
 
 def animator_update(animator: Animator, dt: float) -> None:

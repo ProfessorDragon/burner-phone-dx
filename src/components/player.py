@@ -1,10 +1,16 @@
+from math import atan2, degrees
 import pygame
 
 import core.input as t
 import core.assets as a
 import core.constants as c
-from components.motion import Direction, Motion, motion_update
-from components.camera import Camera, camera_to_screen, camera_to_screen_shake
+from components.motion import Direction, Motion, direction_from_angle, motion_update
+from components.camera import (
+    Camera,
+    camera_to_screen,
+    camera_to_screen_shake,
+    camera_to_screen_shake_rect,
+)
 from components.animation import (
     Animator,
     Animation,
@@ -53,7 +59,7 @@ def player_initialise() -> Player:
 
 def player_rect(motion: Motion):
     # round for accurate collision.
-    return pygame.Rect(round(motion.position.x), round(motion.position.y), 16, 8)
+    return pygame.Rect(round(motion.position.x) + 11, round(motion.position.y) + 28, 10, 4)
 
 
 def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
@@ -88,9 +94,9 @@ def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
         for wall in walls:
             if rect.colliderect(wall):
                 if m.velocity.x > 0:
-                    player.motion.position.x = wall.left - rect.w
+                    player.motion.position.x = wall.left - rect.w - 11
                 else:
-                    player.motion.position.x = wall.right
+                    player.motion.position.x = wall.right - 11
                 player.motion.velocity.x = 0
 
     # vertical collision
@@ -102,9 +108,9 @@ def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
         for wall in walls:
             if rect.colliderect(wall):
                 if m.velocity.y > 0:
-                    player.motion.position.y = wall.top - rect.h
+                    player.motion.position.y = wall.top - 32
                 else:
-                    player.motion.position.y = wall.bottom
+                    player.motion.position.y = wall.bottom - 32 + rect.h
                 player.motion.velocity.y = 0
 
 
@@ -117,49 +123,26 @@ def player_update(
 
     if player.caught_timer <= 0:
         _player_movement(player, dt, action_buffer)
-    else:
-        player.caught_timer -= dt
-        if player.caught_timer <= 0:
-            player_kill(player)
-            return
 
     dx, dy = player.motion.velocity
     _player_collision(player, dt, walls)
 
-    # Handle animation transitions
+    motion_update(player.motion, dt)
+
     if dx != 0 or dy != 0:
-        if dx > 0:
-            if dy > 0:
-                player.direction = Direction.SE
-            elif dy < 0:
-                player.direction = Direction.NE
-            else:
-                player.direction = Direction.E
-        elif dx < 0:
-            if dy > 0:
-                player.direction = Direction.SW
-            elif dy < 0:
-                player.direction = Direction.NW
-            else:
-                player.direction = Direction.W
-        elif dy > 0:
-            player.direction = Direction.S
-        else:
-            player.direction = Direction.N
+        player.direction = direction_from_angle(degrees(atan2(-dy, dx)))
         animator_switch_animation(player.animator, f"walk_{player.direction}")
     else:
         animator_switch_animation(player.animator, f"idle_{player.direction}")
-
-    motion_update(player.motion, dt)
     animator_update(player.animator, dt)
 
 
-def player_caught(player: Player):
+def player_caught(player: Player, camera: Camera):
     if player.caught_timer > 0:
         return
-    # todo: add screen shake here. how? idk, aside from passing the camera object through a lengthy chain of args...
     player.caught_timer = 0.5
     player.motion.velocity = pygame.Vector2()
+    camera.trauma = 0.5
 
 
 def player_kill(player: Player):
@@ -169,7 +152,7 @@ def player_kill(player: Player):
 
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
     frame = animator_get_frame(player.animator)
-    render_position = (player.motion.position.x - 8, player.motion.position.y - 24)
+    render_position = player.motion.position
 
     # if we want a 'real' shadow:
     # shadow = pygame.transform.flip(pygame.transform.scale_by(frame, (1, 0.5)), False, True)
@@ -207,11 +190,11 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
             ),
         )
 
-    # hitbox
-    hitbox = player_rect(player.motion)
-    pygame.draw.rect(
-        surface,
-        c.CYAN,
-        (*camera_to_screen_shake(camera, hitbox[0], hitbox[1]), hitbox[2], hitbox[3]),
-        1,
-    )
+    if c.DEBUG_HITBOXES:
+        # hitbox
+        pygame.draw.rect(
+            surface,
+            c.CYAN,
+            camera_to_screen_shake_rect(camera, *player_rect(player.motion)),
+            1,
+        )

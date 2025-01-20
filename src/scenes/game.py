@@ -1,10 +1,11 @@
 import pygame
 
 from components.editor import Editor, editor_update
-from components.enemy import PatrolEnemy, SpotlightEnemy, enemy_render, enemy_update
+from components.enemy import PatrolEnemy, SpikeTrapEnemy, SpotlightEnemy, enemy_render, enemy_update
 import core.input as t
 import core.constants as c
 from components.player import (
+    player_kill,
     player_rect,
     player_update,
     player_render,
@@ -31,6 +32,11 @@ def tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rec
 
 def tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
+
+
+# for clarity
+def scene_reset(scene: Scene):
+    scene.enter()
 
 
 class Game(Scene):
@@ -84,6 +90,10 @@ class Game(Scene):
             tile_size_rect(6, 7),
         ]
 
+    def enter(self) -> None:
+        camera_reset(self.camera)
+        # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
+
         patrol = PatrolEnemy()
         patrol.path = [
             tile_size_vec(3, 5),
@@ -99,11 +109,9 @@ class Game(Scene):
             tile_size_vec(3, 3),
         ]
         spotlight.motion.position = spotlight.path[0].copy()
-        self.enemies: list[PatrolEnemy] = [patrol, spotlight]
-
-    def enter(self) -> None:
-        camera_reset(self.camera)
-        # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
+        spike = SpikeTrapEnemy()
+        spike.motion.position = tile_size_vec(0, 2)
+        self.enemies: list[PatrolEnemy] = [patrol, spotlight, spike]
 
     def execute(
         self,
@@ -129,9 +137,14 @@ class Game(Scene):
 
         if not self.paused:
             if not Editor.enabled:
+                if self.player.caught_timer > 0:
+                    self.player.caught_timer -= dt
+                    if self.player.caught_timer <= 0:
+                        scene_reset(self)
+                        player_kill(self.player)
                 player_update(self.player, dt, action_buffer, self.walls)
                 for enemy in self.enemies:
-                    enemy_update(enemy, dt, self.player)
+                    enemy_update(enemy, dt, self.player, self.camera)
             camera_follow(self.camera, *player_rect(self.player.motion).center)
             camera_update(self.camera, dt)
 
@@ -142,7 +155,7 @@ class Game(Scene):
         surface.blit(self.background, camera_to_screen_shake(self.camera, 0, 0))
 
         # player feet
-        terrain_cutoff = round(self.player.motion.position.y) + 8
+        terrain_cutoff = round(self.player.motion.position.y)
 
         # behind player
         surface.blit(

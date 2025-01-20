@@ -17,8 +17,11 @@ DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 # player
 PLAYER_FRAMES = slice_sheet("assets/img/player_sheet_2.png", 32, 32)
 
-# terrain (don't slice bc some use custom dimensions)
+# terrain
 TERRAIN_SHEET = pygame.image.load("assets/img/terrain_sheet.png")
+
+# enemies
+PATROL_FRAMES = slice_sheet("assets/img/patrol_sheet.png", 32, 32)
 
 
 # Load audio (ogg for web compatibility)

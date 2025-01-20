@@ -14,6 +14,10 @@ class Direction(IntEnum):
     NW = auto()
 
 
+def direction_from_angle(theta: float) -> Direction:
+    return Direction(round((90 - theta) / 45) % 8)
+
+
 # @dataclass(slots=True)
 # class pygame.Vector2:
 #     x: float = 0.0
