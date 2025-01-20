@@ -124,14 +124,12 @@ def player_update(
     walls: list[pygame.Rect],
 ) -> None:
 
-    # lateral movement
+    # movement
     if player.caught_timer <= 0:
         _player_movement(player, dt, action_buffer)
-
-    # jumping
-    if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
-        player.z_velocity = -150
-        animator_reset(player.animator)
+        if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
+            player.z_velocity = -150
+            animator_reset(player.animator)
 
     # collision
     dx, dy = player.motion.velocity
@@ -218,7 +216,6 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
         )
 
     if c.DEBUG_HITBOXES:
-        # hitbox
         pygame.draw.rect(
             surface,
             c.CYAN,
