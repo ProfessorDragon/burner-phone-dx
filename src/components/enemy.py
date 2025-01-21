@@ -164,7 +164,7 @@ class PatrolEnemy(Enemy):
             # not facing in correct direction, turn
             if abs(turn) > 1:
                 if abs(turn) > 5:
-                    self.facing += turn / abs(turn) * 5
+                    self.facing += turn / abs(turn) * 600 * dt
                 else:
                     self.facing = target_facing
             # follow path
@@ -184,7 +184,8 @@ class PatrolEnemy(Enemy):
         else:
             self.sight_data.center = self.motion.position + pygame.Vector2(16, 16)
             self.sight_data.facing = self.facing
-            compile_sight(self.sight_data, grid_collision)
+            if len(self.path) > 1 or not self.sight_data.compiled:
+                compile_sight(self.sight_data, grid_collision)
             if collide_sight(player, self.sight_data):
                 player_caught(player, camera)
 
@@ -379,9 +380,9 @@ class SecurityCameraEnemy(Enemy):
         # not facing in correct direction, turn
         if abs(turn) > 1:
             if self.swivel_forwards:
-                self.swivel += 0.25
+                self.swivel += 30 * dt
             else:
-                self.swivel -= 0.25
+                self.swivel -= 30 * dt
         # inverse swivel direction
         else:
             self.swivel_forwards = not self.swivel_forwards

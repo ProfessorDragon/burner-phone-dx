@@ -36,6 +36,7 @@ async def game_loop(
         elapsed_time = clock.tick(c.FPS)
         dt = elapsed_time / 1000.0  # Convert to seconds
         dt = min(dt, c.MAX_DT)  # Clamp delta time
+        dt *= c.TIME_DILATION
 
         running = input_event_queue()
 

@@ -103,6 +103,14 @@ class Game(Scene):
 
         in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
+        # update and render enemies within this area
+        enemy_bounds = pygame.Rect(
+            self.camera.motion.position.x - self.camera.offset.x - c.TILE_SIZE * 8,
+            self.camera.motion.position.y - self.camera.offset.y - c.TILE_SIZE * 8,
+            surface.get_width() + c.TILE_SIZE * 16,
+            surface.get_height() + c.TILE_SIZE * 16,
+        )
+
         if not self.paused:
             if not self.editor.enabled and not in_dialogue:
                 # gameplay
@@ -115,13 +123,7 @@ class Game(Scene):
                 # player
                 player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
 
-                # update enemies within this area
-                enemy_bounds = pygame.Rect(
-                    self.camera.motion.position.x - self.camera.offset.x,
-                    self.camera.motion.position.y - self.camera.offset.y,
-                    surface.get_width(),
-                    surface.get_height(),
-                )
+                # enemies
                 for enemy in self.enemies:
                     if enemy_bounds.collidepoint(enemy.get_hitbox().center):
                         enemy_update(enemy, dt, self.player, self.camera, self.grid_collision)
@@ -167,21 +169,23 @@ class Game(Scene):
                     else:
                         not_bg_tiles.append((x, y, tile))
         for enemy in self.enemies:
-            enemy_render(enemy, surface, self.camera, RenderLayer.RAYS)
+            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
+                enemy_render(enemy, surface, self.camera, RenderLayer.RAYS)
         for x, y, tile in not_bg_tiles:
             if terrain_cutoff + 16 > (y + tile.render_z) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
         for enemy in self.enemies:
-            enemy_render(
-                enemy,
-                surface,
-                self.camera,
-                (
-                    RenderLayer.PLAYER_BG
-                    if enemy.motion.position.y <= terrain_cutoff
-                    else RenderLayer.BACKGROUND
-                ),
-            )
+            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
+                enemy_render(
+                    enemy,
+                    surface,
+                    self.camera,
+                    (
+                        RenderLayer.PLAYER_BG
+                        if enemy.motion.position.y <= terrain_cutoff
+                        else RenderLayer.BACKGROUND
+                    ),
+                )
 
         # player
         player_render(self.player, surface, self.camera)
@@ -191,16 +195,17 @@ class Game(Scene):
             if terrain_cutoff + 16 <= (y + tile.render_z) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
         for enemy in self.enemies:
-            enemy_render(
-                enemy,
-                surface,
-                self.camera,
-                (
-                    RenderLayer.PLAYER_FG
-                    if enemy.motion.position.y > terrain_cutoff
-                    else RenderLayer.FOREGROUND
-                ),
-            )
+            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
+                enemy_render(
+                    enemy,
+                    surface,
+                    self.camera,
+                    (
+                        RenderLayer.PLAYER_FG
+                        if enemy.motion.position.y > terrain_cutoff
+                        else RenderLayer.FOREGROUND
+                    ),
+                )
 
         # hitboxes
         if c.DEBUG_HITBOXES:

@@ -72,7 +72,7 @@ class Editor:
             return
         self.mode = mode
         self.debug_text = None
-        if mode in (EditorMode.WALLS,):
+        if mode in (EditorMode.WALLS, EditorMode.ENEMIES):
             c.DEBUG_HITBOXES = True
 
     def save(self, *, pretty=False) -> None:
@@ -331,6 +331,8 @@ def editor_update(
         scene_reset(editor.scene)
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
+    if just_pressed[pygame.K_t]:
+        c.TIME_DILATION = 0.25 if c.TIME_DILATION == 1.0 else 1.0
 
     # editor toggle
     if just_pressed[pygame.K_e]:

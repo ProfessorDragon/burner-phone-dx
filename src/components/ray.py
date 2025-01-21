@@ -11,11 +11,15 @@ from utilities.math import point_in_circle, point_in_ellipse
 
 @dataclass
 class SightData:
+    # parameters
     radius: float
     angle: float
     z_offset: float = 0
     center: pygame.Vector2 = None
     facing: float = 0
+
+    # compiled data
+    compiled: bool = False
     collision_depths: list[float] = None
     render_segs: list[tuple[int, int]] = None
 
@@ -31,7 +35,8 @@ def grid_raycast(
     for i in range(min(start_step, steps), steps):
         percent = float(i) / steps
         ray = vec * percent
-        x, y = int((ray.x + center.x) // c.TILE_SIZE), int((ray.y + center.y) // c.TILE_SIZE)
+        x = int((ray.x + center.x) // c.TILE_SIZE)
+        y = int((ray.y + center.y) // c.TILE_SIZE)
         if last_tile == (x, y):
             continue
         if (x, y) in grid_collision:
@@ -44,15 +49,19 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]]) -> None
     assert data.center is not None
     segs = int(pi / 360 * data.radius * data.angle)
     steps = int(data.radius / c.HALF_TILE_SIZE)
+    offset_center = data.center + pygame.Vector2(0, data.z_offset)
     data.collision_depths = []
     data.render_segs = [(data.radius, data.radius + data.z_offset)]
     for i in range(segs):
         percent = float(i) / (segs - 1)
         sight = pygame.Vector2(data.radius, 0).rotate(-data.facing + data.angle * (percent - 0.5))
-        depth = grid_raycast(sight, data.center, grid_collision, steps, 3)
+        sight.y -= data.z_offset
+        depth = grid_raycast(sight, offset_center, grid_collision, steps, 2)
         data.collision_depths.append(depth)
         sight *= depth
+        sight.y += data.z_offset
         data.render_segs.append((data.radius + sight.x, data.radius + sight.y))
+    data.compiled = True
 
 
 def collide_sight(player: Player, data: SightData) -> bool:

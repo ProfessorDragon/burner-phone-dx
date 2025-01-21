@@ -22,6 +22,7 @@ WINDOW_SETUP = {
 CAPTION = "Pirate Software - Game Jam 16"
 FPS = 0  # 0 = Uncapped -> let VSYNC decide best tick speed if enabled
 MAX_DT = 1 / 60
+TIME_DILATION = 1.0
 
 # Colour constants
 WHITE = pygame.Color(255, 255, 255)
