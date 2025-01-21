@@ -13,9 +13,10 @@ import core.assets as a
 from components.camera import (
     Camera,
     camera_from_screen,
+    camera_to_screen_shake,
     camera_to_screen_shake_rect,
 )
-from scenes.scene import Scene
+from scenes.scene import Scene, scene_reset
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_SHORTCUTS = [0, 9, 19, 27, 45]
@@ -107,13 +108,14 @@ class Editor:
         self.mouse_buffer = mouse_buffer
 
     def view_mode(self) -> None:
+        a_held = t.is_held(self.action_buffer, t.Action.A)
         dx = t.is_held(self.action_buffer, t.Action.RIGHT) - t.is_held(
             self.action_buffer, t.Action.LEFT
         )
         dy = t.is_held(self.action_buffer, t.Action.DOWN) - t.is_held(
             self.action_buffer, t.Action.UP
         )
-        move_vec = pygame.Vector2(dx, dy) * self.dt * 250
+        move_vec = pygame.Vector2(dx, dy) * self.dt * (50 if a_held else 250)
         self.scene.player.motion.position += move_vec
 
     def wall_mode(self) -> None:
@@ -237,7 +239,7 @@ class Editor:
             self.debug_text = "path paint"
         else:
             if self.drag_start and len(self.scene.enemies) > 0:
-                self.debug_text = f"facing {self.scene.enemies[-1].facing}"
+                self.debug_text = f"facing {getattr(self.scene.enemies[-1], 'facing', '')}"
             else:
                 self.debug_text = "place enemy"
 
@@ -319,7 +321,7 @@ def editor_update(
 
     # debug shortcuts
     if just_pressed[pygame.K_r]:
-        editor.scene.player.caught_timer = 0.01
+        scene_reset(editor.scene)
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
 
@@ -403,6 +405,10 @@ def editor_render(editor: Editor, surface: pygame.Surface):
             )
 
         case EditorMode.ENEMIES:
+            x, y = _floor_point(_camera_from_mouse(editor.scene.camera))
+            pygame.draw.circle(
+                surface, c.WHITE, camera_to_screen_shake(editor.scene.camera, x, y), 2
+            )
             render_path(surface, editor.scene.camera, editor.enemy_path)
 
     # debug text

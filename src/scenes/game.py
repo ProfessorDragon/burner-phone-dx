@@ -58,8 +58,6 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.editor = Editor(self)
-
         self.player = player_initialise()
 
         self.camera = Camera.empty()
@@ -74,6 +72,9 @@ class Game(Scene):
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
         self.walls: list[pygame.Rect] = []
         self.enemies: list[Enemy] = []
+
+        self.editor = Editor(self)
+        self.editor.load()
 
     def enter(self) -> None:
         camera_reset(self.camera)
@@ -167,6 +168,15 @@ class Game(Scene):
         player_render(self.player, surface, self.camera)
 
         # in front of player
+        for y in range(tile_bounds.top, tile_bounds.bottom + 1):
+            for x in range(tile_bounds.left, tile_bounds.right + 1):
+                for tile in self.grid_tiles.get((x, y), []):
+                    if (
+                        tile.render_z >= 0
+                        and self.player.motion.position.y + 16 <= (y + tile.render_z) * c.TILE_SIZE
+                    ):
+                        render_tile(surface, self.camera, x, y, tile)
+
         for enemy in self.enemies:
             enemy_render(
                 enemy,
@@ -178,15 +188,6 @@ class Game(Scene):
                     else RenderLayer.FOREGROUND
                 ),
             )
-
-        for y in range(tile_bounds.top, tile_bounds.bottom + 1):
-            for x in range(tile_bounds.left, tile_bounds.right + 1):
-                for tile in self.grid_tiles.get((x, y), []):
-                    if (
-                        tile.render_z >= 0
-                        and self.player.motion.position.y + 16 <= (y + tile.render_z) * c.TILE_SIZE
-                    ):
-                        render_tile(surface, self.camera, x, y, tile)
 
         # hitboxes
         if c.DEBUG_HITBOXES:

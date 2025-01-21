@@ -10,7 +10,7 @@ from components.motion import Direction
 class Animation:
     frames: list[pygame.Surface]
     frame_duration: float = 1.0
-    loops: bool = True
+    loop: bool = True
 
 
 @dataclass(slots=True)
@@ -63,6 +63,32 @@ def directional_animation_mapping(
     return animation_mapping
 
 
+# utility function to standardise frame ordering and animation speeds for walking entities
+def walking_animation_mapping(
+    frames: list[pygame.Surface], walk_duration: float = 0.09
+) -> dict[Hashable, Animation]:
+    return directional_animation_mapping(
+        {
+            "idle": [
+                Animation([frames[4]]),
+                Animation([frames[3]]),
+                Animation([frames[2]]),
+                Animation([frames[1]]),
+                Animation([frames[0]]),
+                Animation([frames[7]]),
+                Animation([frames[6]]),
+                Animation([frames[5]]),
+            ],
+            "walk": [
+                Animation(frames[32:40], walk_duration),
+                Animation(frames[16:24], walk_duration),
+                Animation(frames[8:16], walk_duration),
+                Animation(frames[24:32], walk_duration),
+            ],
+        }
+    )
+
+
 def animator_get_frame(animator: Animator) -> pygame.Surface:
     return animator.animations[animator.state_id].frames[animator.frame_index]
 
@@ -94,7 +120,7 @@ def animator_update(animator: Animator, dt: float) -> None:
     if animator.elapsed_time > current_animation.frame_duration:
         animator.frame_index += 1
         if animator.frame_index >= len(current_animation.frames):
-            if current_animation.loops:
+            if current_animation.loop:
                 animator.frame_index %= len(current_animation.frames)
             else:
                 animator.frame_index = len(current_animation.frames) - 1

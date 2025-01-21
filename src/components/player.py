@@ -1,11 +1,15 @@
-from math import atan2, degrees
 import pygame
 
 from components.tiles import grid_collision_rect
 import core.input as t
 import core.assets as a
 import core.constants as c
-from components.motion import Direction, Motion, direction_from_angle, motion_update
+from components.motion import (
+    Direction,
+    Motion,
+    direction_from_delta,
+    motion_update,
+)
 from components.camera import (
     Camera,
     camera_to_screen,
@@ -21,6 +25,7 @@ from components.animation import (
     animator_get_frame,
     animator_initialise,
     directional_animation_mapping,
+    walking_animation_mapping,
 )
 
 
@@ -37,31 +42,18 @@ class Player:
 
 def player_initialise() -> Player:
     player = Player()
-    animation_mapping = directional_animation_mapping(
-        {
-            "idle": [
-                Animation([a.PLAYER_FRAMES[4]], 1),
-                Animation([a.PLAYER_FRAMES[3]], 1),
-                Animation([a.PLAYER_FRAMES[2]], 1),
-                Animation([a.PLAYER_FRAMES[1]], 1),
-                Animation([a.PLAYER_FRAMES[0]], 1),
-                Animation([a.PLAYER_FRAMES[7]], 1),
-                Animation([a.PLAYER_FRAMES[6]], 1),
-                Animation([a.PLAYER_FRAMES[5]], 1),
-            ],
-            "walk": [
-                Animation(a.PLAYER_FRAMES[32:40], 0.08),
-                Animation(a.PLAYER_FRAMES[16:24], 0.08),
-                Animation(a.PLAYER_FRAMES[8:16], 0.08),
-                Animation(a.PLAYER_FRAMES[24:32], 0.08),
-            ],
-            "jump": [
-                Animation(a.PLAYER_FRAMES[55:60], 0.08),
-                Animation(a.PLAYER_FRAMES[45:50], 0.08),
-                Animation(a.PLAYER_FRAMES[40:45], 0.08),
-                Animation(a.PLAYER_FRAMES[50:55], 0.08),
-            ],
-        }
+    animation_mapping = walking_animation_mapping(a.PLAYER_FRAMES)
+    animation_mapping.update(
+        directional_animation_mapping(
+            {
+                "jump": [
+                    Animation(a.PLAYER_FRAMES[55:60], 0.08, False),
+                    Animation(a.PLAYER_FRAMES[45:50], 0.08, False),
+                    Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
+                    Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
+                ],
+            }
+        )
     )
     animator_initialise(player.animator, animation_mapping)
     return player
@@ -160,7 +152,7 @@ def player_update(
     player.z_position = min(player.z_position + player.z_velocity * dt, 0)
 
     if dx != 0 or dy != 0:
-        player.direction = direction_from_angle(degrees(atan2(-dy, dx)))
+        player.direction = direction_from_delta(dx, dy)
     if player.z_position < 0:
         animator_switch_animation(player.animator, f"jump_{player.direction}")
     elif dx != 0 or dy != 0:
@@ -170,7 +162,7 @@ def player_update(
     animator_update(player.animator, dt)
 
 
-def player_caught(player: Player, camera: Camera):
+def player_caught(player: Player, camera: Camera) -> None:
     if player.caught_timer > 0:
         return
     player.caught_timer = 0.5
@@ -178,42 +170,46 @@ def player_caught(player: Player, camera: Camera):
     camera.trauma = 0.5
 
 
-def player_kill(player: Player):
+def player_kill(player: Player) -> None:
     player.motion.position = pygame.Vector2()
     player.motion.velocity = pygame.Vector2()
 
 
+def shadow_render(
+    surface: pygame.Surface,
+    camera: Camera,
+    motion: Motion,
+    direction: Direction,
+    z_position: float = 0,
+) -> None:
+    # use two vectors because we NEED to preserve decimal places
+    shadow_tl = pygame.Vector2(motion.position.x + 10, motion.position.y + 29)
+    shadow_wh = pygame.Vector2(12, 6)
+    if motion.velocity.x != 0:
+        if direction in (Direction.W, Direction.NW, Direction.SW):
+            shadow_wh.x += 2
+        elif direction in (Direction.E, Direction.NE, Direction.SE):
+            shadow_tl.x -= 2
+            shadow_wh.x += 2
+    if z_position < -5:
+        shadow_wh.x -= 2
+        shadow_wh.y -= 2
+        shadow_tl.x += 1
+        shadow_tl.y += 1
+    shadow = pygame.Surface(shadow_wh, pygame.SRCALPHA)
+    pygame.draw.ellipse(shadow, (0, 0, 0, 50), pygame.Rect(0, 0, *shadow_wh))
+    surface.blit(shadow, camera_to_screen_shake(camera, *shadow_tl))
+
+
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
     frame = animator_get_frame(player.animator)
-    render_position = player.motion.position
-    jump_position = player.motion.position + pygame.Vector2(0, player.z_position)
 
-    shadow_rect = pygame.Rect(
-        render_position[0] + 10, render_position[1] + frame.get_height() - 3, 12, 6
-    )
-    if player.motion.velocity.x < 0:
-        shadow_rect.w += 2
-    elif player.motion.velocity.x > 0:
-        shadow_rect.x -= 2
-        shadow_rect.w += 2
-    if player.z_position < -5:
-        shadow_rect.w -= 2
-        shadow_rect.h -= 2
-        shadow_rect.x += 1
-        shadow_rect.y += 1
-    shadow = pygame.Surface(shadow_rect.size, pygame.SRCALPHA)
-    pygame.draw.ellipse(
-        shadow,
-        (0, 0, 0, 50),
-        pygame.Rect(0, 0, *shadow_rect.size),
-    )
-    surface.blit(
-        shadow,
-        camera_to_screen_shake(camera, *shadow_rect.topleft),
-    )
+    shadow_render(surface, camera, player.motion, player.direction, player.z_position)
     surface.blit(
         frame,
-        camera_to_screen_shake(camera, *jump_position),
+        camera_to_screen_shake(
+            camera, player.motion.position.x, player.motion.position.y + player.z_position
+        ),
     )
 
     # caught alert
@@ -223,8 +219,8 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
             alert,
             camera_to_screen(
                 camera,
-                render_position[0] + frame.get_width() // 2 - alert.get_width() // 2,
-                render_position[1] - 16 + player.caught_timer * 8,
+                player.motion.position.x + frame.get_width() // 2 - alert.get_width() // 2,
+                player.motion.position.y - 16 + player.caught_timer * 8,
             ),
         )
 

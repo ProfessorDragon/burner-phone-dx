@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
+from math import atan2, degrees
 import pygame
 
 
@@ -18,16 +19,8 @@ def direction_from_angle(theta: float) -> Direction:
     return Direction(round((90 - theta) / 45) % 8)
 
 
-# @dataclass(slots=True)
-# class pygame.Vector2:
-#     x: float = 0.0
-#     y: float = 0.0
-#
-#     def __iter__(self):
-#         return iter((self.x, self.y))
-#
-#     def copy(self):
-#         return pygame.Vector2(self.x, self.y)
+def direction_from_delta(dx: float, dy: float) -> Direction:
+    return direction_from_angle(degrees(atan2(-dy, dx)))
 
 
 @dataclass
