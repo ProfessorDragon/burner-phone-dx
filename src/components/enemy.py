@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from math import cos, radians
 import random
-from typing import Any, Self
-
+from typing import Any
 import pygame
+
 from components.player import Player, player_caught, player_rect, shadow_render
+from components.ray import SightData, collide_sight, compile_sight, render_sight
 import core.assets as a
 import core.constants as c
 from components.animation import (
@@ -26,7 +27,7 @@ from components.motion import (
     direction_from_delta,
     motion_update,
 )
-from scenes.scene import RenderLayer
+from scenes.scene import PLAYER_LAYER, PLAYER_OR_BG, PLAYER_OR_FG, RenderLayer
 from utilities.math import point_in_ellipse
 
 
@@ -48,67 +49,6 @@ def render_path(surface: pygame.Surface, camera: Camera, path: list[pygame.Vecto
             a.DEBUG_FONT.render(str(i), False, c.RED),
             camera_to_screen_shake(camera, *point),
         )
-
-
-def collide_sight(
-    player: Player,
-    *,
-    center: pygame.Vector2,
-    facing: float,
-    radius: float,
-    angle: float,
-) -> bool:
-    prect = player_rect(player.motion)
-    if point_in_ellipse(
-        *prect.center,
-        *center,
-        radius,
-        radius * c.PERSPECTIVE,
-    ):
-        pdist = pygame.Vector2(prect.center) - center
-        theta = (pdist.angle_to(pygame.Vector2(1, 0)) - facing) % 360
-        if theta < angle / 2 + 1 or theta > 360 - (angle / 2 + 1):
-            return True
-    return False
-
-
-def render_sight(
-    surface: pygame.Surface,
-    camera: Camera,
-    *,
-    center: pygame.Vector2,
-    facing: float,
-    radius: float,
-    angle: float,
-    z_offset: float = 0,
-) -> None:
-    sight_left = pygame.Vector2(radius, 0).rotate(facing - angle // 2)
-    sight_right = pygame.Vector2(radius, 0).rotate(facing + angle // 2)
-    sight = pygame.Surface((radius * 2, radius * 2 * c.PERSPECTIVE), pygame.SRCALPHA)
-    pygame.draw.polygon(
-        sight,
-        (162, 48, 0, 96),
-        [
-            (
-                sight.get_width() // 2,
-                sight.get_height() // 2 + z_offset,
-            ),
-            (
-                sight.get_width() // 2 + sight_left.x,
-                sight.get_height() // 2 - sight_left.y * c.PERSPECTIVE,
-            ),
-            (
-                sight.get_width() // 2 + sight_right.x,
-                sight.get_height() // 2 - sight_right.y * c.PERSPECTIVE,
-            ),
-        ],
-    )
-    surface.blit(
-        sight,
-        camera_to_screen_shake(
-            camera, center.x - sight.get_width() // 2, center.y - sight.get_height() // 2
-        ),
-    )
 
 
 def _path_to_json(path: list[pygame.Vector2]) -> list[tuple[int, int]]:
@@ -142,13 +82,15 @@ class Enemy(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_json(js: dict[str, Any]) -> Self: ...
+    def from_json(js: dict[str, Any]): ...
 
     @abstractmethod
     def reset(self) -> None: ...
 
     @abstractmethod
-    def update(self, dt: float, player: Player, camera: Camera) -> None: ...
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None: ...
 
     @abstractmethod
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None: ...
@@ -179,8 +121,7 @@ class PatrolEnemy(Enemy):
         self.path: list[pygame.Vector2] = path
         self.facing = 0
         self.direction = Direction.N
-        self.sight_radius = 80
-        self.sight_angle = 14
+        self.sight_data = SightData(80, 14)
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -210,7 +151,9 @@ class PatrolEnemy(Enemy):
         else:
             self.active_point = 0
 
-    def update(self, dt: float, player: Player, camera: Camera) -> None:
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None:
         if len(self.path) > 1:
             target = self.path[self.active_point]
             dist = target - self.motion.position
@@ -238,14 +181,12 @@ class PatrolEnemy(Enemy):
         prect = player_rect(player.motion)
         if prect.colliderect(self.get_hitbox()):
             player_caught(player, camera)
-        elif collide_sight(
-            player,
-            center=self.motion.position + pygame.Vector2(16, 16),
-            facing=self.facing,
-            radius=self.sight_radius,
-            angle=self.sight_angle,
-        ):
-            player_caught(player, camera)
+        else:
+            self.sight_data.center = self.motion.position + pygame.Vector2(16, 16)
+            self.sight_data.facing = self.facing
+            compile_sight(self.sight_data, grid_collision)
+            if collide_sight(player, self.sight_data):
+                player_caught(player, camera)
 
         # animation
         if self.motion.velocity.magnitude_squared() > 0:
@@ -258,16 +199,9 @@ class PatrolEnemy(Enemy):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         frame = animator_get_frame(self.animator)
-        if layer < RenderLayer.PLAYER:
-            render_sight(
-                surface,
-                camera,
-                center=self.motion.position + pygame.Vector2(16, 16),
-                facing=self.facing,
-                radius=self.sight_radius,
-                angle=self.sight_angle,
-            )
-        if abs(layer) <= RenderLayer.PLAYER_FG:
+        if layer == RenderLayer.RAYS:
+            render_sight(surface, camera, self.sight_data)
+        if layer in PLAYER_LAYER:
             shadow_render(surface, camera, self.motion, self.direction)
             surface.blit(
                 frame,
@@ -297,7 +231,9 @@ class SpotlightEnemy(Enemy):
         self.motion.position = self.path[0].copy()
         self.active_point = 0
 
-    def update(self, dt: float, player: Player, camera: Camera) -> None:
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None:
         if len(self.path) > 0:
             target = self.path[self.active_point]
             dist = target - self.motion.position
@@ -323,15 +259,10 @@ class SpotlightEnemy(Enemy):
         motion_update(self.motion, dt)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer > RenderLayer.PLAYER:
-            render_position = (
-                self.motion.position.x - self.light_radius,
-                self.motion.position.y - self.light_radius * c.PERSPECTIVE,
-            )
-            sprite = pygame.Surface(
-                (self.light_radius * 2, self.light_radius * 2 * c.PERSPECTIVE),
-                pygame.SRCALPHA,
-            )
+        if layer in PLAYER_OR_FG:
+            rx, ry = self.light_radius, self.light_radius * c.PERSPECTIVE
+            render_position = (self.motion.position.x - rx, self.motion.position.y - ry)
+            sprite = pygame.Surface((rx * 2, ry * 2), pygame.SRCALPHA)
             pygame.draw.ellipse(sprite, (255, 255, 0, 96), sprite.get_rect())
             surface.blit(sprite, camera_to_screen_shake(camera, *render_position))
 
@@ -365,7 +296,9 @@ class SpikeTrapEnemy(Enemy):
         self.activated = False
         animator_switch_animation(self.animator, "idle")
 
-    def update(self, dt: float, player: Player, camera: Camera) -> None:
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None:
         # collision
         if player.z_position == 0:
             prect = player_rect(player.motion)
@@ -383,7 +316,7 @@ class SpikeTrapEnemy(Enemy):
         animator_update(self.animator, dt)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer < RenderLayer.PLAYER:
+        if layer in PLAYER_OR_BG:
             surface.blit(
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),
@@ -405,12 +338,10 @@ class SecurityCameraEnemy(Enemy):
             }
         )
         animator_initialise(self.animator, animation_mapping)
-        self.z = 0
         self.facing = 0
-        self.target_facing = None
-        self.sight_radius = 96
-        self.sight_angle = 30
-        self.swivel_angle = 90
+        self.sight_data = SightData(96, 30)
+        self.swivel = 0
+        self.swivel_angle = 60
         self.swivel_forwards = True
         self.reset()
 
@@ -420,73 +351,63 @@ class SecurityCameraEnemy(Enemy):
     def to_json(self):
         return {
             "pos": (*self.motion.position,),
-            "z": self.z,
             "facing": self.facing,
+            "z": self.sight_data.z_offset,
         }
 
     @staticmethod
     def from_json(js):
         enemy = SecurityCameraEnemy()
         enemy.motion.position = pygame.Vector2(js["pos"])
-        enemy.z = js.get("z", 0)
         enemy.facing = js.get("facing", 0)
+        enemy.sight_data.z_offset = js.get("z", 0)
         return enemy
 
     def reset(self) -> None:
-        pass
+        self.swivel = 0
 
-    def update(self, dt: float, player: Player, camera: Camera) -> None:
-        if self.target_facing is None:
-            self.target_facing = (self.facing + self.swivel_angle / 2) % 360
-        turn = (self.target_facing - self.facing) % 360
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None:
+        if self.swivel_forwards:
+            target_swivel = self.swivel_angle / 2
+        else:
+            target_swivel = -self.swivel_angle / 2
+        turn = (target_swivel - self.swivel) % 360
         if turn > 180:
             turn -= 360
         # not facing in correct direction, turn
         if abs(turn) > 1:
             if self.swivel_forwards:
-                self.facing += 0.25
+                self.swivel += 0.25
             else:
-                self.facing -= 0.25
+                self.swivel -= 0.25
         # inverse swivel direction
         else:
-            if self.swivel_forwards:
-                self.target_facing = self.target_facing - self.swivel_angle
-            else:
-                self.target_facing = self.target_facing + self.swivel_angle
-            self.target_facing %= 360
             self.swivel_forwards = not self.swivel_forwards
 
         # collision
-        if collide_sight(
-            player,
-            center=self.motion.position + pygame.Vector2(8, 8),
-            facing=self.facing,
-            radius=self.sight_radius,
-            angle=self.sight_angle,
-        ):
+        self.sight_data.center = self.motion.position + pygame.Vector2(8, 8)
+        self.sight_data.facing = self.facing + self.swivel
+        compile_sight(self.sight_data, grid_collision)
+        if collide_sight(player, self.sight_data):
             player_caught(player, camera)
 
         # animation
-        direction = direction_from_angle(self.facing)
+        direction = direction_from_angle(self.facing + self.swivel)
         animator_switch_animation(self.animator, f"swivel_{direction}")
         animator_update(self.animator, dt)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer < RenderLayer.PLAYER:
-            render_sight(
-                surface,
-                camera,
-                center=self.motion.position + pygame.Vector2(8, 8),
-                facing=self.facing,
-                radius=self.sight_radius,
-                angle=self.sight_angle,
-                z_offset=self.z,
-            )
-        if abs(layer) <= RenderLayer.PLAYER_FG:
+        if layer == RenderLayer.RAYS:
+            render_sight(surface, camera, self.sight_data)
+        if layer in PLAYER_LAYER:
             surface.blit(
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(
-                    camera, self.motion.position.x, self.motion.position.y + self.z
+                    camera,
+                    self.motion.position.x,
+                    self.motion.position.y + self.sight_data.z_offset,
                 ),
             )
 
@@ -521,7 +442,9 @@ class ZombieEnemy(Enemy):
     def randomize_walk_speed(self) -> None:
         self.walk_speed = 200 * random.uniform(0.8, 1.2)
 
-    def update(self, dt: float, player: Player, camera: Camera) -> None:
+    def update(
+        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    ) -> None:
         self.motion.velocity = pygame.Vector2()
         prect = player_rect(player.motion)
         hitbox = self.get_hitbox()
@@ -562,13 +485,13 @@ class ZombieEnemy(Enemy):
         motion_update(self.motion, dt)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if abs(layer) <= RenderLayer.PLAYER_FG:
+        if layer in PLAYER_LAYER:
             shadow_render(surface, camera, self.motion, self.direction)
             surface.blit(
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),
             )
-        if layer > RenderLayer.PLAYER and c.DEBUG_HITBOXES:
+        if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:
             pygame.draw.circle(
                 surface,
                 c.RED,
@@ -582,19 +505,26 @@ def enemy_reset(enemy: Enemy) -> None:
     enemy.reset()
 
 
-def enemy_update(enemy: Enemy, dt: float, player: Player, camera: Camera) -> None:
-    enemy.update(dt, player, camera)
+def enemy_update(
+    enemy: Enemy, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+) -> None:
+    enemy.update(dt, player, camera, grid_collision)
 
 
-def enemy_render(enemy: Enemy, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
+def enemy_render(
+    enemy: Enemy,
+    surface: pygame.Surface,
+    camera: Camera,
+    layer: RenderLayer,
+) -> None:
     enemy.render(surface, camera, layer)
 
     if c.DEBUG_HITBOXES:
-        if layer < RenderLayer.PLAYER:
+        if layer == RenderLayer.RAYS:
             path = enemy.get_path()
             if path is not None:
                 render_path(surface, camera, path)
-        elif layer > RenderLayer.PLAYER:
+        if layer in PLAYER_OR_FG:
             hitbox = enemy.get_hitbox()
             if hitbox:
                 pygame.draw.rect(surface, c.RED, camera_to_screen_shake_rect(camera, *hitbox), 1)

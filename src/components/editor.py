@@ -17,9 +17,14 @@ from components.camera import (
     camera_to_screen_shake_rect,
 )
 from scenes.scene import Scene, scene_reset
+from utilities.math import clamp
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
-TILE_SHORTCUTS = [0, 9, 19, 27, 45]
+TILE_SHORTCUTS = [
+    [0, 3, 9, 19, 27],
+    [0, 4, 9, 17, 26],
+    [0, 4, 11, 15],
+]
 
 
 class EditorMode(Enum):
@@ -63,8 +68,12 @@ class Editor:
         self.enemy_path: list[pygame.Vector2] = []
 
     def set_mode(self, mode: EditorMode) -> None:
+        if self.mode == mode:
+            return
         self.mode = mode
         self.debug_text = None
+        if mode in (EditorMode.WALLS,):
+            c.DEBUG_HITBOXES = True
 
     def save(self, *, pretty=False) -> None:
         data = {
@@ -199,7 +208,7 @@ class Editor:
                 print(self.scene.grid_tiles[id])
                 self.tile_data = self.scene.grid_tiles[id][-1].copy()
 
-        shortcuts = TILE_SHORTCUTS
+        shortcuts = TILE_SHORTCUTS[clamp(self.tile_data.y - 2, 0, len(TILE_SHORTCUTS) - 1)]
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
             if a_held:
                 for pos in shortcuts[::-1]:
@@ -208,9 +217,8 @@ class Editor:
                         break
                 else:  # fancy :-)
                     self.tile_data.x = shortcuts[-1]
-                self.tile_data.y = 0
             else:
-                self.tile_data.x = (self.tile_data.x - 1) % 64
+                self.tile_data.x = (self.tile_data.x - 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
             if a_held:
                 for pos in shortcuts:
@@ -219,19 +227,18 @@ class Editor:
                         break
                 else:
                     self.tile_data.x = shortcuts[0]
-                self.tile_data.y = 0
             else:
-                self.tile_data.x = (self.tile_data.x + 1) % 64
+                self.tile_data.x = (self.tile_data.x + 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
             if a_held:
                 self.tile_data.render_z = max(self.tile_data.render_z - 1, -1)
             else:
-                self.tile_data.y = (self.tile_data.y - 1) % 3
+                self.tile_data.y = (self.tile_data.y + 1) % (a.TERRAIN.get_height() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.UP):
             if a_held:
                 self.tile_data.render_z += 1
             else:
-                self.tile_data.y = (self.tile_data.y + 1) % 3
+                self.tile_data.y = (self.tile_data.y - 1) % (a.TERRAIN.get_height() // c.TILE_SIZE)
 
     def enemy_mode(self) -> None:
         a_held = t.is_held(self.action_buffer, t.Action.A)
@@ -396,10 +403,10 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                 surface,
                 c.WHITE,
                 pygame.Rect(
-                    surface.get_width() // 2 - c.HALF_TILE_SIZE,
-                    surface.get_height() - c.TILE_SIZE,
-                    c.TILE_SIZE,
-                    c.TILE_SIZE,
+                    surface.get_width() // 2 - c.HALF_TILE_SIZE - 1,
+                    surface.get_height() - c.TILE_SIZE - 1,
+                    c.TILE_SIZE + 2,
+                    c.TILE_SIZE + 2,
                 ),
                 1,
             )

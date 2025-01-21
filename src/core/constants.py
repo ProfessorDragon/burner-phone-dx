@@ -36,6 +36,6 @@ MAGENTA = pygame.Color(255, 0, 255)
 
 # Debug
 DEBUG_FPS = True
-DEBUG_HITBOXES = True
+DEBUG_HITBOXES = False
 
 print("Loaded constants")

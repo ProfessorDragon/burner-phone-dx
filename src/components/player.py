@@ -139,8 +139,9 @@ def player_update(
     # movement
     if player.caught_timer <= 0:
         _player_movement(player, dt, action_buffer)
+        # jumping
         if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
-            player.z_velocity = -150
+            player.z_velocity = -130
             animator_reset(player.animator)
 
     # collision

@@ -32,6 +32,7 @@ from components.tiles import (
 from components.camera import (
     Camera,
     camera_follow,
+    camera_to_screen_shake,
     camera_update,
     camera_reset,
 )
@@ -110,9 +111,20 @@ class Game(Scene):
                     if self.player.caught_timer <= 0:
                         scene_reset(self)
                         player_kill(self.player)
+
+                # player
                 player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
+
+                # update enemies within this area
+                enemy_bounds = pygame.Rect(
+                    self.camera.motion.position.x - self.camera.offset.x,
+                    self.camera.motion.position.y - self.camera.offset.y,
+                    surface.get_width(),
+                    surface.get_height(),
+                )
                 for enemy in self.enemies:
-                    enemy_update(enemy, dt, self.player, self.camera)
+                    if enemy_bounds.collidepoint(enemy.get_hitbox().center):
+                        enemy_update(enemy, dt, self.player, self.camera, self.grid_collision)
 
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
@@ -134,7 +146,10 @@ class Game(Scene):
         # background
         surface.fill(c.GRAY)  # can remove once map is made
 
-        terrain_cutoff = round(self.player.motion.position.y)
+        # for some reason, subtracting the z position looks good.
+        terrain_cutoff = round(self.player.motion.position.y - self.player.z_position)
+
+        # render tiles within this area
         tile_bounds = pygame.Rect(
             (self.camera.motion.position.x - self.camera.offset.x) // c.TILE_SIZE,
             (self.camera.motion.position.y - self.camera.offset.y) // c.TILE_SIZE,
@@ -143,15 +158,19 @@ class Game(Scene):
         )
 
         # behind player
+        not_bg_tiles = []
         for y in range(tile_bounds.top, tile_bounds.bottom + 1):
             for x in range(tile_bounds.left, tile_bounds.right + 1):
                 for tile in self.grid_tiles.get((x, y), []):
-                    if (
-                        tile.render_z < 0
-                        or self.player.motion.position.y + 16 > (y + tile.render_z) * c.TILE_SIZE
-                    ):
+                    if tile.render_z < 0:
                         render_tile(surface, self.camera, x, y, tile)
-
+                    else:
+                        not_bg_tiles.append((x, y, tile))
+        for enemy in self.enemies:
+            enemy_render(enemy, surface, self.camera, RenderLayer.RAYS)
+        for x, y, tile in not_bg_tiles:
+            if terrain_cutoff + 16 > (y + tile.render_z) * c.TILE_SIZE:
+                render_tile(surface, self.camera, x, y, tile)
         for enemy in self.enemies:
             enemy_render(
                 enemy,
@@ -168,15 +187,9 @@ class Game(Scene):
         player_render(self.player, surface, self.camera)
 
         # in front of player
-        for y in range(tile_bounds.top, tile_bounds.bottom + 1):
-            for x in range(tile_bounds.left, tile_bounds.right + 1):
-                for tile in self.grid_tiles.get((x, y), []):
-                    if (
-                        tile.render_z >= 0
-                        and self.player.motion.position.y + 16 <= (y + tile.render_z) * c.TILE_SIZE
-                    ):
-                        render_tile(surface, self.camera, x, y, tile)
-
+        for x, y, tile in not_bg_tiles:
+            if terrain_cutoff + 16 <= (y + tile.render_z) * c.TILE_SIZE:
+                render_tile(surface, self.camera, x, y, tile)
         for enemy in self.enemies:
             enemy_render(
                 enemy,
@@ -191,6 +204,13 @@ class Game(Scene):
 
         # hitboxes
         if c.DEBUG_HITBOXES:
+            origin_text = a.DEBUG_FONT.render("0", False, c.WHITE)
+            surface.blit(
+                origin_text,
+                camera_to_screen_shake(
+                    self.camera, -origin_text.get_width() // 2, -origin_text.get_height() // 2
+                ),
+            )
             for i, wall in enumerate(self.walls):
                 render_wall(surface, self.camera, i, wall)
             for y in range(tile_bounds.top, tile_bounds.bottom + 1):
