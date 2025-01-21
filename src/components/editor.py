@@ -4,11 +4,11 @@ import json
 from math import ceil, floor
 import pygame
 
-from components.enemy import Enemy, enemy_from_json, enemy_update
+from components.enemy import ENEMY_CLASSES, enemy_from_json, render_path
 import core.input as t
 import core.constants as c
 import core.assets as a
-from components.camera import camera_from_screen
+from components.camera import Camera, camera_from_screen
 from scenes.scene import Scene
 
 # terrain pasting
@@ -48,6 +48,24 @@ class EditorMode(Enum):
     ENEMIES = "enemies"
 
 
+def _camera_from_mouse(camera: Camera) -> pygame.Vector2:
+    return pygame.Vector2(camera_from_screen(camera, *pygame.mouse.get_pos()))
+
+
+def _floor_point(vec: pygame.Vector2) -> pygame.Vector2:
+    return pygame.Vector2(
+        floor(vec.x / c.TILE_SIZE) * c.TILE_SIZE,
+        floor(vec.y / c.TILE_SIZE) * c.TILE_SIZE,
+    )
+
+
+def _ceil_point(vec: pygame.Vector2) -> pygame.Vector2:
+    return pygame.Vector2(
+        ceil(vec.x / c.TILE_SIZE) * c.TILE_SIZE,
+        ceil(vec.y / c.TILE_SIZE) * c.TILE_SIZE,
+    )
+
+
 class Editor:
     def __init__(self, scene: Scene):
         self.scene = scene
@@ -56,9 +74,16 @@ class Editor:
         self.dt = 0
         self.action_buffer: t.InputBuffer = None
         self.mouse_buffer: t.InputBuffer = None
-        self.wall_paste_start = None
+        self.debug_text: str = None
+        self.drag_start: pygame.Vector2 = None
+        self.enemy_index = 0
+        self.enemy_path: list[pygame.Vector2] = []
         # self.terrain_paste_tile = (0, 2)
         # self.terrain_paste_layer = 0
+
+    def set_mode(self, mode: EditorMode) -> None:
+        self.mode = mode
+        self.debug_text = None
 
     def save(self) -> None:
         data = {
@@ -95,40 +120,46 @@ class Editor:
         self.scene.player.motion.position += move_vec
 
     def wall_mode(self) -> None:
+        a_held = t.is_held(self.action_buffer, t.Action.A)
+        b_held = t.is_held(self.action_buffer, t.Action.B)
+        if a_held:
+            if self.drag_start:
+                self.debug_text = "snap"
+            else:
+                self.debug_text = "expand"
+        elif b_held:
+            self.debug_text = "contract"
+        else:
+            self.debug_text = "place/move"
+
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
-            self.wall_paste_start = camera_from_screen(self.scene.camera, *pygame.mouse.get_pos())
-            self.scene.walls.append(pygame.Rect(*self.wall_paste_start, 1, 1))
+            self.drag_start = _camera_from_mouse(self.scene.camera)
+            self.scene.walls.append(pygame.Rect(*self.drag_start, 1, 1))
+
         if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
-            x, y = camera_from_screen(self.scene.camera, *pygame.mouse.get_pos())
+            pos = _camera_from_mouse(self.scene.camera)
             for i, wall in enumerate(self.scene.walls[::-1]):
-                if wall.collidepoint(x, y):
+                if wall.collidepoint(pos):
                     self.scene.walls.pop(len(self.scene.walls) - 1 - i)
                     break
-        if self.wall_paste_start:
-            start, end = self.wall_paste_start, camera_from_screen(
-                self.scene.camera, *pygame.mouse.get_pos()
-            )
-            if t.is_held(self.action_buffer, t.Action.A):
-                start = (
-                    floor(start[0] / c.TILE_SIZE) * c.TILE_SIZE,
-                    floor(start[1] / c.TILE_SIZE) * c.TILE_SIZE,
-                )
-                end = (
-                    ceil(end[0] / c.TILE_SIZE) * c.TILE_SIZE,
-                    ceil(end[1] / c.TILE_SIZE) * c.TILE_SIZE,
-                )
-            self.scene.walls[-1] = pygame.Rect(*start, end[0] - start[0], end[1] - start[1])
+
+        if self.drag_start:
+            start = self.drag_start.copy()
+            end = _camera_from_mouse(self.scene.camera)
+            if a_held:
+                start, end = _floor_point(start), _ceil_point(end)
+            self.scene.walls[-1] = pygame.Rect(*start, end.x - start.x, end.y - start.y)
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
-                if start[0] >= end[0] or start[1] >= end[1]:
+                if start.x >= end.x or start.y >= end.y:
                     self.scene.walls.pop()
-                self.wall_paste_start = None
+                self.drag_start = None
 
         if len(self.scene.walls) == 0:
             return
 
         wall = self.scene.walls[-1]
         # expand
-        if t.is_held(self.action_buffer, t.Action.A):
+        if a_held:
             if t.is_pressed(self.action_buffer, t.Action.LEFT):
                 wall.x -= 1
                 wall.width += 1
@@ -140,7 +171,7 @@ class Editor:
             if t.is_pressed(self.action_buffer, t.Action.DOWN):
                 wall.height += 1
         # contract
-        elif t.is_held(self.action_buffer, t.Action.B):
+        elif b_held:
             if t.is_pressed(self.action_buffer, t.Action.LEFT):
                 wall.width -= 1
             if t.is_pressed(self.action_buffer, t.Action.RIGHT):
@@ -163,7 +194,67 @@ class Editor:
                 wall.move_ip(0, 1)
 
     def enemy_mode(self) -> None:
-        pass
+        a_held = t.is_held(self.action_buffer, t.Action.A)
+        if a_held:
+            self.debug_text = "path paint"
+        else:
+            if self.drag_start:
+                self.debug_text = "set facing"
+            else:
+                self.debug_text = "place enemy"
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
+            # path paint
+            if a_held:
+                self.enemy_path.append(_floor_point(_camera_from_mouse(self.scene.camera)))
+            # place enemy
+            else:
+                pos = _floor_point(_camera_from_mouse(self.scene.camera))
+                if len(self.enemy_path) == 0:
+                    self.enemy_path.append(pos)
+                # just put in a lot of properties, only the necessary ones will be used
+                enemy = enemy_from_json(
+                    {
+                        "class": ENEMY_CLASSES[self.enemy_index].__name__,
+                        "pos": (*pos,),
+                        "path": self.enemy_path,
+                        "facing": 0,
+                    }
+                )
+                self.scene.enemies.append(enemy)
+                self.drag_start = pos
+                self.enemy_path.clear()
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
+            # path paint
+            if a_held:
+                if len(self.enemy_path) > 0:
+                    self.enemy_path.pop()
+            # delete enemy
+            else:
+                pos = _camera_from_mouse(self.scene.camera)
+                for i, enemy in enumerate(self.scene.enemies[::-1]):
+                    if enemy.get_hitbox().collidepoint(pos):
+                        self.scene.enemies.pop(len(self.scene.enemies) - 1 - i)
+                        break
+
+        if self.drag_start:
+            end = _camera_from_mouse(self.scene.camera)
+            if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
+                self.scene.enemies[-1].facing = (
+                    round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 5.0) * 5
+                )
+            if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
+                self.drag_start = None
+
+        if t.is_pressed(self.action_buffer, t.Action.UP):
+            self.enemy_index = (self.enemy_index + 1) % len(ENEMY_CLASSES)
+        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+            self.enemy_index = (self.enemy_index - 1) % len(ENEMY_CLASSES)
+
+        self.debug_text += (
+            f"\n{self.enemy_index} {ENEMY_CLASSES[self.enemy_index].__name__.removesuffix('Enemy')}"
+        )
 
 
 def editor_update(
@@ -192,11 +283,11 @@ def editor_update(
     editor.update_state(dt, action_buffer, mouse_buffer)
 
     if just_pressed[pygame.K_1]:
-        editor.mode = EditorMode.VIEW
+        editor.set_mode(EditorMode.VIEW)
     elif just_pressed[pygame.K_2]:
-        editor.mode = EditorMode.WALLS
+        editor.set_mode(EditorMode.WALLS)
     elif just_pressed[pygame.K_3]:
-        editor.mode = EditorMode.ENEMIES
+        editor.set_mode(EditorMode.ENEMIES)
 
     match editor.mode:
         case EditorMode.VIEW:
@@ -211,6 +302,14 @@ def editor_update(
 
 
 def editor_render(editor: Editor, surface: pygame.Surface):
-    if editor.enabled:
-        mode_text = a.DEBUG_FONT.render(str(editor.mode), False, c.WHITE, c.BLACK)
-        surface.blit(mode_text, (surface.get_width() - mode_text.get_width(), 0))
+    if not editor.enabled:
+        return
+    # enemy path
+    if editor.mode == EditorMode.ENEMIES:
+        render_path(surface, editor.scene.camera, editor.enemy_path)
+    # debug text
+    debug_text = str(editor.mode)
+    if editor.debug_text is not None:
+        debug_text += "\n" + str(editor.debug_text)
+    mode_text = a.DEBUG_FONT.render(debug_text, False, c.WHITE, c.BLACK)
+    surface.blit(mode_text, (surface.get_width() - mode_text.get_width(), 0))

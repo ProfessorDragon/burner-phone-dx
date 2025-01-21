@@ -10,7 +10,7 @@ from components.dialogue import (
     dialogue_update,
 )
 from components.editor import Editor, editor_render, editor_update
-from components.enemy import PatrolEnemy, SpikeTrapEnemy, SpotlightEnemy, enemy_render, enemy_update
+from components.enemy import Enemy, enemy_render, enemy_reset, enemy_update
 import core.input as t
 import core.constants as c
 import core.assets as a
@@ -98,30 +98,14 @@ class Game(Scene):
             )
 
         self.walls: list[pygame.Rect] = []
+        self.enemies: list[Enemy] = []
 
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
+        for enemy in self.enemies:
+            enemy_reset(enemy)
         # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
-
-        patrol = PatrolEnemy(
-            [
-                tile_size_vec(6, 5),
-                tile_size_vec(6, 7),
-                tile_size_vec(2, 6),
-            ]
-        )
-        spotlight = SpotlightEnemy(
-            [
-                tile_size_vec(12, 0),
-                tile_size_vec(18, 0),
-                tile_size_vec(18, 3),
-                tile_size_vec(12, 3),
-            ]
-        )
-        spike = SpikeTrapEnemy()
-        spike.motion.position = tile_size_vec(0, 12)
-        self.enemies: list[PatrolEnemy] = [patrol, spotlight, spike]
 
     def execute(
         self,

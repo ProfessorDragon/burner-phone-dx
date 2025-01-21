@@ -85,7 +85,7 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
             if scene_name is not None:
                 dialogue.script_scenes[scene_name] = scene_content
             scene_name = ln[1:-1]
-            scene_content = []
+            scene_content.clear()
         elif ln.strip():
             scene_content.append(ln)
     if scene_name is not None:

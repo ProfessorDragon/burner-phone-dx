@@ -1,1 +1,1 @@
-{"walls":[],"enemies":[{"class":"PatrolEnemy","path":[[96,80],[96,112],[32,96]]},{"class":"SpotlightEnemy","path":[[192,0],[288,0],[288,48],[192,48]]},{"class":"SpikeTrapEnemy","pos":[0.0,192.0]}]}
+{"walls":[],"enemies":[{"class":"PatrolEnemy","path":[[64,32],[192,32],[64,112],[192,112]]},{"class":"SpotlightEnemy","path":[[320,32],[320,48],[336,48],[336,32]]},{"class":"SpikeTrapEnemy","pos":[416.0,16.0]},{"class":"SecurityCameraEnemy","pos":[416.0,112.0],"facing":180}]}
