@@ -16,6 +16,10 @@ class Camera:
     trauma: float = 0.0
     max_shake_duration: float = 2.0
 
+    @staticmethod
+    def empty():
+        return Camera(Motion.empty(), pygame.Vector2(), pygame.Vector2(), pygame.Vector2(30, 30))
+
 
 def camera_follow(camera: Camera, x: float, y: float, speed: float = 8) -> None:
     dist = pygame.Vector2(x - camera.motion.position.x, y - camera.motion.position.y)

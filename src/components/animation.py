@@ -9,7 +9,8 @@ from components.motion import Direction
 @dataclass(slots=True)
 class Animation:
     frames: list[pygame.Surface]
-    frame_duration: float
+    frame_duration: float = 1.0
+    loops: bool = True
 
 
 @dataclass(slots=True)
@@ -92,5 +93,9 @@ def animator_update(animator: Animator, dt: float) -> None:
 
     if animator.elapsed_time > current_animation.frame_duration:
         animator.frame_index += 1
-        animator.frame_index %= len(current_animation.frames)
+        if animator.frame_index >= len(current_animation.frames):
+            if current_animation.loops:
+                animator.frame_index %= len(current_animation.frames)
+            else:
+                animator.frame_index = len(current_animation.frames) - 1
         animator.elapsed_time = 0.0

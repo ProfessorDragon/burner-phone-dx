@@ -85,7 +85,7 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
             if scene_name is not None:
                 dialogue.script_scenes[scene_name] = scene_content
             scene_name = ln[1:-1]
-            scene_content.clear()
+            scene_content = []
         elif ln.strip():
             scene_content.append(ln)
     if scene_name is not None:
@@ -168,7 +168,7 @@ def dialogue_update(
     has_buttons = active_packet.buttons is not None
 
     if action_buffer:
-        if t.is_pressed(action_buffer, t.Action.SELECT):
+        if t.is_pressed(action_buffer, t.Action.SELECT) or t.is_pressed(action_buffer, t.Action.A):
             if not is_complete:
                 # Skip writing
                 dialogue.char_index = len(active_packet.message)
@@ -244,21 +244,30 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
 
     active_packet = dialogue.queue[0]
 
+    # background
+    inner_rect = dialogue.rect.copy()
+    inner_rect.x += 1
+    inner_rect.w -= 2
+    inner_rect.y += 1
+    inner_rect.h -= 2
     match active_packet.style:
         case DialogueStyle.DEFAULT:
             pygame.draw.rect(surface, c.BLACK, dialogue.rect)
+            pygame.draw.rect(surface, c.GRAY, inner_rect, 1)
         case DialogueStyle.PHONE:
-            pygame.draw.rect(surface, c.GRAY, dialogue.rect)
+            pygame.draw.rect(surface, c.GRAY, dialogue.rect, 0, 8)
+            pygame.draw.rect(surface, c.BLACK, dialogue.rect, 1, 8)
         case DialogueStyle.COMMS:
             pygame.draw.rect(surface, (0, 128, 0), dialogue.rect)
+            pygame.draw.rect(surface, (0, 255, 0), inner_rect, 1)
 
     graphic = active_packet.graphic
-    surface.blit(graphic, (dialogue.rect.x, dialogue.rect.y + 2), (0, 0, 64, 64))
+    surface.blit(graphic, (dialogue.rect.x + 3, dialogue.rect.y + 3), (0, 0, 64, 64))
     name = a.DEBUG_FONT.render(active_packet.name, False, c.WHITE)
     surface.blit(
         name,
         (
-            dialogue.rect.left + 32 - name.get_width() / 2,
+            dialogue.rect.left + 3 + 32 - name.get_width() / 2,
             dialogue.rect.bottom - name.get_height() - 2,
         ),
     )

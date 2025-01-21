@@ -36,9 +36,7 @@ class Menu(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
 
-        self.camera = Camera(
-            Motion.empty(), pygame.Vector2(), pygame.Vector2(), pygame.Vector2(30, 30)
-        )
+        self.camera = Camera.empty()
 
         self.debug = Animator()
         debug_animation_mapping = {0: Animation(a.DEBUG_FRAMES, 0.1)}

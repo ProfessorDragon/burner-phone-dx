@@ -1,49 +1,26 @@
-from dataclasses import dataclass
 from enum import Enum
 import json
 from math import ceil, floor
 import pygame
 
 from components.enemy import ENEMY_CLASSES, enemy_from_json, render_path
+from components.tiles import TileData, render_tile, render_tile_hitbox
 import core.input as t
 import core.constants as c
 import core.assets as a
-from components.camera import Camera, camera_from_screen
+from components.camera import (
+    Camera,
+    camera_from_screen,
+    camera_to_screen_shake_rect,
+)
 from scenes.scene import Scene
 
-# terrain pasting
-# if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
-#     x, y = camera_from_screen(scene.camera, *pygame.mouse.get_pos())
-#     x = x // c.HALF_TILE_SIZE * c.HALF_TILE_SIZE
-#     y = y // c.HALF_TILE_SIZE * c.HALF_TILE_SIZE
-#     (
-#         scene.background if scene.terrain_paste_layer == 0 else scene.player_layer
-#     ).blit(
-#         a.TERRAIN_SHEET,
-#         (
-#             x,
-#             y,
-#         ),
-#         (
-#             scene.terrain_paste_tile[0] * c.TILE_SIZE,
-#             scene.terrain_paste_tile[1] * c.HALF_TILE_SIZE,
-#             16,
-#             16,
-#         ),
-#     )
-# if _key_pressed(pygame.K_1):
-#     scene.terrain_paste_tile = (0, 0)
-#     scene.terrain_paste_layer = 1
-# if _key_pressed(pygame.K_2):
-#     scene.terrain_paste_tile = (0, 1)
-#     scene.terrain_paste_layer = 0
-# if _key_pressed(pygame.K_3):
-#     scene.terrain_paste_tile = (0, 2)
-#     scene.terrain_paste_layer = 0
+TILE_SHORTCUTS = [0, 9, 19, 27, 45]
 
 
 class EditorMode(Enum):
     VIEW = "view"
+    TILES = "tiles"
     WALLS = "walls"
     ENEMIES = "enemies"
 
@@ -52,18 +29,18 @@ def _camera_from_mouse(camera: Camera) -> pygame.Vector2:
     return pygame.Vector2(camera_from_screen(camera, *pygame.mouse.get_pos()))
 
 
-def _floor_point(vec: pygame.Vector2) -> pygame.Vector2:
-    return pygame.Vector2(
-        floor(vec.x / c.TILE_SIZE) * c.TILE_SIZE,
-        floor(vec.y / c.TILE_SIZE) * c.TILE_SIZE,
-    )
+def _floor_point(vec: pygame.Vector2, upscale=True) -> pygame.Vector2:
+    vec = pygame.Vector2(vec.x // c.TILE_SIZE, vec.y // c.TILE_SIZE)
+    if upscale:
+        return vec * c.TILE_SIZE
+    return vec
 
 
-def _ceil_point(vec: pygame.Vector2) -> pygame.Vector2:
-    return pygame.Vector2(
-        ceil(vec.x / c.TILE_SIZE) * c.TILE_SIZE,
-        ceil(vec.y / c.TILE_SIZE) * c.TILE_SIZE,
-    )
+def _ceil_point(vec: pygame.Vector2, upscale=True) -> pygame.Vector2:
+    vec = pygame.Vector2(ceil(vec.x / c.TILE_SIZE), ceil(vec.y / c.TILE_SIZE))
+    if upscale:
+        return vec * c.TILE_SIZE
+    return vec
 
 
 class Editor:
@@ -76,10 +53,10 @@ class Editor:
         self.mouse_buffer: t.InputBuffer = None
         self.debug_text: str = None
         self.drag_start: pygame.Vector2 = None
+        self.drag_tile: tuple[int, int] = None
+        self.tile_data = TileData()
         self.enemy_index = 0
         self.enemy_path: list[pygame.Vector2] = []
-        # self.terrain_paste_tile = (0, 2)
-        # self.terrain_paste_layer = 0
 
     def set_mode(self, mode: EditorMode) -> None:
         self.mode = mode
@@ -87,6 +64,11 @@ class Editor:
 
     def save(self) -> None:
         data = {
+            "grid_collision": list(self.scene.grid_collision),
+            "grid_tiles": {
+                f"{k[0]},{k[1]}": [(*tile,) for tile in tiles]
+                for k, tiles in self.scene.grid_tiles.items()
+            },
             "walls": [(*wall,) for wall in self.scene.walls],
             "enemies": [
                 {"class": enemy.__class__.__name__, **enemy.to_json()}
@@ -99,6 +81,11 @@ class Editor:
     def load(self) -> None:
         with open("assets/default_level.json") as f:
             data = json.load(f)
+        self.scene.grid_collision = set([tuple(pos) for pos in data["grid_collision"]])
+        self.scene.grid_tiles = {
+            (*map(int, k.split(",")),): [TileData(*tile) for tile in tiles]
+            for k, tiles in data["grid_tiles"].items()
+        }
         self.scene.walls = [pygame.Rect(wall) for wall in data["walls"]]
         self.scene.enemies = [enemy_from_json(enemy) for enemy in data["enemies"]]
 
@@ -121,18 +108,24 @@ class Editor:
 
     def wall_mode(self) -> None:
         a_held = t.is_held(self.action_buffer, t.Action.A)
-        b_held = t.is_held(self.action_buffer, t.Action.B)
         if a_held:
-            if self.drag_start:
-                self.debug_text = "snap"
-            else:
-                self.debug_text = "expand"
-        elif b_held:
-            self.debug_text = "contract"
+            self.debug_text = "free"
         else:
-            self.debug_text = "place/move"
+            self.debug_text = "grid"
 
-        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
+        if t.is_held(self.mouse_buffer, t.MouseButton.LEFT) and not a_held:
+            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+            id = (int(x), int(y))
+            if self.drag_tile != id:
+                if id in self.scene.grid_collision:
+                    self.scene.grid_collision.remove(id)
+                else:
+                    self.scene.grid_collision.add(id)
+            self.drag_tile = id
+        else:
+            self.drag_tile = None
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT) and a_held:
             self.drag_start = _camera_from_mouse(self.scene.camera)
             self.scene.walls.append(pygame.Rect(*self.drag_start, 1, 1))
 
@@ -154,44 +147,79 @@ class Editor:
                     self.scene.walls.pop()
                 self.drag_start = None
 
-        if len(self.scene.walls) == 0:
-            return
-
-        wall = self.scene.walls[-1]
-        # expand
+    def tile_mode(self) -> None:
+        a_held = t.is_held(self.action_buffer, t.Action.A)
+        self.debug_text = f"{self.tile_data.x}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
         if a_held:
-            if t.is_pressed(self.action_buffer, t.Action.LEFT):
-                wall.x -= 1
-                wall.width += 1
-            if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-                wall.width += 1
-            if t.is_pressed(self.action_buffer, t.Action.UP):
-                wall.y -= 1
-                wall.height += 1
-            if t.is_pressed(self.action_buffer, t.Action.DOWN):
-                wall.height += 1
-        # contract
-        elif b_held:
-            if t.is_pressed(self.action_buffer, t.Action.LEFT):
-                wall.width -= 1
-            if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-                wall.x += 1
-                wall.width -= 1
-            if t.is_pressed(self.action_buffer, t.Action.UP):
-                wall.height -= 1
-            if t.is_pressed(self.action_buffer, t.Action.DOWN):
-                wall.y += 1
-                wall.height -= 1
-        # move
+            self.debug_text += " z+"
+
+        if t.is_held(self.mouse_buffer, t.MouseButton.LEFT):
+            new_tile_data = self.tile_data.copy()
+            if a_held:
+                new_tile_data.render_z += 1
+            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+            id = (int(x), int(y))
+            cur = self.scene.grid_tiles.get(id, [])
+            if new_tile_data not in cur:
+                self.scene.grid_tiles.setdefault(id, [])
+                # replace bg tiles
+                if new_tile_data.render_z < 0 and len(cur) > 0 and cur[0].render_z < 0:
+                    self.scene.grid_tiles[id][0] = new_tile_data
+                # append to mg tiles
+                else:
+                    self.scene.grid_tiles[id].append(new_tile_data)
+
+        if t.is_held(self.mouse_buffer, t.MouseButton.RIGHT):
+            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+            id = (int(x), int(y))
+            if self.drag_tile != id and len(self.scene.grid_tiles.get(id, [])) > 0:
+                self.scene.grid_tiles[id].pop()
+                if len(self.scene.grid_tiles[id]) == 0:
+                    self.scene.grid_tiles.pop(id)
+            self.drag_tile = id
         else:
-            if t.is_pressed(self.action_buffer, t.Action.LEFT):
-                wall.move_ip(-1, 0)
-            if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-                wall.move_ip(1, 0)
-            if t.is_pressed(self.action_buffer, t.Action.UP):
-                wall.move_ip(0, -1)
-            if t.is_pressed(self.action_buffer, t.Action.DOWN):
-                wall.move_ip(0, 1)
+            self.drag_tile = None
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.MIDDLE):
+            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+            id = (int(x), int(y))
+            if len(self.scene.grid_tiles.get(id, [])) > 0:
+                print(self.scene.grid_tiles[id])
+                self.tile_data = self.scene.grid_tiles[id][-1].copy()
+
+        shortcuts = TILE_SHORTCUTS
+        if t.is_pressed(self.action_buffer, t.Action.LEFT):
+            if a_held:
+                for pos in shortcuts[::-1]:
+                    if pos < self.tile_data.x:
+                        self.tile_data.x = pos
+                        break
+                else:  # fancy :-)
+                    self.tile_data.x = shortcuts[-1]
+                self.tile_data.y = 0
+            else:
+                self.tile_data.x = (self.tile_data.x - 1) % 64
+        if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+            if a_held:
+                for pos in shortcuts:
+                    if pos > self.tile_data.x:
+                        self.tile_data.x = pos
+                        break
+                else:
+                    self.tile_data.x = shortcuts[0]
+                self.tile_data.y = 0
+            else:
+                self.tile_data.x = (self.tile_data.x + 1) % 64
+        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+            if a_held:
+                self.tile_data.render_z = max(self.tile_data.render_z - 1, -1)
+            else:
+                self.tile_data.y = (self.tile_data.y - 1) % 3
+        if t.is_pressed(self.action_buffer, t.Action.UP):
+            if a_held:
+                self.tile_data.render_z += 1
+            else:
+                self.tile_data.y = (self.tile_data.y + 1) % 3
 
     def enemy_mode(self) -> None:
         a_held = t.is_held(self.action_buffer, t.Action.A)
@@ -266,6 +294,12 @@ def editor_update(
     if just_pressed[pygame.K_e]:
         editor.enabled = not editor.enabled
 
+    # debug shortcuts
+    if just_pressed[pygame.K_r]:
+        editor.scene.player.caught_timer = 0.01
+    if just_pressed[pygame.K_f]:
+        c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
+
     if not editor.enabled:
         return
 
@@ -287,6 +321,8 @@ def editor_update(
     elif just_pressed[pygame.K_2]:
         editor.set_mode(EditorMode.WALLS)
     elif just_pressed[pygame.K_3]:
+        editor.set_mode(EditorMode.TILES)
+    elif just_pressed[pygame.K_4]:
         editor.set_mode(EditorMode.ENEMIES)
 
     match editor.mode:
@@ -297,6 +333,9 @@ def editor_update(
         case EditorMode.WALLS:
             editor.wall_mode()
 
+        case EditorMode.TILES:
+            editor.tile_mode()
+
         case EditorMode.ENEMIES:
             editor.enemy_mode()
 
@@ -304,9 +343,52 @@ def editor_update(
 def editor_render(editor: Editor, surface: pygame.Surface):
     if not editor.enabled:
         return
-    # enemy path
-    if editor.mode == EditorMode.ENEMIES:
-        render_path(surface, editor.scene.camera, editor.enemy_path)
+
+    match editor.mode:
+        case EditorMode.TILES:
+            x, y = _floor_point(_camera_from_mouse(editor.scene.camera), False)
+            if editor.tile_data in editor.scene.grid_tiles.get((x, y), []):
+                pygame.draw.rect(
+                    surface,
+                    c.WHITE,
+                    camera_to_screen_shake_rect(
+                        editor.scene.camera,
+                        x * c.TILE_SIZE,
+                        y * c.TILE_SIZE,
+                        c.TILE_SIZE,
+                        c.TILE_SIZE,
+                    ),
+                    1,
+                )
+            else:
+                new_tile_data = editor.tile_data.copy()
+                if t.is_held(editor.action_buffer, t.Action.A):
+                    new_tile_data.render_z += 1
+                render_tile(surface, editor.scene.camera, x, y, new_tile_data)
+                render_tile_hitbox(surface, editor.scene.camera, x, y, new_tile_data)
+            surface.blit(
+                a.TERRAIN,
+                (
+                    surface.get_width() // 2 - c.HALF_TILE_SIZE - editor.tile_data.x * c.TILE_SIZE,
+                    surface.get_height() - c.TILE_SIZE,
+                ),
+                (0, editor.tile_data.y * c.TILE_SIZE, a.TERRAIN.get_width(), c.TILE_SIZE),
+            )
+            pygame.draw.rect(
+                surface,
+                c.WHITE,
+                pygame.Rect(
+                    surface.get_width() // 2 - c.HALF_TILE_SIZE,
+                    surface.get_height() - c.TILE_SIZE,
+                    c.TILE_SIZE,
+                    c.TILE_SIZE,
+                ),
+                1,
+            )
+
+        case EditorMode.ENEMIES:
+            render_path(surface, editor.scene.camera, editor.enemy_path)
+
     # debug text
     debug_text = str(editor.mode)
     if editor.debug_text is not None:

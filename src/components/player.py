@@ -1,6 +1,7 @@
 from math import atan2, degrees
 import pygame
 
+from components.tiles import grid_collision_rect
 import core.input as t
 import core.assets as a
 import core.constants as c
@@ -86,18 +87,28 @@ def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
         pass  # maybe reduce air control if jumping?
 
 
-def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
+def _player_collision(
+    player: Player, dt: float, grid_collision: set[tuple[int, int]], walls: list[pygame.Rect]
+):
     # I'VE PLAYED THESE GAMES BEFOREEEE
     # horizontal collision
     if player.motion.velocity.x != 0:
         m = player.motion.copy()
         m.velocity.y = 0
         motion_update(m, dt)
-        rect = player_rect(m)
-        for wall in walls:
-            if rect.colliderect(wall):
+        prect = player_rect(m)
+        top, bottom = prect.top // c.TILE_SIZE, prect.bottom // c.TILE_SIZE
+        left, right = prect.left // c.TILE_SIZE, prect.right // c.TILE_SIZE
+        walls_with_grid = walls + [
+            grid_collision_rect(grid_collision, right, top),
+            grid_collision_rect(grid_collision, right, bottom),
+            grid_collision_rect(grid_collision, left, top),
+            grid_collision_rect(grid_collision, left, bottom),
+        ]
+        for wall in walls_with_grid:
+            if wall is not None and prect.colliderect(wall):
                 if m.velocity.x > 0:
-                    player.motion.position.x = wall.left - rect.w - 11
+                    player.motion.position.x = wall.left - prect.w - 11
                 else:
                     player.motion.position.x = wall.right - 11
                 player.motion.velocity.x = 0
@@ -107,13 +118,21 @@ def _player_collision(player: Player, dt: float, walls: list[pygame.Rect]):
         m = player.motion.copy()
         m.velocity.x = 0
         motion_update(m, dt)
-        rect = player_rect(m)
-        for wall in walls:
-            if rect.colliderect(wall):
+        prect = player_rect(m)
+        top, bottom = prect.top // c.TILE_SIZE, prect.bottom // c.TILE_SIZE
+        left, right = prect.left // c.TILE_SIZE, prect.right // c.TILE_SIZE
+        walls_with_grid = walls + [
+            grid_collision_rect(grid_collision, right, top),
+            grid_collision_rect(grid_collision, left, top),
+            grid_collision_rect(grid_collision, right, bottom),
+            grid_collision_rect(grid_collision, left, bottom),
+        ]
+        for wall in walls_with_grid:
+            if wall is not None and prect.colliderect(wall):
                 if m.velocity.y > 0:
                     player.motion.position.y = wall.top - 32
                 else:
-                    player.motion.position.y = wall.bottom - 32 + rect.h
+                    player.motion.position.y = wall.bottom - 32 + prect.h
                 player.motion.velocity.y = 0
 
 
@@ -121,6 +140,7 @@ def player_update(
     player: Player,
     dt: float,
     action_buffer: t.InputBuffer,
+    grid_collision: set[tuple[int, int]],
     walls: list[pygame.Rect],
 ) -> None:
 
@@ -133,7 +153,7 @@ def player_update(
 
     # collision
     dx, dy = player.motion.velocity
-    _player_collision(player, dt, walls)
+    _player_collision(player, dt, grid_collision, walls)
 
     motion_update(player.motion, dt)
     player.z_velocity += 600 * dt
@@ -167,13 +187,6 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
     frame = animator_get_frame(player.animator)
     render_position = player.motion.position
     jump_position = player.motion.position + pygame.Vector2(0, player.z_position)
-
-    # if we want a 'real' shadow:
-    # shadow = pygame.transform.flip(pygame.transform.scale_by(frame, (1, 0.5)), False, True)
-    # surface.blit(
-    #     shadow,
-    #     camera_to_screen_shake(camera, render_position[0], render_position[1] + frame.get_height()),
-    # )
 
     shadow_rect = pygame.Rect(
         render_position[0] + 10, render_position[1] + frame.get_height() - 3, 12, 6

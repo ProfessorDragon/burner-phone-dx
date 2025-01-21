@@ -16,13 +16,15 @@ DEBUG_SPRITE_SMALL = pygame.image.load("assets/img/icon_pirate_small.png")
 DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
 
 # player
-PLAYER_FRAMES = slice_sheet("assets/img/player_sheet.png", 32, 32)
+PLAYER_FRAMES = slice_sheet("assets/img/player.png", 32, 32)
 
 # terrain
-TERRAIN_SHEET = pygame.image.load("assets/img/terrain_sheet.png")
+TERRAIN = pygame.image.load("assets/img/terrain.png")
 
-# enemies
-PATROL_FRAMES = slice_sheet("assets/img/patrol_sheet.png", 32, 32)
+# entities
+PATROL_FRAMES = slice_sheet("assets/img/entities/patrol.png", 32, 32)
+SPIKE_TRAP_FRAMES = slice_sheet("assets/img/entities/spike_trap.png", 16, 16)
+BUTTON_FRAMES = slice_sheet("assets/img/entities/button.png", 16, 16)
 
 
 ## AUDIO (ogg for web compatibility)
@@ -52,10 +54,11 @@ class DialogueCharacter:
     sprites: list[pygame.Surface]
 
 
+DIALOGUE_PLACEHOLDER_AVATARS = slice_sheet("assets/img/dialogue_placeholder_avatars.png", 64, 64)
 DIALOGUE_CHARACTERS = {
     "phone": DialogueCharacter("Phone", [DEBUG_IMAGE]),
-    "luke": DialogueCharacter("Luke", [DEBUG_SPRITE, DEBUG_SPRITE_SMALL]),
-    "rogan": DialogueCharacter("Rogan", [DEBUG_SPRITE]),
+    "luke": DialogueCharacter("Luke", DIALOGUE_PLACEHOLDER_AVATARS),
+    "rogan": DialogueCharacter("Rogan", DIALOGUE_PLACEHOLDER_AVATARS),
 }
 
 print("Loaded assets")

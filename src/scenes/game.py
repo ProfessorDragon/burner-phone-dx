@@ -1,5 +1,9 @@
 import pygame
 
+import core.assets as a
+import core.constants as c
+import core.input as t
+
 from components.dialogue import (
     DialogueSystem,
     dialogue_execute_script_scene,
@@ -11,9 +15,6 @@ from components.dialogue import (
 )
 from components.editor import Editor, editor_render, editor_update
 from components.enemy import Enemy, enemy_render, enemy_reset, enemy_update
-import core.input as t
-import core.constants as c
-import core.assets as a
 from components.player import (
     player_kill,
     player_rect,
@@ -21,7 +22,13 @@ from components.player import (
     player_render,
     player_initialise,
 )
-from components.walls import draw_wall
+from components.tiles import (
+    TileData,
+    grid_collision_rect,
+    render_tile,
+    render_tile_hitbox,
+    render_wall,
+)
 from components.motion import Motion
 from components.camera import (
     Camera,
@@ -31,22 +38,17 @@ from components.camera import (
     camera_reset,
 )
 
-from scenes.scene import RenderLayer, Scene
+from scenes.scene import RenderLayer, Scene, scene_reset
 import scenes.scenemapping as scene
 from components.statemachine import StateMachine, statemachine_change_state
 
 
-def tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
+def _tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
     return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, w * c.TILE_SIZE, h * c.TILE_SIZE)
 
 
-def tile_size_vec(x: float, y: float) -> pygame.Vector2:
+def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
-
-
-# for clarity
-def scene_reset(scene: Scene):
-    scene.enter()
 
 
 class Game(Scene):
@@ -62,41 +64,16 @@ class Game(Scene):
 
         self.player = player_initialise()
 
-        self.camera = Camera(
-            Motion(
-                pygame.Vector2(*player_rect(self.player.motion).center),
-                pygame.Vector2(),
-                pygame.Vector2(),
-            ),
-            pygame.Vector2(),
-            pygame.Vector2(),
-            pygame.Vector2(30, 30),
-        )
+        self.camera = Camera.empty()
+        self.camera.motion.position = pygame.Vector2(player_rect(self.player.motion).center)
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
 
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
-        self.background = pygame.Surface((500, 300), pygame.SRCALPHA)
-        self.player_layer = pygame.Surface((500, 300), pygame.SRCALPHA)
-
-        # bg grid
-        for y in range(1, int(self.background.get_height() / c.TILE_SIZE / c.PERSPECTIVE)):
-            pygame.draw.line(
-                self.background,
-                c.BLACK if y % 2 == 0 else c.GRAY,
-                (0, y * c.TILE_SIZE * c.PERSPECTIVE),
-                (self.background.get_width(), y * c.TILE_SIZE * c.PERSPECTIVE),
-            )
-        for x in range(1, int(self.background.get_width() / c.TILE_SIZE)):
-            pygame.draw.line(
-                self.background,
-                c.BLACK if x % 2 == 0 else c.GRAY,
-                (x * c.TILE_SIZE, 0),
-                (x * c.TILE_SIZE, self.background.get_height()),
-            )
-
+        self.grid_collision: set[tuple[int, int]] = set()
+        self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
         self.walls: list[pygame.Rect] = []
         self.enemies: list[Enemy] = []
 
@@ -134,14 +111,14 @@ class Game(Scene):
                     if self.player.caught_timer <= 0:
                         scene_reset(self)
                         player_kill(self.player)
-                player_update(self.player, dt, action_buffer, self.walls)
+                player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
                 for enemy in self.enemies:
                     enemy_update(enemy, dt, self.player, self.camera)
 
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     # self.paused = True
-                    dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
+                    dialogue_execute_script_scene(self.dialogue, "SHADOWLESS TREE")
                     dialogue_update(self.dialogue, dt)
 
             # general
@@ -156,18 +133,26 @@ class Game(Scene):
         # RENDER
 
         # background
-        surface.fill(c.WHITE)
-        surface.blit(self.background, camera_to_screen_shake(self.camera, 0, 0))
+        surface.fill(c.BLACK)  # can remove once map is made
 
-        # player feet
         terrain_cutoff = round(self.player.motion.position.y)
+        tile_bounds = pygame.Rect(
+            (self.camera.motion.position.x - self.camera.offset.x) // c.TILE_SIZE,
+            (self.camera.motion.position.y - self.camera.offset.y) // c.TILE_SIZE,
+            surface.get_width() // c.TILE_SIZE,
+            surface.get_height() // c.TILE_SIZE,
+        )
 
         # behind player
-        surface.blit(
-            self.player_layer,
-            camera_to_screen_shake(self.camera, 0, -c.HALF_TILE_SIZE),
-            (0, 0, self.player_layer.get_width(), terrain_cutoff),
-        )
+        for y in range(tile_bounds.top, tile_bounds.bottom + 1):
+            for x in range(tile_bounds.left, tile_bounds.right + 1):
+                for tile in self.grid_tiles.get((x, y), []):
+                    if (
+                        tile.render_z < 0
+                        or self.player.motion.position.y + 16 > (y + tile.render_z) * c.TILE_SIZE
+                    ):
+                        render_tile(surface, self.camera, x, y, tile)
+
         for enemy in self.enemies:
             enemy_render(
                 enemy,
@@ -183,21 +168,7 @@ class Game(Scene):
         # player
         player_render(self.player, surface, self.camera)
 
-        # in front
-        surface.blit(
-            self.player_layer,
-            camera_to_screen_shake(
-                self.camera,
-                0,
-                -c.HALF_TILE_SIZE + terrain_cutoff,
-            ),
-            (
-                0,
-                terrain_cutoff,
-                self.player_layer.get_width(),
-                self.player_layer.get_height() - terrain_cutoff,
-            ),
-        )
+        # in front of player
         for enemy in self.enemies:
             enemy_render(
                 enemy,
@@ -210,9 +181,26 @@ class Game(Scene):
                 ),
             )
 
+        for y in range(tile_bounds.top, tile_bounds.bottom + 1):
+            for x in range(tile_bounds.left, tile_bounds.right + 1):
+                for tile in self.grid_tiles.get((x, y), []):
+                    if (
+                        tile.render_z >= 0
+                        and self.player.motion.position.y + 16 <= (y + tile.render_z) * c.TILE_SIZE
+                    ):
+                        render_tile(surface, self.camera, x, y, tile)
+
         # hitboxes
-        for i, wall in enumerate(self.walls):
-            draw_wall(surface, self.camera, i, wall)
+        if c.DEBUG_HITBOXES:
+            for i, wall in enumerate(self.walls):
+                render_wall(surface, self.camera, i, wall)
+            for y in range(tile_bounds.top, tile_bounds.bottom + 1):
+                for x in range(tile_bounds.left, tile_bounds.right + 1):
+                    crect = grid_collision_rect(self.grid_collision, x, y)
+                    if crect is not None:
+                        render_wall(surface, self.camera, None, crect)
+                    for tile in self.grid_tiles.get((x, y), []):
+                        render_tile_hitbox(surface, self.camera, x, y, tile)
 
         # ui
         dialogue_render(self.dialogue, surface)
