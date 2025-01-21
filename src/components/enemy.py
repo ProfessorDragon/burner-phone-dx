@@ -72,6 +72,7 @@ def render_sight(
     facing: float,
     radius: float,
     angle: float,
+    z_offset: float = 0,
 ) -> None:
     sight_left = pygame.Vector2(radius, 0).rotate(facing - angle // 2)
     sight_right = pygame.Vector2(radius, 0).rotate(facing + angle // 2)
@@ -80,7 +81,10 @@ def render_sight(
         sight,
         (162, 48, 0, 96),
         [
-            (sight.get_width() // 2, sight.get_height() // 2),
+            (
+                sight.get_width() // 2,
+                sight.get_height() // 2 + z_offset,
+            ),
             (
                 sight.get_width() // 2 + sight_left.x,
                 sight.get_height() // 2 - sight_left.y * c.PERSPECTIVE,
@@ -206,7 +210,7 @@ class PatrolEnemy(Enemy):
         if "path" in js:
             return PatrolEnemy(_path_from_json(js["path"]))
         enemy = PatrolEnemy([pygame.Vector2(js["pos"])])
-        enemy.facing = js["facing"]
+        enemy.facing = js.get("facing", 0)
         return enemy
 
     def reset(self) -> None:
@@ -400,6 +404,7 @@ class SpikeTrapEnemy(Enemy):
 class SecurityCameraEnemy(Enemy):
     def __init__(self):
         super().__init__()
+        self.z = 0
         self.facing = 0
         self.target_facing = None
         self.sight_radius = 96
@@ -412,13 +417,18 @@ class SecurityCameraEnemy(Enemy):
         return pygame.Rect(*self.motion.position, 16, 16)
 
     def to_json(self):
-        return {"pos": (*self.motion.position,), "facing": self.facing}
+        return {
+            "pos": (*self.motion.position,),
+            "z": self.z,
+            "facing": self.facing,
+        }
 
     @staticmethod
     def from_json(js):
         enemy = SecurityCameraEnemy()
         enemy.motion.position = pygame.Vector2(js["pos"])
-        enemy.facing = js["facing"]
+        enemy.z = js.get("z", 0)
+        enemy.facing = js.get("facing", 0)
         return enemy
 
     def reset(self) -> None:
@@ -464,11 +474,14 @@ class SecurityCameraEnemy(Enemy):
                 facing=self.facing,
                 radius=self.sight_radius,
                 angle=self.sight_angle,
+                z_offset=self.z,
             )
         if abs(layer) <= RenderLayer.PLAYER_FG:
             surface.blit(
                 a.DEBUG_IMAGE,
-                camera_to_screen_shake(camera, *self.motion.position),
+                camera_to_screen_shake(
+                    camera, self.motion.position.x, self.motion.position.y + self.z
+                ),
                 (0, 0, 16, 16),
             )
 

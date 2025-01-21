@@ -1,6 +1,8 @@
 from enum import Enum
 import json
-from math import ceil, floor
+from math import ceil
+import os
+import subprocess
 import pygame
 
 from components.enemy import ENEMY_CLASSES, enemy_from_json, render_path
@@ -15,6 +17,7 @@ from components.camera import (
 )
 from scenes.scene import Scene
 
+EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_SHORTCUTS = [0, 9, 19, 27, 45]
 
 
@@ -62,7 +65,7 @@ class Editor:
         self.mode = mode
         self.debug_text = None
 
-    def save(self) -> None:
+    def save(self, *, pretty=False) -> None:
         data = {
             "grid_collision": list(self.scene.grid_collision),
             "grid_tiles": {
@@ -75,12 +78,19 @@ class Editor:
                 for enemy in self.scene.enemies
             ],
         }
-        with open("assets/default_level.json", "w") as f:
-            json.dump(data, f, separators=(",", ":"))
+        with open(EDITOR_DEFAULT_LEVEL, "w") as f:
+            if pretty:
+                json.dump(data, f)
+            else:
+                json.dump(data, f, separators=(",", ":"))
 
     def load(self) -> None:
-        with open("assets/default_level.json") as f:
-            data = json.load(f)
+        with open(EDITOR_DEFAULT_LEVEL) as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                print("ERROR: Failed to parse level data")
+                return
         self.scene.grid_collision = set([tuple(pos) for pos in data["grid_collision"]])
         self.scene.grid_tiles = {
             (*map(int, k.split(",")),): [TileData(*tile) for tile in tiles]
@@ -226,8 +236,8 @@ class Editor:
         if a_held:
             self.debug_text = "path paint"
         else:
-            if self.drag_start:
-                self.debug_text = "set facing"
+            if self.drag_start and len(self.scene.enemies) > 0:
+                self.debug_text = f"facing {self.scene.enemies[-1].facing}"
             else:
                 self.debug_text = "place enemy"
 
@@ -289,10 +299,23 @@ def editor_update(
     editor: Editor, dt: float, action_buffer: t.InputBuffer, mouse_buffer: t.InputBuffer
 ) -> None:
     just_pressed = pygame.key.get_just_pressed()
+    pressed = pygame.key.get_pressed()
 
-    # editor toggle
-    if just_pressed[pygame.K_e]:
-        editor.enabled = not editor.enabled
+    if editor.enabled and pressed[pygame.K_LCTRL]:
+        # save
+        if just_pressed[pygame.K_s]:
+            editor.save()
+            return
+        # load
+        if just_pressed[pygame.K_o]:
+            editor.load()
+            return
+        # raw edit (for directly modifying json data)
+        if just_pressed[pygame.K_e]:
+            editor.save(pretty=True)
+            subprocess.call(["notepad", os.path.abspath(EDITOR_DEFAULT_LEVEL)])
+            editor.load()
+            return
 
     # debug shortcuts
     if just_pressed[pygame.K_r]:
@@ -300,19 +323,12 @@ def editor_update(
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
 
+    # editor toggle
+    if just_pressed[pygame.K_e]:
+        editor.enabled = not editor.enabled
+
     if not editor.enabled:
         return
-
-    pressed = pygame.key.get_pressed()
-
-    # save/load
-    if pressed[pygame.K_LCTRL]:
-        if just_pressed[pygame.K_s]:
-            editor.save()
-            return
-        if just_pressed[pygame.K_o]:
-            editor.load()
-            return
 
     editor.update_state(dt, action_buffer, mouse_buffer)
 

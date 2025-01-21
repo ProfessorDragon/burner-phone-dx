@@ -133,7 +133,7 @@ class Game(Scene):
         # RENDER
 
         # background
-        surface.fill(c.BLACK)  # can remove once map is made
+        surface.fill(c.GRAY)  # can remove once map is made
 
         terrain_cutoff = round(self.player.motion.position.y)
         tile_bounds = pygame.Rect(
