@@ -10,10 +10,10 @@ from utilities.sprite import slice_sheet
 ICON = pygame.image.load("assets/icon.png")
 
 # debug
-DEBUG_IMAGE = pygame.image.load("assets/img/debug_image.png")
-DEBUG_SPRITE = pygame.image.load("assets/img/icon_pirate.png")
-DEBUG_SPRITE_SMALL = pygame.image.load("assets/img/icon_pirate_small.png")
-DEBUG_FRAMES = slice_sheet("assets/img/impossible_spin.png", 64, 64)
+DEBUG_IMAGE_16 = pygame.image.load("assets/img/debug/image_16.png")
+DEBUG_IMAGE_64 = pygame.image.load("assets/img/debug/image_64.png")
+DEBUG_SPRITE_128 = pygame.image.load("assets/img/debug/pirate_128.png")
+DEBUG_SPRITE_64 = pygame.image.load("assets/img/debug/pirate_64.png")
 
 # player
 PLAYER_FRAMES = slice_sheet("assets/img/player.png", 32, 32)
@@ -56,7 +56,7 @@ class DialogueCharacter:
 
 DIALOGUE_PLACEHOLDER_AVATARS = slice_sheet("assets/img/dialogue_placeholder_avatars.png", 64, 64)
 DIALOGUE_CHARACTERS = {
-    "phone": DialogueCharacter("Phone", [DEBUG_IMAGE]),
+    "phone": DialogueCharacter("Phone", [DEBUG_IMAGE_64]),
     "luke": DialogueCharacter("Luke", DIALOGUE_PLACEHOLDER_AVATARS),
     "rogan": DialogueCharacter("Rogan", DIALOGUE_PLACEHOLDER_AVATARS),
 }

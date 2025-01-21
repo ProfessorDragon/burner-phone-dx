@@ -29,12 +29,10 @@ from components.tiles import (
     render_tile_hitbox,
     render_wall,
 )
-from components.motion import Motion
 from components.camera import (
     Camera,
     camera_follow,
     camera_update,
-    camera_to_screen_shake,
     camera_reset,
 )
 
@@ -118,7 +116,7 @@ class Game(Scene):
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     # self.paused = True
-                    dialogue_execute_script_scene(self.dialogue, "SHADOWLESS TREE")
+                    dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
                     dialogue_update(self.dialogue, dt)
 
             # general

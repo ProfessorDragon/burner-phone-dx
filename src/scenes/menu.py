@@ -38,16 +38,6 @@ class Menu(Scene):
 
         self.camera = Camera.empty()
 
-        self.debug = Animator()
-        debug_animation_mapping = {0: Animation(a.DEBUG_FRAMES, 0.1)}
-        animator_initialise(self.debug, debug_animation_mapping, 0)
-
-        debug_size = animator_get_frame(self.debug).get_size()
-        self.debug_pos = pygame.Vector2(
-            c.WINDOW_CENTRE[0] - debug_size[0] // 2,
-            c.WINDOW_CENTRE[1] - debug_size[1] // 2,
-        )
-
         self.settings = Settings()
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
@@ -55,7 +45,6 @@ class Menu(Scene):
     def enter(self) -> None:
         dialogue_reset_queue(self.dialogue)
         camera_reset(self.camera)
-        animator_switch_animation(self.debug, 0)
         pygame.mixer.Channel(0).play(a.DEBUG_THEME_MENU, -1)
 
     def execute(
@@ -75,7 +64,6 @@ class Menu(Scene):
 
         # UPDATE
         camera_update(self.camera, dt)
-        animator_update(self.debug, dt)
         in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
         if not in_dialogue:
@@ -83,10 +71,6 @@ class Menu(Scene):
 
         # RENDER
         surface.fill(c.WHITE)
-        surface.blit(
-            animator_get_frame(self.debug),
-            camera_to_screen_shake(self.camera, *self.debug_pos),
-        )
         dialogue_render(self.dialogue, surface)
 
         if not in_dialogue:

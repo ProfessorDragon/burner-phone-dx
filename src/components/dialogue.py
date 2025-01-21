@@ -102,7 +102,8 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
     dialogue_reset_queue(dialogue)
 
     dialogue_packet = DialoguePacket()
-    dialogue_packet.graphic = a.DEBUG_SPRITE_SMALL
+    dialogue_packet.graphic = a.DEBUG_SPRITE_64
+    last_character_id = None
 
     for ln in dialogue.script_scenes[scene_name]:
         if not ln.strip():
@@ -130,9 +131,13 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 dialogue_packet.style = DialogueStyle(content)
 
             case "char":
-                sprite_index, char_id = content.split(" ", 1)
-                character = a.DIALOGUE_CHARACTERS[char_id]
-                dialogue_packet.graphic = character.sprites[int(sprite_index)]
+                args = content.split(" ", 1)
+                if len(args) > 1:
+                    character = a.DIALOGUE_CHARACTERS[args[1]]
+                    last_character_id = args[1]
+                else:
+                    character = a.DIALOGUE_CHARACTERS[last_character_id]
+                dialogue_packet.graphic = character.sprites[int(args[0])]
                 dialogue_packet.name = character.name
 
             case "buttons":

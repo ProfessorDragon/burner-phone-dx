@@ -404,6 +404,18 @@ class SpikeTrapEnemy(Enemy):
 class SecurityCameraEnemy(Enemy):
     def __init__(self):
         super().__init__()
+        self.animator = Animator()
+        animation_mapping = directional_animation_mapping(
+            {
+                "swivel": [
+                    Animation([a.DEBUG_IMAGE_16]),
+                    Animation([a.DEBUG_IMAGE_16]),
+                    Animation([a.DEBUG_IMAGE_16]),
+                    Animation([a.DEBUG_IMAGE_16]),
+                ]
+            }
+        )
+        animator_initialise(self.animator, animation_mapping)
         self.z = 0
         self.facing = 0
         self.target_facing = None
@@ -465,6 +477,11 @@ class SecurityCameraEnemy(Enemy):
         ):
             player_caught(player, camera)
 
+        # animation
+        direction = direction_from_angle(self.facing)
+        animator_switch_animation(self.animator, f"swivel_{direction}")
+        animator_update(self.animator, dt)
+
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer < RenderLayer.PLAYER:
             render_sight(
@@ -478,11 +495,10 @@ class SecurityCameraEnemy(Enemy):
             )
         if abs(layer) <= RenderLayer.PLAYER_FG:
             surface.blit(
-                a.DEBUG_IMAGE,
+                animator_get_frame(self.animator),
                 camera_to_screen_shake(
                     camera, self.motion.position.x, self.motion.position.y + self.z
                 ),
-                (0, 0, 16, 16),
             )
 
 

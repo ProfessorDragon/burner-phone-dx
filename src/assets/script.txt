@@ -2,7 +2,7 @@
 # syntax is as follows, where items in <> are parameters (never actually write out the <>)
 # [<SCENE NAME:str>]
 # style <DialogueStyle:Str>
-# char <SpriteIndex:int> <CharacterId:str>
+# char <SpriteIndex:int> <CharacterId:str=LastCharacterId>
 # - <Message:str>
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
 
@@ -29,9 +29,11 @@ char 0 luke
 - ah, mr jones, we've been expecting you. all i'll need is a minute of your time.
 - listen, our monitoring systems detected that you're immune. we also know you can throw a ferocious punch.\nand that makes you extremely valuable.
 - ...
-char 1 luke
+char 1
 - we're giving you an opportunity to save the world right now.\nmaybe i can throw a bit of cash on top to sweeten the pot.
-- if you're in, start heading north. stand under the tree with no shadow, and i'll set you up.\n**sksrkck**
+char 0
+- if you're in, start heading north. stand under the tree with no shadow, and i'll set you up.
+- oh, and maybe keep this on the down low. we don't want any... interference.\n**sksrkck**
 
 
 [SHADOWLESS TREE]
@@ -47,19 +49,19 @@ buttons Accept=SETUP ACCEPT|Decline=
 style phone
 char 2 rogan
 - eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
-char 0 rogan
+char 0
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
 
 # show underground lab
 
 - ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
-char 1 rogan
+char 1
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
 
 # cut back to game environment
 
-char 0 rogan
+char 0
 - alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
 - it's like a phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
 
