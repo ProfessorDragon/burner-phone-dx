@@ -31,11 +31,20 @@ BUTTON_FRAMES = slice_sheet("assets/img/entities/button.png", 16, 16)
 ## AUDIO (ogg for web compatibility)
 
 # music
-DEBUG_THEME_GAME = pygame.mixer.Sound("assets/sfx/theme.ogg")
 DEBUG_THEME_MENU = pygame.mixer.Sound("assets/sfx/menu.ogg")
 
-# sfx
-DEBUG_BONK = pygame.mixer.Sound("assets/sfx/bonk.ogg")
+# player
+JUMP = pygame.mixer.Sound("assets/sfx/jump.ogg")
+FOOTSTEP = pygame.mixer.Sound("assets/sfx/footstep.ogg")
+CAUGHT_SIGHT = pygame.mixer.Sound("assets/sfx/caught_sight.ogg")
+CAUGHT_HOLE = pygame.mixer.Sound("assets/sfx/caught_hole.ogg")
+
+# ui
+UI_SELECT = pygame.mixer.Sound("assets/sfx/select.ogg")
+UI_HOVER = pygame.mixer.Sound("assets/sfx/hover.ogg")
+
+# entities
+ZOMBIE = pygame.mixer.Sound("assets/sfx/zomb.ogg")
 
 
 # FONTS (ttf for web compatibility)

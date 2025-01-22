@@ -154,6 +154,7 @@ def player_update(
         if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
             player.z_velocity = -130
             animator_reset(player.animator)
+            pygame.mixer.Channel(1).play(a.JUMP)
 
     # collision
     dx, dy = player.motion.velocity
@@ -171,7 +172,12 @@ def player_update(
         animator_switch_animation(player.animator, f"walk_{player.direction}")
     else:
         animator_switch_animation(player.animator, f"idle_{player.direction}")
+
+    prev_frame = player.animator.frame_index
     animator_update(player.animator, dt)
+    if player.z_position >= 0 and (dx != 0 or dy != 0):
+        if prev_frame not in (3, 7) and player.animator.frame_index in (3, 7):
+            pygame.mixer.Channel(1).play(a.FOOTSTEP)
 
 
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
@@ -181,6 +187,10 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
     player.caught_style = style
     player.motion.velocity = pygame.Vector2()
     camera.trauma = 0.4
+    if style == PlayerCaughtStyle.HOLE:
+        pygame.mixer.Channel(1).play(a.CAUGHT_HOLE)
+    else:
+        pygame.mixer.Channel(1).play(a.CAUGHT_SIGHT)
 
 
 def player_reset(player: Player, position: pygame.Vector2) -> None:

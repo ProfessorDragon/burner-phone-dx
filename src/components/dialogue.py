@@ -139,7 +139,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
             case "style":
                 dialogue_packet.style = DialogueStyle(content)
                 if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
-                    pygame.mixer.Channel(1).play(a.DEBUG_BONK)
+                    pygame.mixer.Channel(1).play(a.ZOMBIE)  # todo
                     timer_reset(dialogue.show_timer, 0.5)
 
             case "char":
@@ -189,6 +189,7 @@ def dialogue_update(
     has_buttons = active_packet.buttons is not None
 
     if action_buffer:
+        # confirm
         if t.is_pressed(action_buffer, t.Action.SELECT) or t.is_pressed(action_buffer, t.Action.A):
             if not is_complete:
                 # Skip writing
@@ -197,6 +198,7 @@ def dialogue_update(
                 timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
             elif dialogue.complete_timer.remaining <= 0:
+                # pygame.mixer.Channel(1).play(a.UI_SELECT) # sounds bad
                 # Activate selected button
                 if has_buttons:
                     selected_index = [
@@ -218,6 +220,7 @@ def dialogue_update(
                 action_buffer, t.Action.LEFT
             )
             if dx != 0:
+                pygame.mixer.Channel(1).play(a.UI_HOVER)
                 selected_index = [i for i, btn in enumerate(active_packet.buttons) if btn.selected]
                 if len(selected_index) > 0:
                     active_packet.buttons[selected_index[0]].selected = False
@@ -229,7 +232,8 @@ def dialogue_update(
                 return True
 
     if is_complete:
-        timer_update(dialogue.complete_timer, dt)
+        if timer_update(dialogue.complete_timer, dt):
+            pygame.mixer.Channel(1).play(a.UI_HOVER)
 
     else:
         timer_update(dialogue.character_timer, dt)

@@ -10,7 +10,8 @@ class Timer:
     callback: Callable = None
 
 
-def timer_update(timer: Timer, dt: float) -> None:
+# returns true if time remaining just reached zero (this is very useful)
+def timer_update(timer: Timer, dt: float) -> bool:
     prev_remaining = timer.remaining
     timer.elapsed += dt
     timer.elapsed = min(timer.elapsed, timer.duration)
@@ -19,6 +20,8 @@ def timer_update(timer: Timer, dt: float) -> None:
         # execute binding
         if callable(timer.callback):
             timer.callback()
+        return True
+    return False
 
 
 def timer_reset(timer: Timer, duration: float, callback: Callable = None) -> None:

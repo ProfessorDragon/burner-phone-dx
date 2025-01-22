@@ -107,7 +107,6 @@ class Game(Scene):
         dialogue_reset_queue(self.dialogue)
         for entity in self.entities:
             entity_reset(entity)
-        # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
 
     def execute(
         self,
@@ -139,18 +138,14 @@ class Game(Scene):
         if not self.paused:
             if not self.editor.enabled and not in_dialogue:
                 # timers
-                if self.player.caught_timer.remaining > 0:
-                    timer_update(self.player.caught_timer, dt)
-                    if self.player.caught_timer.remaining <= 0:
-                        scene_reset(self)
-                        if self.progression.has_comms:
-                            bindings = {
-                                0.5: partial(
-                                    _post_death_comms, self.dialogue, self.player.caught_style
-                                )
-                            }
-                            stopwatch_reset(self.post_death_stopwatch, bindings)
-                        player_reset(self.player, self.progression.checkpoint)
+                if timer_update(self.player.caught_timer, dt):
+                    scene_reset(self)
+                    if self.progression.has_comms:
+                        bindings = {
+                            0.5: partial(_post_death_comms, self.dialogue, self.player.caught_style)
+                        }
+                        stopwatch_reset(self.post_death_stopwatch, bindings)
+                    player_reset(self.player, self.progression.checkpoint)
                 stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player

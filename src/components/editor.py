@@ -22,9 +22,10 @@ from utilities.math import clamp
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_SHORTCUTS = [
-    [0, 3, 9, 19, 27],
-    [0, 4, 9, 17, 26],
-    [0, 4, 11, 15],
+    [0, 9, 15, 29, 41],
+    [0, 8, 13, 20, 30, 35],
+    [0, 8, 15, 20, 26, 31],
+    [0, 4, 8],
 ]
 
 
@@ -190,6 +191,7 @@ class Editor:
                 # append to mg tiles
                 else:
                     self.scene.grid_tiles[id].append(new_tile_data)
+                    self.scene.grid_tiles[id].sort(key=lambda tile: tile.render_z)
 
         if t.is_held(self.mouse_buffer, t.MouseButton.RIGHT):
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
