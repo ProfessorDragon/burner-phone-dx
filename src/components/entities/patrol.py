@@ -1,5 +1,6 @@
 import pygame
 
+from components.entities.entity_util import path_from_json, path_to_json, render_shadow
 import core.assets as a
 from components.animation import (
     Animator,
@@ -10,16 +11,9 @@ from components.animation import (
     walking_animation_mapping,
 )
 from components.camera import Camera, camera_to_screen_shake
-from components.entities.entity import (
-    DIST_THRESHOLD,
-    TURN_THRESHOLD,
-    Entity,
-    entity_follow,
-    path_from_json,
-    path_to_json,
-)
+from components.entities.entity import DIST_THRESHOLD, TURN_THRESHOLD, Entity, entity_follow
 from components.motion import Direction, direction_from_angle, motion_update
-from components.player import Player, PlayerCaughtStyle, player_caught, player_rect, shadow_render
+from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
 from components.ray import SightData, collide_sight, compile_sight, render_sight
 from scenes.scene import PLAYER_LAYER, RenderLayer
 
@@ -37,6 +31,9 @@ class PatrolEnemy(Entity):
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(self.motion.position.x + 12, self.motion.position.y + 28, 8, 4)
+
+    def get_terrain_cutoff(self) -> float:
+        return self.motion.position.y + 32
 
     def get_path(self) -> list[pygame.Vector2]:
         return self.path
@@ -115,7 +112,7 @@ class PatrolEnemy(Entity):
         if layer == RenderLayer.RAYS:
             render_sight(surface, camera, self.sight_data)
         if layer in PLAYER_LAYER:
-            shadow_render(surface, camera, self.motion, self.direction)
+            render_shadow(surface, camera, self.motion, self.direction)
             surface.blit(
                 frame,
                 camera_to_screen_shake(camera, *self.motion.position),

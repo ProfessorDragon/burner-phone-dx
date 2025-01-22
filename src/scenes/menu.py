@@ -1,22 +1,13 @@
 import pygame
 
+from components.audio import AudioChannel, play_sound, stop_all_sounds
 import core.constants as c
 import core.input as t
 import core.assets as a
 from components.camera import (
     Camera,
     camera_update,
-    camera_to_screen_shake,
     camera_reset,
-)
-from components.motion import Motion
-from components.animation import (
-    Animator,
-    Animation,
-    animator_get_frame,
-    animator_update,
-    animator_initialise,
-    animator_switch_animation,
 )
 from components.settings import Settings, settings_render, settings_update
 from components.dialogue import (
@@ -45,7 +36,7 @@ class Menu(Scene):
     def enter(self) -> None:
         dialogue_reset_queue(self.dialogue)
         camera_reset(self.camera)
-        pygame.mixer.Channel(0).play(a.DEBUG_THEME_MENU, -1)
+        play_sound(AudioChannel.MUSIC, a.DEBUG_THEME_MENU, -1)
 
     def execute(
         self,
@@ -77,5 +68,4 @@ class Menu(Scene):
             settings_render(self.settings, surface)
 
     def exit(self) -> None:
-        pygame.mixer.Channel(0).stop()
-        pygame.mixer.Channel(1).stop()
+        stop_all_sounds()

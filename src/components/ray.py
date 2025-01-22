@@ -5,9 +5,8 @@ from pygame import gfxdraw
 
 from components.camera import Camera, camera_to_screen_shake
 from components.player import Player, player_rect
-from components.tiles import grid_collision_rect
 import core.constants as c
-from utilities.math import point_in_circle, point_in_ellipse
+from utilities.math import point_in_circle
 
 
 @dataclass

@@ -2,6 +2,7 @@ from enum import Enum
 import json
 from math import ceil
 import os
+import random
 import subprocess
 import pygame
 
@@ -22,9 +23,9 @@ from utilities.math import clamp
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_SHORTCUTS = [
-    [0, 9, 15, 29, 41],
-    [0, 8, 13, 20, 30, 35],
-    [0, 8, 15, 20, 26, 31],
+    [0, 9, 15, 30, 42, 60],
+    [0, 8, 13, 20, 30, 35, 40],
+    [0, 8, 15, 20, 33],
     [0, 4, 8],
 ]
 
@@ -66,6 +67,7 @@ class Editor:
         self.drag_start: pygame.Vector2 = None
         self.drag_tile: tuple[int, int] = None
         self.tile_data = TileData()
+        self.tile_variance_x = 0
         self.entity_index = 0
         self.entity_path: list[pygame.Vector2] = []
 
@@ -74,8 +76,6 @@ class Editor:
             return
         self.mode = mode
         self.debug_text = None
-        if mode in (EditorMode.WALLS, EditorMode.ENTITIES):
-            c.DEBUG_HITBOXES = True
 
     def save(self, *, pretty=False) -> None:
         data = {
@@ -97,6 +97,8 @@ class Editor:
                 json.dump(data, f, separators=(",", ":"))
 
     def load(self) -> None:
+        if not os.path.isfile(EDITOR_DEFAULT_LEVEL):
+            return
         with open(EDITOR_DEFAULT_LEVEL) as f:
             try:
                 data = json.load(f)
@@ -166,40 +168,69 @@ class Editor:
                 start, end = _floor_point(start), _ceil_point(end)
             self.scene.walls[-1] = pygame.Rect(*start, end.x - start.x, end.y - start.y)
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
-                if start.x >= end.x or start.y >= end.y:
+                if start.x > end.x or start.y > end.y:
                     self.scene.walls.pop()
+                if start.x == end.x:
+                    self.scene.walls[-1].width += 2
+                    self.scene.walls[-1].x -= 1
+                if start.y == end.y:
+                    self.scene.walls[-1].height += 2
+                    self.scene.walls[-1].y -= 1
                 self.drag_start = None
+
+        if len(self.scene.walls) == 0:
+            return
+
+        wall = self.scene.walls[-1]
+        if t.is_pressed(self.action_buffer, t.Action.LEFT):
+            wall.x -= 1
+        if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+            wall.x += 1
+        if t.is_pressed(self.action_buffer, t.Action.UP):
+            wall.y -= 1
+        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+            wall.y += 1
 
     def tile_mode(self) -> None:
         a_held = t.is_held(self.action_buffer, t.Action.A)
+        b_held = t.is_held(self.action_buffer, t.Action.B)
         self.debug_text = f"{self.tile_data.x}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
         if a_held:
             self.debug_text += " z+"
+        if b_held:
+            self.debug_text += " ovr"
 
         if t.is_held(self.mouse_buffer, t.MouseButton.LEFT):
-            new_tile_data = self.tile_data.copy()
-            if a_held:
-                new_tile_data.render_z += 1
+            new_tile_data = []
+            for i in range(self.tile_variance_x + 1):
+                tile_copy = self.tile_data.copy()
+                tile_copy.x += i
+                if a_held:
+                    tile_copy.render_z += 1
+                new_tile_data.append(tile_copy)
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             cur = self.scene.grid_tiles.get(id, [])
-            if new_tile_data not in cur:
+            if all(tile_copy not in cur for tile_copy in new_tile_data):
                 self.scene.grid_tiles.setdefault(id, [])
-                # replace bg tiles
-                if new_tile_data.render_z < 0 and len(cur) > 0 and cur[0].render_z < 0:
-                    self.scene.grid_tiles[id][0] = new_tile_data
-                # append to mg tiles
+                # overwrite
+                if b_held:
+                    self.scene.grid_tiles[id] = [random.choice(new_tile_data)]
+                # add
                 else:
-                    self.scene.grid_tiles[id].append(new_tile_data)
+                    self.scene.grid_tiles[id].append(random.choice(new_tile_data))
                     self.scene.grid_tiles[id].sort(key=lambda tile: tile.render_z)
 
         if t.is_held(self.mouse_buffer, t.MouseButton.RIGHT):
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             if self.drag_tile != id and len(self.scene.grid_tiles.get(id, [])) > 0:
-                self.scene.grid_tiles[id].pop()
-                if len(self.scene.grid_tiles[id]) == 0:
+                if b_held:
                     self.scene.grid_tiles.pop(id)
+                else:
+                    self.scene.grid_tiles[id].pop()
+                    if len(self.scene.grid_tiles[id]) == 0:
+                        self.scene.grid_tiles.pop(id)
             self.drag_tile = id
         else:
             self.drag_tile = None
@@ -208,7 +239,6 @@ class Editor:
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             if len(self.scene.grid_tiles.get(id, [])) > 0:
-                print(self.scene.grid_tiles[id])
                 self.tile_data = self.scene.grid_tiles[id][-1].copy()
 
         shortcuts = TILE_SHORTCUTS[clamp(self.tile_data.y - 2, 0, len(TILE_SHORTCUTS) - 1)]
@@ -220,6 +250,8 @@ class Editor:
                         break
                 else:  # fancy :-)
                     self.tile_data.x = shortcuts[-1]
+            elif b_held:
+                self.tile_variance_x = max(self.tile_variance_x - 1, 0)
             else:
                 self.tile_data.x = (self.tile_data.x - 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
@@ -230,6 +262,8 @@ class Editor:
                         break
                 else:
                     self.tile_data.x = shortcuts[0]
+            elif b_held:
+                self.tile_variance_x += 1
             else:
                 self.tile_data.x = (self.tile_data.x + 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
@@ -292,7 +326,7 @@ class Editor:
             end = _camera_from_mouse(self.scene.camera)
             if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
                 self.scene.entities[-1].facing = (
-                    round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 5.0) * 5
+                    round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 10.0) * 10
                 )
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
                 self.drag_start = None
@@ -348,12 +382,16 @@ def editor_update(
 
     if just_pressed[pygame.K_1]:
         editor.set_mode(EditorMode.VIEW)
+        c.DEBUG_HITBOXES = False
     elif just_pressed[pygame.K_2]:
         editor.set_mode(EditorMode.WALLS)
+        c.DEBUG_HITBOXES = True
     elif just_pressed[pygame.K_3]:
         editor.set_mode(EditorMode.TILES)
+        c.DEBUG_HITBOXES = False
     elif just_pressed[pygame.K_4]:
         editor.set_mode(EditorMode.ENTITIES)
+        c.DEBUG_HITBOXES = True
 
     match editor.mode:
         case EditorMode.VIEW:
@@ -410,7 +448,7 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                 pygame.Rect(
                     surface.get_width() // 2 - c.HALF_TILE_SIZE - 1,
                     surface.get_height() - c.TILE_SIZE - 1,
-                    c.TILE_SIZE + 2,
+                    c.TILE_SIZE * (1 + editor.tile_variance_x) + 2,
                     c.TILE_SIZE + 2,
                 ),
                 1,

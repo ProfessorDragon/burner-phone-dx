@@ -52,7 +52,7 @@ buttons Accept=SETUP ACCEPT|Decline=
 [SETUP ACCEPT]
 
 style phone
-char 2 rogan
+char 2 rogan_no_comms
 - eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
 char 0
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
@@ -66,6 +66,7 @@ char 0
 - alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
 - it's like a phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
 style comms
+char 0 rogan
 - test, test.
 char 1 rogan
 - well, the lab is west. get moving!

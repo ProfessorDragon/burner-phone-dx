@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import partial
 import pygame
 
+from components.audio import stop_all_sounds
 from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
 import core.assets as a
 import core.constants as c
@@ -51,7 +52,7 @@ from components.statemachine import StateMachine, statemachine_change_state
 @dataclass
 class GameProgression:
     checkpoint: pygame.Vector2 = None
-    has_comms: bool = False
+    has_comms: bool = True
 
 
 def _tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
@@ -177,7 +178,7 @@ class Game(Scene):
         surface.fill(c.GRAY)  # can remove once map is made
 
         # for some reason, subtracting the z position looks good.
-        terrain_cutoff = round(self.player.motion.position.y - self.player.z_position)
+        terrain_cutoff = round(self.player.motion.position.y - self.player.z_position + 32)
 
         # render tiles within this area
         tile_bounds = pygame.Rect(
@@ -200,7 +201,7 @@ class Game(Scene):
             if entity_bounds.collidepoint(entity.get_hitbox().center):
                 entity_render(entity, surface, self.camera, RenderLayer.RAYS)
         for x, y, tile in not_bg_tiles:
-            if terrain_cutoff + 16 > (y + tile.render_z) * c.TILE_SIZE:
+            if terrain_cutoff > (y + tile.render_z + 1) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.collidepoint(entity.get_hitbox().center):
@@ -210,7 +211,7 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_BG
-                        if entity.motion.position.y <= terrain_cutoff
+                        if entity.get_terrain_cutoff() <= terrain_cutoff
                         else RenderLayer.BACKGROUND
                     ),
                 )
@@ -220,7 +221,7 @@ class Game(Scene):
 
         # in front of player
         for x, y, tile in not_bg_tiles:
-            if terrain_cutoff + 16 <= (y + tile.render_z) * c.TILE_SIZE:
+            if terrain_cutoff <= (y + tile.render_z + 1) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.collidepoint(entity.get_hitbox().center):
@@ -230,7 +231,7 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_FG
-                        if entity.motion.position.y > terrain_cutoff
+                        if entity.get_terrain_cutoff() > terrain_cutoff
                         else RenderLayer.FOREGROUND
                     ),
                 )
@@ -265,5 +266,4 @@ class Game(Scene):
             surface.blit(self.pause_overlay, (0, 0))
 
     def exit(self) -> None:
-        pygame.mixer.Channel(0).stop()
-        pygame.mixer.Channel(1).stop()
+        stop_all_sounds()

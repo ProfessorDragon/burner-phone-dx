@@ -44,7 +44,7 @@ class ButtonEntity(Entity):
             self.stepped_on = False
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer in PLAYER_OR_BG:
+        if layer == RenderLayer.RAYS:
             surface.blit(
                 a.BUTTON_FRAMES[self.color * 2 + self.stepped_on],
                 camera_to_screen_shake(camera, *self.motion.position),

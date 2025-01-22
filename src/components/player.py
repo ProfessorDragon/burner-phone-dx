@@ -1,6 +1,8 @@
 from enum import IntEnum, auto
 import pygame
 
+from components.audio import AudioChannel, play_sound
+from components.entities.entity_util import render_shadow
 from components.tiles import grid_collision_rect
 from components.timer import Timer, timer_reset
 import core.input as t
@@ -152,9 +154,9 @@ def player_update(
         _player_movement(player, dt, action_buffer)
         # jumping
         if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
-            player.z_velocity = -130
+            player.z_velocity = -120
             animator_reset(player.animator)
-            pygame.mixer.Channel(1).play(a.JUMP)
+            play_sound(AudioChannel.PLAYER, a.JUMP)
 
     # collision
     dx, dy = player.motion.velocity
@@ -176,8 +178,12 @@ def player_update(
     prev_frame = player.animator.frame_index
     animator_update(player.animator, dt)
     if player.z_position >= 0 and (dx != 0 or dy != 0):
-        if prev_frame not in (3, 7) and player.animator.frame_index in (3, 7):
-            pygame.mixer.Channel(1).play(a.FOOTSTEP)
+        step_frames = (7, 3)
+        if prev_frame not in step_frames and player.animator.frame_index in step_frames:
+            play_sound(
+                AudioChannel.PLAYER,
+                a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
+            )
 
 
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
@@ -188,9 +194,9 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
     player.motion.velocity = pygame.Vector2()
     camera.trauma = 0.4
     if style == PlayerCaughtStyle.HOLE:
-        pygame.mixer.Channel(1).play(a.CAUGHT_HOLE)
+        play_sound(AudioChannel.PLAYER, a.CAUGHT_HOLE)
     else:
-        pygame.mixer.Channel(1).play(a.CAUGHT_SIGHT)
+        play_sound(AudioChannel.PLAYER, a.CAUGHT_SIGHT)
 
 
 def player_reset(player: Player, position: pygame.Vector2) -> None:
@@ -198,32 +204,6 @@ def player_reset(player: Player, position: pygame.Vector2) -> None:
     player.motion.velocity = pygame.Vector2()
     player.motion.acceleration = pygame.Vector2()
     player.caught_style = PlayerCaughtStyle.NONE
-
-
-def shadow_render(
-    surface: pygame.Surface,
-    camera: Camera,
-    motion: Motion,
-    direction: Direction,
-    z_position: float = 0,
-) -> None:
-    # use two vectors because we NEED to preserve decimal places
-    shadow_tl = pygame.Vector2(motion.position.x + 10, motion.position.y + 29)
-    shadow_wh = pygame.Vector2(12, 6)
-    if motion.velocity.x != 0:
-        if direction in (Direction.W, Direction.NW, Direction.SW):
-            shadow_wh.x += 2
-        elif direction in (Direction.E, Direction.NE, Direction.SE):
-            shadow_tl.x -= 2
-            shadow_wh.x += 2
-    if z_position < -5:
-        shadow_wh.x -= 2
-        shadow_wh.y -= 2
-        shadow_tl.x += 1
-        shadow_tl.y += 1
-    shadow = pygame.Surface(shadow_wh, pygame.SRCALPHA)
-    pygame.draw.ellipse(shadow, (0, 0, 0, 50), pygame.Rect(0, 0, *shadow_wh))
-    surface.blit(shadow, camera_to_screen_shake(camera, *shadow_tl))
 
 
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
@@ -247,7 +227,7 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
             return
 
     # normal rendering
-    shadow_render(surface, camera, player.motion, player.direction, player.z_position)
+    render_shadow(surface, camera, player.motion, player.direction, player.z_position)
     surface.blit(
         frame,
         camera_to_screen_shake(

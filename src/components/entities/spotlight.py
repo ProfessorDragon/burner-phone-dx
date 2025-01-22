@@ -1,13 +1,8 @@
 import pygame
 
 from components.camera import Camera, camera_to_screen_shake
-from components.entities.entity import (
-    DIST_THRESHOLD,
-    Entity,
-    entity_follow,
-    path_from_json,
-    path_to_json,
-)
+from components.entities.entity import DIST_THRESHOLD, Entity, entity_follow
+from components.entities.entity_util import path_from_json, path_to_json
 from components.motion import motion_update
 from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
 from scenes.scene import PLAYER_OR_FG, RenderLayer

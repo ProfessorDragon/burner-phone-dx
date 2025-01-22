@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from enum import Enum
 from queue import deque
+import random
 from typing import Callable
 from functools import partial
 import textwrap
 import pygame
 
+from components.audio import AudioChannel, play_sound
 import core.assets as a
 import core.constants as c
 import core.input as t
@@ -41,6 +43,7 @@ class DialoguePacket:
     style: DialogueStyle = DialogueStyle.DEFAULT
     graphic: pygame.Surface = None
     name: str = ""
+    sounds: list[pygame.Sound] = None
     message: str = ""
     buttons: list[DialogueButton] = None
 
@@ -134,12 +137,13 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 new_packet.style = dialogue_packet.style
                 new_packet.graphic = dialogue_packet.graphic
                 new_packet.name = dialogue_packet.name
+                new_packet.sounds = dialogue_packet.sounds
                 dialogue_packet = new_packet
 
             case "style":
                 dialogue_packet.style = DialogueStyle(content)
                 if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
-                    pygame.mixer.Channel(1).play(a.ZOMBIE)  # todo
+                    play_sound(AudioChannel.UI, a.ZOMBIE)  # todo
                     timer_reset(dialogue.show_timer, 0.5)
 
             case "char":
@@ -151,6 +155,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                     character = a.DIALOGUE_CHARACTERS[last_character_id]
                 dialogue_packet.graphic = character.sprites[int(args[0])]
                 dialogue_packet.name = character.name
+                dialogue_packet.sounds = character.sounds
 
             case "buttons":
                 dialogue_packet.buttons = []
@@ -198,7 +203,7 @@ def dialogue_update(
                 timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
             elif dialogue.complete_timer.remaining <= 0:
-                # pygame.mixer.Channel(1).play(a.UI_SELECT) # sounds bad
+                # play_sound(AudioChannel.UI, a.UI_SELECT) # sounds bad
                 # Activate selected button
                 if has_buttons:
                     selected_index = [
@@ -220,7 +225,7 @@ def dialogue_update(
                 action_buffer, t.Action.LEFT
             )
             if dx != 0:
-                pygame.mixer.Channel(1).play(a.UI_HOVER)
+                play_sound(AudioChannel.UI, a.UI_HOVER)
                 selected_index = [i for i, btn in enumerate(active_packet.buttons) if btn.selected]
                 if len(selected_index) > 0:
                     active_packet.buttons[selected_index[0]].selected = False
@@ -233,12 +238,12 @@ def dialogue_update(
 
     if is_complete:
         if timer_update(dialogue.complete_timer, dt):
-            pygame.mixer.Channel(1).play(a.UI_HOVER)
+            play_sound(AudioChannel.UI, a.UI_HOVER)
 
     else:
         timer_update(dialogue.character_timer, dt)
 
-        # Then render next letter
+        # render next letter
         if dialogue.character_timer.remaining <= 0:
             new_char = active_packet.message[dialogue.char_index]
             dialogue.char_index += 1
@@ -248,13 +253,15 @@ def dialogue_update(
             # now is complete
             if dialogue.char_index >= len(active_packet.message):
                 timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
+            # Wait for time before next letter
             else:
-                # Wait for time before next letter
                 if new_char == " ":
                     timer_reset(dialogue.character_timer, SPACE_SPEED)
                 elif new_char in "?!.":
                     timer_reset(dialogue.character_timer, END_SENTENCE_SPEED)
                 else:
+                    if active_packet.sounds and dialogue.char_index % 4 == 0:
+                        play_sound(AudioChannel.UI, random.choice(active_packet.sounds))
                     timer_reset(dialogue.character_timer, LETTER_SPEED)
 
     return True

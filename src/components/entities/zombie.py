@@ -1,6 +1,8 @@
 import random
 import pygame
 
+from components.audio import AudioChannel, play_sound
+from components.entities.entity_util import render_shadow
 import core.assets as a
 import core.constants as c
 from components.animation import (
@@ -14,7 +16,7 @@ from components.animation import (
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import DIST_THRESHOLD, Entity, entity_follow
 from components.motion import Direction, direction_from_delta, motion_update
-from components.player import Player, PlayerCaughtStyle, player_caught, player_rect, shadow_render
+from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
 from scenes.scene import PLAYER_LAYER, PLAYER_OR_FG, RenderLayer
 
 
@@ -32,6 +34,9 @@ class ZombieEnemy(Entity):
         return pygame.Rect(
             round(self.motion.position.x) + 12, round(self.motion.position.y) + 28, 8, 4
         )
+
+    def get_terrain_cutoff(self) -> float:
+        return self.motion.position.y + 32
 
     def to_json(self):
         return {"pos": (*self.movement_center,)}
@@ -66,6 +71,8 @@ class ZombieEnemy(Entity):
                 else:
                     self.chasing = False
                     self.randomize_walk_speed()
+                    if player_dist.magnitude() < self.movement_radius * 1.5:
+                        play_sound(AudioChannel.SFX, a.ZOMBIE)
             else:
                 if center_dist.magnitude_squared() > DIST_THRESHOLD * dt:
                     entity_follow(self, center_dist, self.walk_speed)
@@ -92,7 +99,7 @@ class ZombieEnemy(Entity):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_LAYER:
-            shadow_render(surface, camera, self.motion, self.direction)
+            render_shadow(surface, camera, self.motion, self.direction)
             surface.blit(
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),

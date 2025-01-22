@@ -3,43 +3,15 @@ from math import cos, radians
 from typing import Any
 import pygame
 
+from components.entities.entity_util import render_path
 from components.player import Player
-import core.assets as a
 import core.constants as c
-from components.camera import Camera, camera_to_screen_shake, camera_to_screen_shake_rect
+from components.camera import Camera, camera_to_screen_shake_rect
 from components.motion import Motion
 from scenes.scene import PLAYER_OR_FG, RenderLayer
 
 DIST_THRESHOLD = 300
 TURN_THRESHOLD = 100
-
-
-def render_path(surface: pygame.Surface, camera: Camera, path: list[pygame.Vector2]) -> None:
-    if len(path) == 0:
-        return
-    if len(path) == 1:
-        pygame.draw.circle(surface, c.RED, camera_to_screen_shake(camera, *path[0]), 3)
-    else:
-        pygame.draw.polygon(
-            surface,
-            c.RED,
-            [camera_to_screen_shake(camera, *point) for point in path],
-            1,
-        )
-
-    for i, point in enumerate(path):
-        surface.blit(
-            a.DEBUG_FONT.render(str(i), False, c.RED),
-            camera_to_screen_shake(camera, *point),
-        )
-
-
-def path_to_json(path: list[pygame.Vector2]) -> list[tuple[int, int]]:
-    return [(int(point.x), int(point.y)) for point in path]
-
-
-def path_from_json(js_path: list[tuple[int, int]]) -> list[pygame.Vector2]:
-    return [pygame.Vector2(point) for point in js_path]
 
 
 # base class
@@ -56,7 +28,9 @@ class Entity(ABC):
             c.TILE_SIZE,
         )
 
-    # some standard methods to make it easier on the editor
+    def get_terrain_cutoff(self) -> float:
+        return self.motion.position.y + 16
+
     def get_path(self) -> list[pygame.Vector2]:
         return None
 
