@@ -1,5 +1,5 @@
+from dataclasses import dataclass
 from functools import partial
-import random
 import pygame
 
 from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
@@ -18,7 +18,7 @@ from components.dialogue import (
     dialogue_update,
 )
 from components.editor import Editor, editor_render, editor_update
-from components.enemy import Enemy, enemy_render, enemy_reset, enemy_update
+from components.entities.entity import Entity, entity_render, entity_reset, entity_update
 from components.player import (
     PlayerCaughtStyle,
     player_reset,
@@ -46,6 +46,12 @@ from components.camera import (
 from scenes.scene import RenderLayer, Scene, scene_reset
 import scenes.scenemapping as scene
 from components.statemachine import StateMachine, statemachine_change_state
+
+
+@dataclass
+class GameProgression:
+    checkpoint: pygame.Vector2 = None
+    has_comms: bool = False
 
 
 def _tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
@@ -82,12 +88,15 @@ class Game(Scene):
         dialogue_initialise(self.dialogue)
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
+        self.progression = GameProgression()
+        self.progression.checkpoint = self.player.motion.position.copy()
+
         self.post_death_stopwatch = Stopwatch()
 
         self.grid_collision: set[tuple[int, int]] = set()
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
         self.walls: list[pygame.Rect] = []
-        self.enemies: list[Enemy] = []
+        self.entities: list[Entity] = []
         # self.decor: list[Decor] = []
 
         self.editor = Editor(self)
@@ -96,8 +105,8 @@ class Game(Scene):
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
-        for enemy in self.enemies:
-            enemy_reset(enemy)
+        for entity in self.entities:
+            entity_reset(entity)
         # pygame.mixer.Channel(0).play(a.DEBUG_THEME_GAME, -1) # driving me insane
 
     def execute(
@@ -119,8 +128,8 @@ class Game(Scene):
 
         in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
-        # update and render enemies within this area
-        enemy_bounds = pygame.Rect(
+        # update and render entities within this area
+        entity_bounds = pygame.Rect(
             self.camera.motion.position.x - self.camera.offset.x - c.TILE_SIZE * 8,
             self.camera.motion.position.y - self.camera.offset.y - c.TILE_SIZE * 8,
             surface.get_width() + c.TILE_SIZE * 16,
@@ -134,20 +143,23 @@ class Game(Scene):
                     timer_update(self.player.caught_timer, dt)
                     if self.player.caught_timer.remaining <= 0:
                         scene_reset(self)
-                        bindings = {
-                            0.5: partial(_post_death_comms, self.dialogue, self.player.caught_style)
-                        }
-                        stopwatch_reset(self.post_death_stopwatch, bindings)
-                        player_reset(self.player)
+                        if self.progression.has_comms:
+                            bindings = {
+                                0.5: partial(
+                                    _post_death_comms, self.dialogue, self.player.caught_style
+                                )
+                            }
+                            stopwatch_reset(self.post_death_stopwatch, bindings)
+                        player_reset(self.player, self.progression.checkpoint)
                 stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player
                 player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
 
-                # enemies
-                for enemy in self.enemies:
-                    if enemy_bounds.collidepoint(enemy.get_hitbox().center):
-                        enemy_update(enemy, dt, self.player, self.camera, self.grid_collision)
+                # entities
+                for entity in self.entities:
+                    if entity_bounds.collidepoint(entity.get_hitbox().center):
+                        entity_update(entity, dt, self.player, self.camera, self.grid_collision)
 
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
@@ -189,21 +201,21 @@ class Game(Scene):
                         render_tile(surface, self.camera, x, y, tile)
                     else:
                         not_bg_tiles.append((x, y, tile))
-        for enemy in self.enemies:
-            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
-                enemy_render(enemy, surface, self.camera, RenderLayer.RAYS)
+        for entity in self.entities:
+            if entity_bounds.collidepoint(entity.get_hitbox().center):
+                entity_render(entity, surface, self.camera, RenderLayer.RAYS)
         for x, y, tile in not_bg_tiles:
             if terrain_cutoff + 16 > (y + tile.render_z) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
-        for enemy in self.enemies:
-            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
-                enemy_render(
-                    enemy,
+        for entity in self.entities:
+            if entity_bounds.collidepoint(entity.get_hitbox().center):
+                entity_render(
+                    entity,
                     surface,
                     self.camera,
                     (
                         RenderLayer.PLAYER_BG
-                        if enemy.motion.position.y <= terrain_cutoff
+                        if entity.motion.position.y <= terrain_cutoff
                         else RenderLayer.BACKGROUND
                     ),
                 )
@@ -215,15 +227,15 @@ class Game(Scene):
         for x, y, tile in not_bg_tiles:
             if terrain_cutoff + 16 <= (y + tile.render_z) * c.TILE_SIZE:
                 render_tile(surface, self.camera, x, y, tile)
-        for enemy in self.enemies:
-            if enemy_bounds.collidepoint(enemy.get_hitbox().center):
-                enemy_render(
-                    enemy,
+        for entity in self.entities:
+            if entity_bounds.collidepoint(entity.get_hitbox().center):
+                entity_render(
+                    entity,
                     surface,
                     self.camera,
                     (
                         RenderLayer.PLAYER_FG
-                        if enemy.motion.position.y > terrain_cutoff
+                        if entity.motion.position.y > terrain_cutoff
                         else RenderLayer.FOREGROUND
                     ),
                 )

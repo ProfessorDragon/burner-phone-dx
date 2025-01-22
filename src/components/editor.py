@@ -5,7 +5,8 @@ import os
 import subprocess
 import pygame
 
-from components.enemy import ENEMY_CLASSES, enemy_from_json, render_path
+from components.entities.all import ENTITY_CLASSES, entity_from_json
+from components.entities.entity import render_path
 from components.tiles import TileData, render_tile, render_tile_hitbox
 import core.input as t
 import core.constants as c
@@ -31,7 +32,7 @@ class EditorMode(Enum):
     VIEW = "view"
     TILES = "tiles"
     WALLS = "walls"
-    ENEMIES = "enemies"
+    ENTITIES = "entities"
 
 
 def _camera_from_mouse(camera: Camera) -> pygame.Vector2:
@@ -64,15 +65,15 @@ class Editor:
         self.drag_start: pygame.Vector2 = None
         self.drag_tile: tuple[int, int] = None
         self.tile_data = TileData()
-        self.enemy_index = 0
-        self.enemy_path: list[pygame.Vector2] = []
+        self.entity_index = 0
+        self.entity_path: list[pygame.Vector2] = []
 
     def set_mode(self, mode: EditorMode) -> None:
         if self.mode == mode:
             return
         self.mode = mode
         self.debug_text = None
-        if mode in (EditorMode.WALLS, EditorMode.ENEMIES):
+        if mode in (EditorMode.WALLS, EditorMode.ENTITIES):
             c.DEBUG_HITBOXES = True
 
     def save(self, *, pretty=False) -> None:
@@ -83,9 +84,9 @@ class Editor:
                 for k, tiles in self.scene.grid_tiles.items()
             },
             "walls": [(*wall,) for wall in self.scene.walls],
-            "enemies": [
-                {"class": enemy.__class__.__name__, **enemy.to_json()}
-                for enemy in self.scene.enemies
+            "entities": [
+                {"class": entity.__class__.__name__, **entity.to_json()}
+                for entity in self.scene.entities
             ],
         }
         with open(EDITOR_DEFAULT_LEVEL, "w") as f:
@@ -107,7 +108,7 @@ class Editor:
             for k, tiles in data["grid_tiles"].items()
         }
         self.scene.walls = [pygame.Rect(wall) for wall in data["walls"]]
-        self.scene.enemies = [enemy_from_json(enemy) for enemy in data["enemies"]]
+        self.scene.entities = [entity_from_json(entity) for entity in data["entities"]]
 
     def update_state(
         self, dt: float, action_buffer: t.InputBuffer, mouse_buffer: t.InputBuffer
@@ -240,68 +241,66 @@ class Editor:
             else:
                 self.tile_data.y = (self.tile_data.y - 1) % (a.TERRAIN.get_height() // c.TILE_SIZE)
 
-    def enemy_mode(self) -> None:
+    def entity_mode(self) -> None:
         a_held = t.is_held(self.action_buffer, t.Action.A)
         if a_held:
             self.debug_text = "path paint"
         else:
-            if self.drag_start and len(self.scene.enemies) > 0:
-                self.debug_text = f"facing {getattr(self.scene.enemies[-1], 'facing', '')}"
+            if self.drag_start and len(self.scene.entities) > 0:
+                self.debug_text = f"facing {getattr(self.scene.entities[-1], 'facing', '')}"
             else:
-                self.debug_text = "place enemy"
+                self.debug_text = "place entity"
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
             # path paint
             if a_held:
-                self.enemy_path.append(_floor_point(_camera_from_mouse(self.scene.camera)))
-            # place enemy
+                self.entity_path.append(_floor_point(_camera_from_mouse(self.scene.camera)))
+            # place ent
             else:
                 pos = _floor_point(_camera_from_mouse(self.scene.camera))
-                if len(self.enemy_path) == 0:
-                    self.enemy_path.append(pos)
+                if len(self.entity_path) == 0:
+                    self.entity_path.append(pos)
                 # just put in a lot of properties, only the necessary ones will be used
-                enemy = enemy_from_json(
+                entity = entity_from_json(
                     {
-                        "class": ENEMY_CLASSES[self.enemy_index].__name__,
+                        "class": ENTITY_CLASSES[self.entity_index].__name__,
                         "pos": (*pos,),
-                        "path": self.enemy_path,
+                        "path": self.entity_path,
                         "facing": 0,
                     }
                 )
-                self.scene.enemies.append(enemy)
+                self.scene.entities.append(entity)
                 self.drag_start = pos
-                self.enemy_path.clear()
+                self.entity_path.clear()
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
             # path paint
             if a_held:
-                if len(self.enemy_path) > 0:
-                    self.enemy_path.pop()
-            # delete enemy
+                if len(self.entity_path) > 0:
+                    self.entity_path.pop()
+            # delete ent
             else:
                 pos = _camera_from_mouse(self.scene.camera)
-                for i, enemy in enumerate(self.scene.enemies[::-1]):
-                    if enemy.get_hitbox().collidepoint(pos):
-                        self.scene.enemies.pop(len(self.scene.enemies) - 1 - i)
+                for i, entity in enumerate(self.scene.entities[::-1]):
+                    if entity.get_hitbox().collidepoint(pos):
+                        self.scene.entities.pop(len(self.scene.entities) - 1 - i)
                         break
 
         if self.drag_start:
             end = _camera_from_mouse(self.scene.camera)
             if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
-                self.scene.enemies[-1].facing = (
+                self.scene.entities[-1].facing = (
                     round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 5.0) * 5
                 )
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
                 self.drag_start = None
 
         if t.is_pressed(self.action_buffer, t.Action.UP):
-            self.enemy_index = (self.enemy_index + 1) % len(ENEMY_CLASSES)
+            self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
-            self.enemy_index = (self.enemy_index - 1) % len(ENEMY_CLASSES)
+            self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
 
-        self.debug_text += (
-            f"\n{self.enemy_index} {ENEMY_CLASSES[self.enemy_index].__name__.removesuffix('Enemy')}"
-        )
+        self.debug_text += f"\n{self.entity_index} {ENTITY_CLASSES[self.entity_index].__name__.removesuffix('Enemy')}"
 
 
 def editor_update(
@@ -350,7 +349,7 @@ def editor_update(
     elif just_pressed[pygame.K_3]:
         editor.set_mode(EditorMode.TILES)
     elif just_pressed[pygame.K_4]:
-        editor.set_mode(EditorMode.ENEMIES)
+        editor.set_mode(EditorMode.ENTITIES)
 
     match editor.mode:
         case EditorMode.VIEW:
@@ -363,8 +362,8 @@ def editor_update(
         case EditorMode.TILES:
             editor.tile_mode()
 
-        case EditorMode.ENEMIES:
-            editor.enemy_mode()
+        case EditorMode.ENTITIES:
+            editor.entity_mode()
 
 
 def editor_render(editor: Editor, surface: pygame.Surface):
@@ -413,12 +412,12 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                 1,
             )
 
-        case EditorMode.ENEMIES:
+        case EditorMode.ENTITIES:
             x, y = _floor_point(_camera_from_mouse(editor.scene.camera))
             pygame.draw.circle(
                 surface, c.WHITE, camera_to_screen_shake(editor.scene.camera, x, y), 2
             )
-            render_path(surface, editor.scene.camera, editor.enemy_path)
+            render_path(surface, editor.scene.camera, editor.entity_path)
 
     # debug text
     debug_text = str(editor.mode)

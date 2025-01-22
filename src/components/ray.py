@@ -45,7 +45,7 @@ def grid_raycast(
 def compile_sight(data: SightData, grid_collision: set[tuple[int, int]]) -> None:
     assert data.center is not None
     # fwiw, this is relatively cheap. my computer can handle almost 200 steps without lag
-    # so, as long as there isn't an excessive amount of raycasting enemies on screen at once, it's fine
+    # so, as long as there isn't an excessive amount of raycasting entities on screen at once, it's fine
     segs = int(pi / 360 * data.radius * data.angle)
     steps = int(data.radius / 4)
     offset_center = data.center + pygame.Vector2(0, data.z_offset)

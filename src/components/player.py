@@ -183,8 +183,8 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
     camera.trauma = 0.4
 
 
-def player_reset(player: Player) -> None:
-    player.motion.position = pygame.Vector2()
+def player_reset(player: Player, position: pygame.Vector2) -> None:
+    player.motion.position = position.copy()
     player.motion.velocity = pygame.Vector2()
     player.motion.acceleration = pygame.Vector2()
     player.caught_style = PlayerCaughtStyle.NONE
