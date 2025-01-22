@@ -177,16 +177,17 @@ def player_update(
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
     if player.caught_timer.remaining > 0:
         return
-    player.caught_timer.duration = 0.5
-    timer_reset(player.caught_timer)
+    timer_reset(player.caught_timer, 0.5)
     player.caught_style = style
     player.motion.velocity = pygame.Vector2()
     camera.trauma = 0.4
 
 
-def player_kill(player: Player) -> None:
+def player_reset(player: Player) -> None:
     player.motion.position = pygame.Vector2()
     player.motion.velocity = pygame.Vector2()
+    player.motion.acceleration = pygame.Vector2()
+    player.caught_style = PlayerCaughtStyle.NONE
 
 
 def shadow_render(
@@ -233,28 +234,36 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
             )
             render_position.y += px * 0.5
             surface.blit(scaled_frame, camera_to_screen_shake(camera, *render_position))
-            frame = None
+            return
 
     # normal rendering
-    if frame is not None:
-        shadow_render(surface, camera, player.motion, player.direction, player.z_position)
-        surface.blit(
-            frame,
-            camera_to_screen_shake(
-                camera, player.motion.position.x, player.motion.position.y + player.z_position
-            ),
-        )
+    shadow_render(surface, camera, player.motion, player.direction, player.z_position)
+    surface.blit(
+        frame,
+        camera_to_screen_shake(
+            camera, player.motion.position.x, player.motion.position.y + player.z_position
+        ),
+    )
 
-    # caught by sight
+
+def player_render_overlays(player: Player, surface: pygame.Surface, camera: Camera) -> None:
+    # caught by sight or zombie
     if player.caught_timer.remaining > 0:
+        alert = None
+        y_offset = 0
         if player.caught_style == PlayerCaughtStyle.SIGHT:
             alert = a.DEBUG_FONT.render("!!", False, c.RED)
+            y_offset = -8
+        elif player.caught_style == PlayerCaughtStyle.ZOMBIE:
+            alert = a.DEBUG_FONT.render("!!", False, c.GREEN)
+            y_offset = 12
+        if alert is not None:
             surface.blit(
                 alert,
                 camera_to_screen(
                     camera,
-                    player.motion.position.x + frame.get_width() // 2 - alert.get_width() // 2,
-                    player.motion.position.y - 8 + player.caught_timer.remaining * 8,
+                    player.motion.position.x + 16 - alert.get_width() // 2,
+                    player.motion.position.y + y_offset + player.caught_timer.remaining * 8,
                 ),
             )
 

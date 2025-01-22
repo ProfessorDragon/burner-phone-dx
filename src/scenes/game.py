@@ -1,7 +1,8 @@
+from functools import partial
 import random
 import pygame
 
-from components.timer import timer_update
+from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
 import core.assets as a
 import core.constants as c
 import core.input as t
@@ -9,6 +10,7 @@ import core.input as t
 from components.dialogue import (
     DialogueSystem,
     dialogue_execute_script_scene,
+    dialogue_has_executed_scene,
     dialogue_initialise,
     dialogue_load_script,
     dialogue_render,
@@ -18,8 +20,10 @@ from components.dialogue import (
 from components.editor import Editor, editor_render, editor_update
 from components.enemy import Enemy, enemy_render, enemy_reset, enemy_update
 from components.player import (
-    player_kill,
+    PlayerCaughtStyle,
+    player_reset,
     player_rect,
+    player_render_overlays,
     player_update,
     player_render,
     player_initialise,
@@ -52,6 +56,13 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
+def _post_death_comms(dialogue: DialogueSystem, caught_style: PlayerCaughtStyle) -> None:
+    state_name = "FIRST"  # todo
+    scene_name = f"{state_name} CAUGHT {caught_style.name}"
+    if not dialogue_has_executed_scene(dialogue, scene_name):
+        dialogue_execute_script_scene(dialogue, scene_name)
+
+
 class Game(Scene):
     def __init__(self, statemachine: StateMachine) -> None:
         super().__init__(statemachine)
@@ -71,10 +82,13 @@ class Game(Scene):
         dialogue_initialise(self.dialogue)
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
+        self.post_death_stopwatch = Stopwatch()
+
         self.grid_collision: set[tuple[int, int]] = set()
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
         self.walls: list[pygame.Rect] = []
         self.enemies: list[Enemy] = []
+        # self.decor: list[Decor] = []
 
         self.editor = Editor(self)
         self.editor.load()
@@ -115,12 +129,17 @@ class Game(Scene):
 
         if not self.paused:
             if not self.editor.enabled and not in_dialogue:
-                # gameplay
+                # timers
                 if self.player.caught_timer.remaining > 0:
                     timer_update(self.player.caught_timer, dt)
                     if self.player.caught_timer.remaining <= 0:
                         scene_reset(self)
-                        player_kill(self.player)
+                        bindings = {
+                            0.5: partial(_post_death_comms, self.dialogue, self.player.caught_style)
+                        }
+                        stopwatch_reset(self.post_death_stopwatch, bindings)
+                        player_reset(self.player)
+                stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player
                 player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
@@ -133,7 +152,7 @@ class Game(Scene):
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     # self.paused = True
-                    dialogue_execute_script_scene(self.dialogue, "begin outdoors")
+                    dialogue_execute_script_scene(self.dialogue, "shadowless tree")
                     dialogue_update(self.dialogue, dt)
 
             # general
@@ -227,6 +246,9 @@ class Game(Scene):
                         render_wall(surface, self.camera, None, crect)
                     for tile in self.grid_tiles.get((x, y), []):
                         render_tile_hitbox(surface, self.camera, x, y, tile)
+
+        # player again
+        player_render_overlays(self.player, surface, self.camera)
 
         # ui
         dialogue_render(self.dialogue, surface)

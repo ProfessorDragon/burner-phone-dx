@@ -52,9 +52,11 @@ class DialogueSystem:
     font: pygame.Font = None
     rect: pygame.Rect = None
     text: pygame.Surface = None
+    show_timer: Timer = None
     character_timer: Timer = None
     complete_timer: Timer = None
     script_scenes: dict[str, list[str]] = None
+    executed_scenes: set[str] = None
 
 
 def dialogue_wrap_message(message: str) -> str:
@@ -67,8 +69,11 @@ def dialogue_initialise(dialogue: DialogueSystem) -> None:
     dialogue.font = a.DEBUG_FONT
     dialogue.rect = pygame.Rect(20, c.WINDOW_HEIGHT - 100, c.WINDOW_WIDTH - 40, 80)
     dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
+    dialogue.show_timer = Timer()
     dialogue.character_timer = Timer()
     dialogue.complete_timer = Timer()
+    dialogue.script_scenes = {}
+    dialogue.executed_scenes = set()
 
 
 def dialogue_add_packet(dialogue: DialogueSystem, packet: DialoguePacket) -> None:
@@ -76,8 +81,6 @@ def dialogue_add_packet(dialogue: DialogueSystem, packet: DialoguePacket) -> Non
 
 
 def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
-    if dialogue.script_scenes is None:
-        dialogue.script_scenes = {}
     scene_name = None
     scene_content = []
     for ln in script.split("\n"):
@@ -92,6 +95,10 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
         dialogue.script_scenes[scene_name] = scene_content
 
 
+def dialogue_has_executed_scene(dialogue: DialogueSystem, scene_name: str) -> bool:
+    return scene_name.lower() in dialogue.executed_scenes
+
+
 def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> None:
     if not scene_name:
         return
@@ -101,6 +108,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
         return
 
     dialogue_reset_queue(dialogue)
+    dialogue.executed_scenes.add(scene_name)
 
     dialogue_packet = DialoguePacket()
     dialogue_packet.graphic = a.DEBUG_SPRITE_64
@@ -115,10 +123,10 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
         else:
             cmd, content = ln, ""
 
-        match cmd:
-            case "#":
-                continue
+        if not cmd.replace("#", ""):
+            continue
 
+        match cmd:
             case "-":
                 dialogue_packet.message = dialogue_wrap_message(content.replace("\\n", "\n"))
                 dialogue_add_packet(dialogue, dialogue_packet)
@@ -130,6 +138,9 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
 
             case "style":
                 dialogue_packet.style = DialogueStyle(content)
+                if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
+                    pygame.mixer.Channel(1).play(a.DEBUG_BONK)
+                    timer_reset(dialogue.show_timer, 0.5)
 
             case "char":
                 args = content.split(" ", 1)
@@ -169,6 +180,10 @@ def dialogue_update(
     if not dialogue.queue:
         return False
 
+    timer_update(dialogue.show_timer, dt)
+    if dialogue.show_timer.remaining > 0:
+        return True
+
     active_packet = dialogue.queue[0]
     is_complete = dialogue.char_index >= len(active_packet.message)
     has_buttons = active_packet.buttons is not None
@@ -179,8 +194,7 @@ def dialogue_update(
                 # Skip writing
                 dialogue.char_index = len(active_packet.message)
                 dialogue.text = dialogue.font.render(active_packet.message, False, c.WHITE)
-                dialogue.complete_timer.duration = COMPLETED_DELAY
-                timer_reset(dialogue.complete_timer)
+                timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
             elif dialogue.complete_timer.remaining <= 0:
                 # Activate selected button
@@ -229,23 +243,23 @@ def dialogue_update(
 
             # now is complete
             if dialogue.char_index >= len(active_packet.message):
-                dialogue.complete_timer.duration = COMPLETED_DELAY
-                timer_reset(dialogue.complete_timer)
+                timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
             else:
                 # Wait for time before next letter
                 if new_char == " ":
-                    dialogue.character_timer.duration = SPACE_SPEED
+                    timer_reset(dialogue.character_timer, SPACE_SPEED)
                 elif new_char in "?!.":
-                    dialogue.character_timer.duration = END_SENTENCE_SPEED
+                    timer_reset(dialogue.character_timer, END_SENTENCE_SPEED)
                 else:
-                    dialogue.character_timer.duration = LETTER_SPEED
-                timer_reset(dialogue.character_timer)
+                    timer_reset(dialogue.character_timer, LETTER_SPEED)
 
     return True
 
 
 def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
     if not dialogue.queue:
+        return
+    if dialogue.show_timer.remaining > 0:
         return
 
     active_packet = dialogue.queue[0]

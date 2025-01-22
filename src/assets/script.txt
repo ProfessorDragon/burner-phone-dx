@@ -8,7 +8,7 @@
 
 
 
-# MAIN STORY
+## MAIN STORY
 
 [OPENING VOICEMAIL]
 
@@ -81,7 +81,7 @@ char 0
 
 
 
-# DEATH COMMUNICATIONS
+## DEATH COMMUNICATIONS
 # 'first caught x' should execute once per enemy type after acquiring comms.
 # 'second caught x' should execute once per enemy type after reaching the overworld halfway point.
 # 'third caught x' should execute once per enemy type after entering the lab.
@@ -140,7 +140,7 @@ char 1
 
 
 
-# PROGRESS COMMUNICATIONS
+## PROGRESS COMMUNICATIONS
 # short lines i think are funny, can be played when the player reaches a checkpoint
 
 
