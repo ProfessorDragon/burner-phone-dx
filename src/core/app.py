@@ -38,14 +38,15 @@ async def game_loop(
         dt = min(dt, c.MAX_DT)  # Clamp delta time
         dt *= c.TIME_DILATION
 
-        running = input_event_queue()
+        update_action_buffer(action_buffer, last_action_mapping_pressed)
+
+        running = input_event_queue(action_buffer)
 
         if not running:
             pygame.mixer.stop()
             surface.fill(c.BLACK)
             terminate()
 
-        update_action_buffer(action_buffer, last_action_mapping_pressed)
         update_mouse_buffer(mouse_buffer)
 
         statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
@@ -62,7 +63,7 @@ async def game_loop(
         await asyncio.sleep(0)  # Very important, and keep it 0
 
 
-def input_event_queue() -> bool:
+def input_event_queue(action_buffer: t.InputBuffer) -> bool:
     """
     Pumps the event queue and handles application events
     Returns False if application should terminate, else True
@@ -77,9 +78,15 @@ def input_event_queue() -> bool:
             pass
         elif event.type == pygame.VIDEORESIZE:
             pass
+        elif event.type == pygame.MOUSEWHEEL:
+            # accessibility
+            if event.y < 0:
+                action_buffer[t.Action.RIGHT] = t.InputState.PRESSED
+            elif event.y > 0:
+                action_buffer[t.Action.LEFT] = t.InputState.PRESSED
 
         # HACK: For quick development
-        # NOTE: It overrides exitting fullscreen when in browser
+        # NOTE: It overrides exiting fullscreen when in browser
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             return False
 

@@ -19,14 +19,13 @@ from components.camera import (
     camera_to_screen_shake_rect,
 )
 from scenes.scene import Scene, scene_reset
-from utilities.math import clamp
+
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
-TILE_SHORTCUTS = [
-    [0, 9, 15, 30, 42, 60],
-    [0, 8, 13, 20, 30, 35, 40],
-    [0, 8, 15, 20, 33],
-    [0, 4, 8],
+TILE_GROUPS = [
+    [(9, 0), (10, 0), (11, 0)] + [(0, 0)] * 3,
+    [(12, 0), (13, 0), (14, 0)] + [(3, 0)] * 3,
+    [(20, 0), (21, 0), (22, 0), (23, 0)],
 ]
 
 
@@ -63,11 +62,14 @@ class Editor:
         self.dt = 0
         self.action_buffer: t.InputBuffer = None
         self.mouse_buffer: t.InputBuffer = None
+        self.a_held = False
+        self.b_held = False
         self.debug_text: str = None
         self.drag_start: pygame.Vector2 = None
         self.drag_tile: tuple[int, int] = None
         self.tile_data = TileData()
-        self.tile_variance_x = 0
+        self.stored_tile_data = TileData()
+        self.tile_group_index = -1
         self.entity_index = 0
         self.entity_path: list[pygame.Vector2] = []
 
@@ -119,26 +121,28 @@ class Editor:
         self.dt = dt
         self.action_buffer = action_buffer
         self.mouse_buffer = mouse_buffer
+        self.a_held = t.is_held(self.action_buffer, t.Action.A) or t.is_held(
+            action_buffer, t.Action.SELECT
+        )
+        self.b_held = t.is_held(self.action_buffer, t.Action.B)
 
     def view_mode(self) -> None:
-        a_held = t.is_held(self.action_buffer, t.Action.A)
         dx = t.is_held(self.action_buffer, t.Action.RIGHT) - t.is_held(
             self.action_buffer, t.Action.LEFT
         )
         dy = t.is_held(self.action_buffer, t.Action.DOWN) - t.is_held(
             self.action_buffer, t.Action.UP
         )
-        move_vec = pygame.Vector2(dx, dy) * self.dt * (50 if a_held else 250)
+        move_vec = pygame.Vector2(dx, dy) * self.dt * (50 if self.a_held else 250)
         self.scene.player.motion.position += move_vec
 
     def wall_mode(self) -> None:
-        a_held = t.is_held(self.action_buffer, t.Action.A)
-        if a_held:
+        if self.a_held:
             self.debug_text = "free"
         else:
             self.debug_text = "grid"
 
-        if t.is_held(self.mouse_buffer, t.MouseButton.LEFT) and not a_held:
+        if t.is_held(self.mouse_buffer, t.MouseButton.LEFT) and not self.a_held:
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             if self.drag_tile != id:
@@ -150,7 +154,7 @@ class Editor:
         else:
             self.drag_tile = None
 
-        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT) and a_held:
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT) and self.a_held:
             self.drag_start = _camera_from_mouse(self.scene.camera)
             self.scene.walls.append(pygame.Rect(*self.drag_start, 1, 1))
 
@@ -164,7 +168,7 @@ class Editor:
         if self.drag_start:
             start = self.drag_start.copy()
             end = _camera_from_mouse(self.scene.camera)
-            if a_held:
+            if self.a_held:
                 start, end = _floor_point(start), _ceil_point(end)
             self.scene.walls[-1] = pygame.Rect(*start, end.x - start.x, end.y - start.y)
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
@@ -178,7 +182,7 @@ class Editor:
                     self.scene.walls[-1].y -= 1
                 self.drag_start = None
 
-        if len(self.scene.walls) == 0:
+        if len(self.scene.walls) == 0 or not c.DEBUG_HITBOXES:
             return
 
         wall = self.scene.walls[-1]
@@ -192,40 +196,49 @@ class Editor:
             wall.y += 1
 
     def tile_mode(self) -> None:
-        a_held = t.is_held(self.action_buffer, t.Action.A)
-        b_held = t.is_held(self.action_buffer, t.Action.B)
-        self.debug_text = f"{self.tile_data.x}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
-        if a_held:
+        if self.tile_group_index < 0:
+            self.debug_text = (
+                f"{self.tile_data.x}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
+            )
+        else:
+            self.debug_text = f"GROUP {self.tile_group_index}"
+        if self.a_held:
             self.debug_text += " z+"
-        if b_held:
-            self.debug_text += " ovr"
+        if self.b_held:
+            self.debug_text += " add"
 
         if t.is_held(self.mouse_buffer, t.MouseButton.LEFT):
             new_tile_data = []
-            for i in range(self.tile_variance_x + 1):
+            if self.tile_group_index < 0:
                 tile_copy = self.tile_data.copy()
-                tile_copy.x += i
-                if a_held:
+                if self.a_held:
                     tile_copy.render_z += 1
                 new_tile_data.append(tile_copy)
+            else:
+                for x, y in TILE_GROUPS[self.tile_group_index]:
+                    tile_copy = self.tile_data.copy()
+                    tile_copy.x, tile_copy.y = x, y
+                    if self.a_held:
+                        tile_copy.render_z += 1
+                    new_tile_data.append(tile_copy)
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             cur = self.scene.grid_tiles.get(id, [])
             if all(tile_copy not in cur for tile_copy in new_tile_data):
                 self.scene.grid_tiles.setdefault(id, [])
-                # overwrite
-                if b_held:
-                    self.scene.grid_tiles[id] = [random.choice(new_tile_data)]
                 # add
-                else:
+                if self.b_held:
                     self.scene.grid_tiles[id].append(random.choice(new_tile_data))
                     self.scene.grid_tiles[id].sort(key=lambda tile: tile.render_z)
+                # overwrite
+                else:
+                    self.scene.grid_tiles[id] = [random.choice(new_tile_data)]
 
         if t.is_held(self.mouse_buffer, t.MouseButton.RIGHT):
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             if self.drag_tile != id and len(self.scene.grid_tiles.get(id, [])) > 0:
-                if b_held:
+                if self.b_held:
                     self.scene.grid_tiles.pop(id)
                 else:
                     self.scene.grid_tiles[id].pop()
@@ -239,47 +252,44 @@ class Editor:
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
             id = (int(x), int(y))
             if len(self.scene.grid_tiles.get(id, [])) > 0:
-                self.tile_data = self.scene.grid_tiles[id][-1].copy()
+                tile = self.scene.grid_tiles[id][-1]
+                if self.tile_data == tile:
+                    self.tile_data = self.stored_tile_data
+                else:
+                    self.stored_tile_data = self.tile_data.copy()
+                    self.tile_data = tile.copy()
 
-        shortcuts = TILE_SHORTCUTS[clamp(self.tile_data.y - 2, 0, len(TILE_SHORTCUTS) - 1)]
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
-            if a_held:
-                for pos in shortcuts[::-1]:
-                    if pos < self.tile_data.x:
-                        self.tile_data.x = pos
-                        break
-                else:  # fancy :-)
-                    self.tile_data.x = shortcuts[-1]
-            elif b_held:
-                self.tile_variance_x = max(self.tile_variance_x - 1, 0)
+            if self.a_held:
+                if self.tile_group_index < 0:
+                    self.tile_group_index = 0
+                self.tile_group_index = (self.tile_group_index - 1) % len(TILE_GROUPS)
+                self.tile_data.x, self.tile_data.y = TILE_GROUPS[self.tile_group_index][0]
             else:
+                self.tile_group_index = -1
                 self.tile_data.x = (self.tile_data.x - 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-            if a_held:
-                for pos in shortcuts:
-                    if pos > self.tile_data.x:
-                        self.tile_data.x = pos
-                        break
-                else:
-                    self.tile_data.x = shortcuts[0]
-            elif b_held:
-                self.tile_variance_x += 1
+            if self.a_held:
+                self.tile_group_index = (self.tile_group_index + 1) % len(TILE_GROUPS)
+                self.tile_data.x, self.tile_data.y = TILE_GROUPS[self.tile_group_index][0]
             else:
+                self.tile_group_index = -1
                 self.tile_data.x = (self.tile_data.x + 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
-            if a_held:
+            if self.a_held:
                 self.tile_data.render_z = max(self.tile_data.render_z - 1, -1)
             else:
+                self.tile_group_index = -1
                 self.tile_data.y = (self.tile_data.y + 1) % (a.TERRAIN.get_height() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.UP):
-            if a_held:
+            if self.a_held:
                 self.tile_data.render_z += 1
             else:
+                self.tile_group_index = -1
                 self.tile_data.y = (self.tile_data.y - 1) % (a.TERRAIN.get_height() // c.TILE_SIZE)
 
     def entity_mode(self) -> None:
-        a_held = t.is_held(self.action_buffer, t.Action.A)
-        if a_held:
+        if self.a_held:
             self.debug_text = "path paint"
         else:
             if self.drag_start and len(self.scene.entities) > 0:
@@ -289,7 +299,7 @@ class Editor:
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
             # path paint
-            if a_held:
+            if self.a_held:
                 self.entity_path.append(_floor_point(_camera_from_mouse(self.scene.camera)))
             # place ent
             else:
@@ -311,7 +321,7 @@ class Editor:
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
             # path paint
-            if a_held:
+            if self.a_held:
                 if len(self.entity_path) > 0:
                     self.entity_path.pop()
             # delete ent
@@ -331,10 +341,10 @@ class Editor:
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
                 self.drag_start = None
 
-        if t.is_pressed(self.action_buffer, t.Action.UP):
-            self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
-        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+        if t.is_pressed(self.action_buffer, t.Action.LEFT):
             self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
+        if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+            self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
 
         entity_name = ENTITY_CLASSES[self.entity_index].__name__
         entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
@@ -349,7 +359,7 @@ def editor_update(
 
     if editor.enabled and pressed[pygame.K_LCTRL]:
         # save
-        if just_pressed[pygame.K_s]:
+        if pressed[pygame.K_s] and t.is_pressed(action_buffer, t.Action.DOWN):
             editor.save()
             return
         # load
@@ -444,11 +454,11 @@ def editor_render(editor: Editor, surface: pygame.Surface):
             )
             pygame.draw.rect(
                 surface,
-                c.WHITE,
+                c.WHITE if editor.tile_group_index < 0 else c.BLUE,
                 pygame.Rect(
                     surface.get_width() // 2 - c.HALF_TILE_SIZE - 1,
                     surface.get_height() - c.TILE_SIZE - 1,
-                    c.TILE_SIZE * (1 + editor.tile_variance_x) + 2,
+                    c.TILE_SIZE + 2,
                     c.TILE_SIZE + 2,
                 ),
                 1,

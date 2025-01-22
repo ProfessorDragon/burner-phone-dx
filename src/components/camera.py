@@ -60,12 +60,7 @@ def camera_to_screen(camera: Camera, x: float, y: float) -> tuple[int, int]:
 
 
 def camera_to_screen_shake(camera: Camera, x: float, y: float) -> tuple[int, int]:
-    screen_x = x - camera.motion.position.x + camera.offset.x
-    screen_y = y - camera.motion.position.y + camera.offset.y
-    return (
-        round(screen_x + camera.shake_offset.x),
-        round(screen_y + camera.shake_offset.y),
-    )
+    return camera_to_screen(camera, x + camera.shake_offset.x, y + camera.shake_offset.y)
 
 
 def camera_to_screen_shake_rect(

@@ -80,6 +80,7 @@ class Game(Scene):
         self.pause_overlay.set_alpha(128)
 
         self.player = player_initialise()
+        self.player.motion.position = _tile_size_vec(6.5, -11.5)
 
         self.camera = Camera.empty()
         self.camera.motion.position = pygame.Vector2(player_rect(self.player.motion).center)

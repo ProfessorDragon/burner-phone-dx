@@ -46,7 +46,8 @@ UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")
 UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
 
 # entities
-ZOMBIE = pygame.mixer.Sound(SFX + "zomb.ogg")
+ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
+ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 
 
 # FONTS (ttf for web compatibility)

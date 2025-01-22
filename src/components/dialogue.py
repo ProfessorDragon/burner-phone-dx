@@ -143,7 +143,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
             case "style":
                 dialogue_packet.style = DialogueStyle(content)
                 if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
-                    play_sound(AudioChannel.UI, a.ZOMBIE)  # todo
+                    play_sound(AudioChannel.UI, a.ZOMBIE_CHASE)  # todo
                     timer_reset(dialogue.show_timer, 0.5)
 
             case "char":
@@ -195,7 +195,7 @@ def dialogue_update(
 
     if action_buffer:
         # confirm
-        if t.is_pressed(action_buffer, t.Action.SELECT) or t.is_pressed(action_buffer, t.Action.A):
+        if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(mouse_bufffer, t.Action.LEFT):
             if not is_complete:
                 # Skip writing
                 dialogue.char_index = len(active_packet.message)
