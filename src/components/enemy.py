@@ -4,7 +4,7 @@ import random
 from typing import Any
 import pygame
 
-from components.player import Player, player_caught, player_rect, shadow_render
+from components.player import Player, PlayerCaughtStyle, player_caught, player_rect, shadow_render
 from components.ray import SightData, collide_sight, compile_sight, render_sight
 import core.assets as a
 import core.constants as c
@@ -29,6 +29,9 @@ from components.motion import (
 )
 from scenes.scene import PLAYER_LAYER, PLAYER_OR_BG, PLAYER_OR_FG, RenderLayer
 from utilities.math import point_in_ellipse
+
+DIST_THRESHOLD = 300
+TURN_THRESHOLD = 100
 
 
 def render_path(surface: pygame.Surface, camera: Camera, path: list[pygame.Vector2]) -> None:
@@ -162,13 +165,14 @@ class PatrolEnemy(Enemy):
             if turn > 180:
                 turn -= 360
             # not facing in correct direction, turn
-            if abs(turn) > 1:
-                if abs(turn) > 5:
+            if abs(turn) > TURN_THRESHOLD * dt:
+                if abs(turn) > 600 * dt:
                     self.facing += turn / abs(turn) * 600 * dt
                 else:
                     self.facing = target_facing
+                self.motion.velocity = pygame.Vector2()
             # follow path
-            elif dist.magnitude_squared() > 1:
+            elif dist.magnitude_squared() > DIST_THRESHOLD * dt:
                 _enemy_follow(self, dist, 100)
             # use next point
             else:
@@ -180,14 +184,14 @@ class PatrolEnemy(Enemy):
         # collision
         prect = player_rect(player.motion)
         if prect.colliderect(self.get_hitbox()):
-            player_caught(player, camera)
+            player_caught(player, camera, PlayerCaughtStyle.SIGHT)
         else:
             self.sight_data.center = self.motion.position + pygame.Vector2(16, 16)
             self.sight_data.facing = self.facing
             if len(self.path) > 1 or not self.sight_data.compiled:
                 compile_sight(self.sight_data, grid_collision)
             if collide_sight(player, self.sight_data):
-                player_caught(player, camera)
+                player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         # animation
         if self.motion.velocity.magnitude_squared() > 0:
@@ -239,7 +243,7 @@ class SpotlightEnemy(Enemy):
             target = self.path[self.active_point]
             dist = target - self.motion.position
             # follow path
-            if dist.magnitude_squared() > 1:
+            if dist.magnitude_squared() > DIST_THRESHOLD * dt:
                 _enemy_follow(self, dist, 50)
             # use next point
             else:
@@ -255,7 +259,7 @@ class SpotlightEnemy(Enemy):
             self.light_radius - 4,
             (self.light_radius - 4) * c.PERSPECTIVE,
         ):
-            player_caught(player, camera)
+            player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         motion_update(self.motion, dt)
 
@@ -309,7 +313,7 @@ class SpikeTrapEnemy(Enemy):
                 if not self.activated:
                     animator_switch_animation(self.animator, "stepped_on")
                 else:
-                    player_caught(player, camera)
+                    player_caught(player, camera, PlayerCaughtStyle.HOLE)
             elif not self.stepped_on and prev_stepped:
                 self.activated = True
                 animator_switch_animation(self.animator, "activated")
@@ -378,7 +382,7 @@ class SecurityCameraEnemy(Enemy):
         if turn > 180:
             turn -= 360
         # not facing in correct direction, turn
-        if abs(turn) > 1:
+        if abs(turn) > TURN_THRESHOLD * dt:
             if self.swivel_forwards:
                 self.swivel += 30 * dt
             else:
@@ -392,7 +396,7 @@ class SecurityCameraEnemy(Enemy):
         self.sight_data.facing = self.facing + self.swivel
         compile_sight(self.sight_data, grid_collision)
         if collide_sight(player, self.sight_data):
-            player_caught(player, camera)
+            player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         # animation
         direction = direction_from_angle(self.facing + self.swivel)
@@ -462,7 +466,7 @@ class ZombieEnemy(Enemy):
                     self.chasing = False
                     self.randomize_walk_speed()
             else:
-                if center_dist.magnitude_squared() > 1:
+                if center_dist.magnitude_squared() > DIST_THRESHOLD * dt:
                     _enemy_follow(self, center_dist, self.walk_speed)
                 else:
                     self.chasing = True
@@ -474,7 +478,7 @@ class ZombieEnemy(Enemy):
 
         # collision
         if prect.colliderect(hitbox):
-            player_caught(player, camera)
+            player_caught(player, camera, PlayerCaughtStyle.ZOMBIE)
 
         # animation
         if self.motion.velocity.magnitude_squared() > 0:

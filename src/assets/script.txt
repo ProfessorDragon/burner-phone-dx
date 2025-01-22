@@ -7,12 +7,15 @@
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
 
 
+
+# MAIN STORY
+
 [OPENING VOICEMAIL]
 
 style phone
 char 0 phone
 - -- 1 unread voicemail --
-- hello this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company.
+- hello, this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company.
 - call me back on 0200-666-391.\n**shrkckk**
 # 66639 is the phone code for MONEY
 
@@ -24,11 +27,13 @@ char 0 phone
 - Thank you for calling Pharm-O-Rite LLC. Please wait while we transfer you to an operator.
 - Due to environmental conditions at this time, we are currently not accepting walk ins.
 - ...
-
 char 0 luke
 - ah, mr jones, we've been expecting you. all i'll need is a minute of your time.
-- listen, our monitoring systems detected that you're immune. we also know you can throw a ferocious punch.\nand that makes you extremely valuable.
-- ...
+- listen, our monitoring systems detected that you're immune.\ndo you know what that means?
+# ^ we also know you can throw a ferocious punch.
+# i think this is rather amusing dialogue
+- you're a titanium wall of biological defense, a lucky horse in the universal race titled "life", remaining strong as an elder oak rooted in the soils of time...
+- ...basically, you're extremely valuable to us.
 char 1
 - we're giving you an opportunity to save the world right now.\nmaybe i can throw a bit of cash on top to sweeten the pot.
 char 0
@@ -52,20 +57,106 @@ char 2 rogan
 char 0
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
-
-# show underground lab
-
+# TODO: show underground lab
 - ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
 char 1
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
-
-# cut back to game environment
-
+# TODO: cut back to game environment
 char 0
 - alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
 - it's like a phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
-
 style comms
 - test, test.
 char 1 rogan
-- well, the lab is east. get moving!
+- well, the lab is west. get moving!
+
+
+[BEGIN OUTDOORS]
+
+style comms
+char 2 rogan
+- hey hey, look who's making progress! agent, you've exceeded expectations by two entire miles.
+char 0
+- now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
+
+
+
+# DEATH COMMUNICATIONS
+# 'first caught x' should execute once per enemy type after acquiring comms.
+# 'second caught x' should execute once per enemy type after reaching the overworld halfway point.
+# 'third caught x' should execute once per enemy type after entering the lab.
+
+
+[FIRST CAUGHT SIGHT]
+
+style comms
+char 1 rogan
+- look buddy, did you pay attention to the briefing? keeping it on the "down low" means don't get seen!
+
+
+[SECOND CAUGHT SIGHT]
+
+style comms
+char 0 rogan
+- you know, it's in your best interest to not get caught.
+
+
+[THIRD CAUGHT SIGHT]
+style comms
+char 2 rogan
+- oh! so close!
+char 0
+- but not close enough.
+
+
+[FIRST CAUGHT HOLE]
+
+style comms
+char 1 rogan
+- hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any holes with the <A> button.
+
+
+[SECOND CAUGHT HOLE]
+
+style comms
+char 1 rogan
+- what, you fell in another hole? it ain't funny! we've got lives at stake here!
+
+
+[FIRST CAUGHT ZOMBIE]
+
+style comms
+char 0 rogan
+- errr.... wow. those guys have gone completely psycho. best to not get too close.
+
+
+[SECOND CAUGHT ZOMBIE]
+
+style comms
+char 0 rogan
+- agent, remember, you are the weapon.\nand by that, we mean you're immune to the virus...
+char 1
+- ...immune to the virus, not zombies!\nhave ya lost your mind?
+
+
+
+# PROGRESS COMMUNICATIONS
+# short lines i think are funny, can be played when the player reaches a checkpoint
+
+
+[PROGRESS 1]
+style comms
+char 2 rogan
+- keep up the good work
+
+
+[PROGRESS 2]
+style comms
+char 1 rogan
+- victory is within my grasp!\nno time to waste!
+
+
+[PROGRESS 3]
+style comms
+char 0 rogan
+- don't forget... you are... eheh... the weapon...

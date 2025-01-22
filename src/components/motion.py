@@ -15,12 +15,16 @@ class Direction(IntEnum):
     NW = auto()
 
 
-def direction_from_angle(theta: float) -> Direction:
-    return Direction(round((90 - theta) / 45) % 8)
+def direction_from_angle(angle: float) -> Direction:
+    return Direction(round((90 - angle) / 45) % 8)
 
 
 def direction_from_delta(dx: float, dy: float) -> Direction:
     return direction_from_angle(degrees(atan2(-dy, dx)))
+
+
+def angle_from_direction(dir: Direction) -> float:
+    return 90 - dir.value * 45
 
 
 @dataclass

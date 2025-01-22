@@ -13,14 +13,14 @@ from components.timer import Timer, timer_reset, timer_update
 
 
 # These constants should go elsewhere
-LETTER_SPEED = 0.02
-SPACE_SPEED = 0.04
-END_SENTENCE_SPEED = 0.1
-COMPLETED_DELAY = 0.2
+LETTER_SPEED = 0.01
+SPACE_SPEED = 0.02
+END_SENTENCE_SPEED = 0.12
+COMPLETED_DELAY = END_SENTENCE_SPEED
 DIALOGUE_LINE_LENGTH = 44
 
 # Continue icon
-CONTINUE_ICON = a.DEBUG_FONT.render("<SELECT> to continue", False, c.WHITE)
+CONTINUE_ICON = a.DEBUG_FONT.render("<A> to continue", False, c.WHITE)
 
 
 class DialogueStyle(Enum):
@@ -84,7 +84,7 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
         if ln.startswith("[") and ln.endswith("]"):
             if scene_name is not None:
                 dialogue.script_scenes[scene_name] = scene_content
-            scene_name = ln[1:-1]
+            scene_name = ln[1:-1].lower()
             scene_content = []
         elif ln.strip():
             scene_content.append(ln)
@@ -95,6 +95,7 @@ def dialogue_load_script(dialogue: DialogueSystem, script: str) -> None:
 def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> None:
     if not scene_name:
         return
+    scene_name = scene_name.lower()
     if scene_name not in dialogue.script_scenes:
         print(f"ERROR: Scene {scene_name} does not exist in dialogue scenes")
         return
@@ -261,7 +262,7 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
             pygame.draw.rect(surface, c.GRAY, inner_rect, 1)
         case DialogueStyle.PHONE:
             pygame.draw.rect(surface, c.GRAY, dialogue.rect, 0, 8)
-            pygame.draw.rect(surface, c.BLACK, dialogue.rect, 1, 8)
+            pygame.draw.rect(surface, c.WHITE, dialogue.rect, 1, 8)
         case DialogueStyle.COMMS:
             pygame.draw.rect(surface, (0, 128, 0), dialogue.rect)
             pygame.draw.rect(surface, (0, 255, 0), inner_rect, 1)

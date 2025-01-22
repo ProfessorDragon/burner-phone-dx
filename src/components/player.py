@@ -1,12 +1,15 @@
+from enum import IntEnum, auto
 import pygame
 
 from components.tiles import grid_collision_rect
+from components.timer import Timer, timer_reset
 import core.input as t
 import core.assets as a
 import core.constants as c
 from components.motion import (
     Direction,
     Motion,
+    angle_from_direction,
     direction_from_delta,
     motion_update,
 )
@@ -29,6 +32,13 @@ from components.animation import (
 )
 
 
+class PlayerCaughtStyle(IntEnum):
+    NONE = 0
+    SIGHT = auto()
+    HOLE = auto()
+    ZOMBIE = auto()
+
+
 class Player:
     def __init__(self):
         self.motion = Motion.empty()
@@ -37,7 +47,8 @@ class Player:
         self.animator = Animator()
         self.direction = Direction.E
         self.walk_speed = 150
-        self.caught_timer = 0
+        self.caught_timer = Timer()
+        self.caught_style = PlayerCaughtStyle.NONE
 
 
 def player_initialise() -> Player:
@@ -137,7 +148,7 @@ def player_update(
 ) -> None:
 
     # movement
-    if player.caught_timer <= 0:
+    if player.caught_timer.remaining <= 0:
         _player_movement(player, dt, action_buffer)
         # jumping
         if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
@@ -163,12 +174,14 @@ def player_update(
     animator_update(player.animator, dt)
 
 
-def player_caught(player: Player, camera: Camera) -> None:
-    if player.caught_timer > 0:
+def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
+    if player.caught_timer.remaining > 0:
         return
-    player.caught_timer = 0.5
+    player.caught_timer.duration = 0.5
+    timer_reset(player.caught_timer)
+    player.caught_style = style
     player.motion.velocity = pygame.Vector2()
-    camera.trauma = 0.5
+    camera.trauma = 0.4
 
 
 def player_kill(player: Player) -> None:
@@ -205,26 +218,47 @@ def shadow_render(
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:
     frame = animator_get_frame(player.animator)
 
-    shadow_render(surface, camera, player.motion, player.direction, player.z_position)
-    surface.blit(
-        frame,
-        camera_to_screen_shake(
-            camera, player.motion.position.x, player.motion.position.y + player.z_position
-        ),
-    )
+    # caught in hole
+    if player.caught_timer.remaining > 0:
+        if player.caught_style == PlayerCaughtStyle.HOLE:
+            px = player.caught_timer.elapsed * 32
+            scaled_frame = pygame.transform.smoothscale(frame, (32 - px, 32 - px))
+            scaled_frame.fill(
+                tuple(128 * player.caught_timer.elapsed for _ in range(3)),
+                special_flags=pygame.BLEND_RGB_SUB,
+            )
+            render_position = player.motion.position + pygame.Vector2(px / 2, px / 2)
+            render_position += pygame.Vector2(px * 0.25, 0).rotate(
+                -angle_from_direction(player.direction)
+            )
+            render_position.y += px * 0.5
+            surface.blit(scaled_frame, camera_to_screen_shake(camera, *render_position))
+            frame = None
 
-    # caught alert
-    if player.caught_timer > 0:
-        alert = a.DEBUG_FONT.render("!!", False, c.RED)
+    # normal rendering
+    if frame is not None:
+        shadow_render(surface, camera, player.motion, player.direction, player.z_position)
         surface.blit(
-            alert,
-            camera_to_screen(
-                camera,
-                player.motion.position.x + frame.get_width() // 2 - alert.get_width() // 2,
-                player.motion.position.y - 16 + player.caught_timer * 8,
+            frame,
+            camera_to_screen_shake(
+                camera, player.motion.position.x, player.motion.position.y + player.z_position
             ),
         )
 
+    # caught by sight
+    if player.caught_timer.remaining > 0:
+        if player.caught_style == PlayerCaughtStyle.SIGHT:
+            alert = a.DEBUG_FONT.render("!!", False, c.RED)
+            surface.blit(
+                alert,
+                camera_to_screen(
+                    camera,
+                    player.motion.position.x + frame.get_width() // 2 - alert.get_width() // 2,
+                    player.motion.position.y - 8 + player.caught_timer.remaining * 8,
+                ),
+            )
+
+    # hitbox
     if c.DEBUG_HITBOXES:
         pygame.draw.rect(
             surface,

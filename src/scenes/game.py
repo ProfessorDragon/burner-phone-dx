@@ -1,5 +1,7 @@
+import random
 import pygame
 
+from components.timer import timer_update
 import core.assets as a
 import core.constants as c
 import core.input as t
@@ -114,9 +116,9 @@ class Game(Scene):
         if not self.paused:
             if not self.editor.enabled and not in_dialogue:
                 # gameplay
-                if self.player.caught_timer > 0:
-                    self.player.caught_timer -= dt
-                    if self.player.caught_timer <= 0:
+                if self.player.caught_timer.remaining > 0:
+                    timer_update(self.player.caught_timer, dt)
+                    if self.player.caught_timer.remaining <= 0:
                         scene_reset(self)
                         player_kill(self.player)
 
@@ -131,7 +133,7 @@ class Game(Scene):
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     # self.paused = True
-                    dialogue_execute_script_scene(self.dialogue, "RETURN THE CALL")
+                    dialogue_execute_script_scene(self.dialogue, "begin outdoors")
                     dialogue_update(self.dialogue, dt)
 
             # general

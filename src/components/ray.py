@@ -5,6 +5,7 @@ from pygame import gfxdraw
 
 from components.camera import Camera, camera_to_screen_shake
 from components.player import Player, player_rect
+from components.tiles import grid_collision_rect
 import core.constants as c
 from utilities.math import point_in_circle, point_in_ellipse
 
@@ -31,24 +32,22 @@ def grid_raycast(
     steps: int,
     start_step: int,
 ) -> float:
-    last_tile = None
     for i in range(min(start_step, steps), steps):
         percent = float(i) / steps
         ray = vec * percent
         x = int((ray.x + center.x) // c.TILE_SIZE)
         y = int((ray.y + center.y) // c.TILE_SIZE)
-        if last_tile == (x, y):
-            continue
         if (x, y) in grid_collision:
             return percent
-        last_tile = (x, y)
     return 1
 
 
 def compile_sight(data: SightData, grid_collision: set[tuple[int, int]]) -> None:
     assert data.center is not None
+    # fwiw, this is relatively cheap. my computer can handle almost 200 steps without lag
+    # so, as long as there isn't an excessive amount of raycasting enemies on screen at once, it's fine
     segs = int(pi / 360 * data.radius * data.angle)
-    steps = int(data.radius / c.HALF_TILE_SIZE)
+    steps = int(data.radius / 4)
     offset_center = data.center + pygame.Vector2(0, data.z_offset)
     data.collision_depths = []
     data.render_segs = [(data.radius, data.radius + data.z_offset)]
