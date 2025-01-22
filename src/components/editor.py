@@ -300,7 +300,9 @@ class Editor:
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
             self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
 
-        self.debug_text += f"\n{self.entity_index} {ENTITY_CLASSES[self.entity_index].__name__.removesuffix('Enemy')}"
+        entity_name = ENTITY_CLASSES[self.entity_index].__name__
+        entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
+        self.debug_text += f"\n{self.entity_index} {entity_name}"
 
 
 def editor_update(

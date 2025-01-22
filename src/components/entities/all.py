@@ -1,4 +1,5 @@
 from typing import Any
+from components.entities.button import ButtonEntity
 from components.entities.entity import Entity
 from components.entities.patrol import PatrolEnemy
 from components.entities.security_camera import SecurityCameraEnemy
@@ -8,11 +9,14 @@ from components.entities.zombie import ZombieEnemy
 
 
 ENTITY_CLASSES = [
+    # enemies
     PatrolEnemy,
     SpotlightEnemy,
     SpikeTrapEnemy,
     SecurityCameraEnemy,
     ZombieEnemy,
+    # other
+    ButtonEntity,
 ]
 
 
