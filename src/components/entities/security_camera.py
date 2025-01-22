@@ -12,7 +12,7 @@ from components.animation import (
 )
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import TURN_THRESHOLD, Entity
-from components.motion import direction_from_angle
+from components.motion import Direction, direction_from_angle
 from components.player import Player, PlayerCaughtStyle, player_caught
 from components.ray import SightData, collide_sight, compile_sight, render_sight
 from scenes.scene import PLAYER_LAYER, RenderLayer
@@ -25,10 +25,14 @@ class SecurityCameraEnemy(Entity):
         animation_mapping = directional_animation_mapping(
             {
                 "swivel": [
-                    Animation([a.DEBUG_IMAGE_16]),
-                    Animation([a.DEBUG_IMAGE_16]),
-                    Animation([a.DEBUG_IMAGE_16]),
-                    Animation([a.DEBUG_IMAGE_16]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[4]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[3]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[2]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[1]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[0]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[7]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[6]]),
+                    Animation([a.SECURITY_CAMERA_FRAMES[5]]),
                 ]
             }
         )
@@ -89,7 +93,7 @@ class SecurityCameraEnemy(Entity):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         # animation
-        direction = direction_from_angle(self.facing + self.swivel)
+        direction = direction_from_angle(self.facing)  # looks better without adding swivel
         animator_switch_animation(self.animator, f"swivel_{direction}")
         animator_update(self.animator, dt)
 
