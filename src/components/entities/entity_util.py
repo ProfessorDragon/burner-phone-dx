@@ -32,22 +32,24 @@ def render_shadow(
     surface.blit(shadow, camera_to_screen_shake(camera, *shadow_tl))
 
 
-def render_path(surface: pygame.Surface, camera: Camera, path: list[pygame.Vector2]) -> None:
+def render_path(
+    surface: pygame.Surface, camera: Camera, path: list[pygame.Vector2], color=c.RED
+) -> None:
     if len(path) == 0:
         return
     if len(path) == 1:
-        pygame.draw.circle(surface, c.RED, camera_to_screen_shake(camera, *path[0]), 3)
+        pygame.draw.circle(surface, color, camera_to_screen_shake(camera, *path[0]), 3)
     else:
         pygame.draw.polygon(
             surface,
-            c.RED,
+            color,
             [camera_to_screen_shake(camera, *point) for point in path],
             1,
         )
 
     for i, point in enumerate(path):
         surface.blit(
-            a.DEBUG_FONT.render(str(i), False, c.RED),
+            a.DEBUG_FONT.render(str(i), False, color),
             camera_to_screen_shake(camera, *point),
         )
 

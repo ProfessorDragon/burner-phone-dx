@@ -27,17 +27,17 @@ class CheckpointEntity(Entity):
             "pos": (*self.motion.position,),
             "w": self.w,
             "h": self.h,
-            "main_story": self.main_story_progress,
+            "main_story": self.main_story_progress.name,
         }
 
     @staticmethod
     def from_json(js):
-        entity = CheckpointEntity()
-        entity.motion.position = pygame.Vector2(js["pos"])
-        entity.w, entity.h = js.get("w", 1), js.get("h", 1)
+        ent = CheckpointEntity()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.w, ent.h = js.get("w", 1), js.get("h", 1)
         if "main_story" in js:
-            entity.main_story_progress = MainStoryProgress[js["main_story"]]
-        return entity
+            ent.main_story_progress = MainStoryProgress[js["main_story"]]
+        return ent
 
     def reset(self) -> None:
         pass

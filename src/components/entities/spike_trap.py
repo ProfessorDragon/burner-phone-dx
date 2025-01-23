@@ -37,10 +37,10 @@ class SpikeTrapEnemy(Entity):
 
     @staticmethod
     def from_json(js):
-        enemy = SpikeTrapEnemy()
-        enemy.motion.position = pygame.Vector2(js["pos"])
-        enemy.initial_activated = js.get("activated", False)
-        return enemy
+        ent = SpikeTrapEnemy()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.initial_activated = js.get("activated", False)
+        return ent
 
     def reset(self) -> None:
         self.stepped_on = False

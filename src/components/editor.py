@@ -294,7 +294,9 @@ class Editor:
             self.debug_text = "path paint"
         else:
             if self.drag_start and len(self.scene.entities) > 0:
-                self.debug_text = f"facing {getattr(self.scene.entities[-1], 'facing', '')}"
+                ent = self.scene.entities[-1]
+                self.debug_text = f"facing {getattr(ent, 'facing', '')}"
+                self.debug_text += f"\nw {getattr(ent, 'w', '')} h {getattr(ent, 'h', '')}"
             else:
                 self.debug_text = "place entity"
 
@@ -304,20 +306,22 @@ class Editor:
                 self.entity_path.append(_floor_point(_camera_from_mouse(self.scene.camera)))
             # place ent
             else:
-                pos = _floor_point(_camera_from_mouse(self.scene.camera))
+                x, y = _floor_point(_camera_from_mouse(self.scene.camera))
                 if len(self.entity_path) == 0:
-                    self.entity_path.append(pos)
+                    self.entity_path.append((x, y))
                 # just put in a lot of properties, only the necessary ones will be used
                 entity = entity_from_json(
                     {
                         "class": ENTITY_CLASSES[self.entity_index].__name__,
-                        "pos": (*pos,),
+                        "pos": (x, y),
+                        "w": 1,
+                        "h": 1,
                         "path": self.entity_path,
                         "facing": 0,
                     }
                 )
                 self.scene.entities.append(entity)
-                self.drag_start = pos
+                self.drag_start = pygame.Vector2(x, y)
                 self.entity_path.clear()
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
@@ -333,10 +337,21 @@ class Editor:
                         self.scene.entities.pop(len(self.scene.entities) - 1 - i)
                         break
 
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.MIDDLE):
+            pos = _camera_from_mouse(self.scene.camera)
+            for i, entity in enumerate(self.scene.entities[::-1]):
+                if entity.get_hitbox().collidepoint(pos):
+                    self.entity_index = ENTITY_CLASSES.index(entity.__class__)
+                    self.entity_path = [point.copy() for point in entity.get_path() or []]
+                    break
+
         if self.drag_start:
             end = _camera_from_mouse(self.scene.camera)
+            ent = self.scene.entities[-1]
+            dx, dy = _floor_point(end, False) - _floor_point(self.drag_start, False)
+            ent.w, ent.h = max(dx + 1, 1), max(dy + 1, 1)
             if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
-                self.scene.entities[-1].facing = (
+                ent.facing = (
                     round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 10.0) * 10
                 )
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
@@ -444,7 +459,7 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                 )
             else:
                 new_tile_data = editor.tile_data.copy()
-                if t.is_held(editor.action_buffer, t.Action.A):
+                if editor.a_held:
                     new_tile_data.render_z += 1
                 render_tile(surface, editor.scene.camera, x, y, new_tile_data)
                 render_tile_hitbox(surface, editor.scene.camera, x, y, new_tile_data)
@@ -469,11 +484,14 @@ def editor_render(editor: Editor, surface: pygame.Surface):
             )
 
         case EditorMode.ENTITIES:
+            render_path(surface, editor.scene.camera, editor.entity_path, c.WHITE)
             x, y = _floor_point(_camera_from_mouse(editor.scene.camera))
             pygame.draw.circle(
-                surface, c.WHITE, camera_to_screen_shake(editor.scene.camera, x, y), 2
+                surface,
+                c.RED if editor.a_held else c.WHITE,
+                camera_to_screen_shake(editor.scene.camera, x, y),
+                2,
             )
-            render_path(surface, editor.scene.camera, editor.entity_path)
 
     # debug text
     debug_text = str(editor.mode)

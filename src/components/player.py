@@ -39,6 +39,7 @@ from components.animation import (
 class MainStoryProgress(IntEnum):
     INTRO = 0
     COMMS = auto()
+    HALFWAY = auto()
 
 
 @dataclass

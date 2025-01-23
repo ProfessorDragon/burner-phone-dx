@@ -114,7 +114,7 @@ char 0
 
 style comms
 char 1 rogan
-- hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any holes with the <A> button.
+- hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any deadly substances with the <A> button.
 
 
 [SECOND CAUGHT HOLE]

@@ -21,10 +21,10 @@ class ButtonEntity(Entity):
 
     @staticmethod
     def from_json(js):
-        entity = ButtonEntity()
-        entity.motion.position = pygame.Vector2(js["pos"])
-        entity.color = js.get("color", 0)
-        return entity
+        ent = ButtonEntity()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.color = js.get("color", 0)
+        return ent
 
     def reset(self) -> None:
         self.stepped_on = False

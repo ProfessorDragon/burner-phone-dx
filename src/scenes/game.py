@@ -58,8 +58,14 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
-def _post_death_comms(dialogue: DialogueSystem, caught_style: PlayerCaughtStyle) -> None:
-    state_name = "FIRST"  # todo
+def _post_death_comms(
+    progress: MainStoryProgress, dialogue: DialogueSystem, caught_style: PlayerCaughtStyle
+) -> None:
+    if progress < MainStoryProgress.COMMS:
+        return
+    state_name = "FIRST"
+    if progress >= MainStoryProgress.HALFWAY:
+        state_name = "SECOND"
     scene_name = f"{state_name} CAUGHT {caught_style.name}"
     if not dialogue_has_executed_scene(dialogue, scene_name):
         dialogue_execute_script_scene(dialogue, scene_name)
@@ -100,8 +106,8 @@ class Game(Scene):
         dialogue_reset_queue(self.dialogue)
         for entity in self.entities:
             entity_reset(entity)
-        if not pygame.Channel(AudioChannel.MUSIC).get_busy():
-            play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[0], -1)
+        # if not pygame.Channel(AudioChannel.MUSIC).get_busy():
+        #     play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
     def execute(
         self,
@@ -135,11 +141,15 @@ class Game(Scene):
                 # timers
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
-                    if self.player.progression.main_story >= MainStoryProgress.COMMS:
-                        bindings = {
-                            0.5: partial(_post_death_comms, self.dialogue, self.player.caught_style)
-                        }
-                        stopwatch_reset(self.post_death_stopwatch, bindings)
+                    bindings = {
+                        0.5: partial(
+                            _post_death_comms,
+                            self.player.progression.main_story,
+                            self.dialogue,
+                            self.player.caught_style,
+                        )
+                    }
+                    stopwatch_reset(self.post_death_stopwatch, bindings)
                     player_reset(self.player)
                 stopwatch_update(self.post_death_stopwatch, dt)
 
