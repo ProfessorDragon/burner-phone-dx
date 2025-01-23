@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 import pygame
 
-from utilities.sprite import slice_sheet
+import core.constants as c
+from utilities.sprite import get_sprite_from_sheet, slice_sheet
 
 
 ## IMAGES (png, webp or jpg for web compatibility)
@@ -27,6 +28,7 @@ PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
+SIGN = get_sprite_from_sheet(TERRAIN, 20 * c.TILE_SIZE, 4 * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE)
 
 
 ## AUDIO (ogg for web compatibility)
@@ -37,7 +39,12 @@ DEBUG_THEME_MENU = pygame.mixer.Sound(SFX + "menu.ogg")
 
 # player
 JUMP = pygame.mixer.Sound(SFX + "jump.ogg")
-FOOTSTEPS = [pygame.mixer.Sound(SFX + "footstep_1.ogg"), pygame.mixer.Sound(SFX + "footstep_2.ogg")]
+FOOTSTEPS = [
+    pygame.mixer.Sound(SFX + "footstep_1.ogg"),
+    pygame.mixer.Sound(SFX + "footstep_2.ogg"),
+    pygame.mixer.Sound(SFX + "patrol_footstep_1.ogg"),
+    pygame.mixer.Sound(SFX + "patrol_footstep_2.ogg"),
+]
 CAUGHT_SIGHT = pygame.mixer.Sound(SFX + "caught_sight.ogg")
 CAUGHT_HOLE = pygame.mixer.Sound(SFX + "caught_hole.ogg")
 
@@ -76,8 +83,23 @@ DIALOGUE_PLACEHOLDER_SOUNDS = [
     pygame.mixer.Sound(SFX + "dialogue_low_2.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_comms_1.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_comms_2.ogg"),
+    pygame.mixer.Sound(SFX + "dialogue_sign_1.ogg"),
+    pygame.mixer.Sound(SFX + "dialogue_sign_2.ogg"),
 ]
+
+COMMS_OPEN = pygame.mixer.Sound(SFX + "comms_open.ogg")
+
 DIALOGUE_CHARACTERS = {
+    "default": DialogueCharacter(
+        "???",
+        [DEBUG_IMAGE_64],
+        DIALOGUE_PLACEHOLDER_SOUNDS[0:2],
+    ),
+    "sign": DialogueCharacter(
+        "Sign",
+        [DEBUG_IMAGE_64],
+        DIALOGUE_PLACEHOLDER_SOUNDS[6:8],
+    ),
     "phone": DialogueCharacter(
         "Phone",
         [DEBUG_IMAGE_64],

@@ -161,3 +161,11 @@ char 1 rogan
 style comms
 char 0 rogan
 - don't forget... you are... eheh... the weapon...
+
+
+## SIGNS
+
+[DEFAULT SIGN]
+style sign
+char 0 sign
+- Made for the Pirate Software Game Jam 16 (2025)

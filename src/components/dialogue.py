@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from queue import deque
+from collections import deque
 import random
 from typing import Callable
 from functools import partial
@@ -21,13 +21,11 @@ END_SENTENCE_SPEED = 0.12
 COMPLETED_DELAY = END_SENTENCE_SPEED
 DIALOGUE_LINE_LENGTH = 44
 
-# Continue icon
-CONTINUE_ICON = a.DEBUG_FONT.render("<A> to continue", False, c.WHITE)
-
 
 class DialogueStyle(Enum):
     DEFAULT = "default"
     PHONE = "phone"
+    SIGN = "sign"
     COMMS = "comms"
 
 
@@ -50,11 +48,11 @@ class DialoguePacket:
 
 @dataclass
 class DialogueSystem:
-    queue: list[DialoguePacket] = None
+    queue: deque = None
     char_index: int = 0
     font: pygame.Font = None
     rect: pygame.Rect = None
-    text: pygame.Surface = None
+    text: str = None
     show_timer: Timer = None
     character_timer: Timer = None
     complete_timer: Timer = None
@@ -71,7 +69,7 @@ def dialogue_initialise(dialogue: DialogueSystem) -> None:
     dialogue.char_index = 0
     dialogue.font = a.DEBUG_FONT
     dialogue.rect = pygame.Rect(20, c.WINDOW_HEIGHT - 100, c.WINDOW_WIDTH - 40, 80)
-    dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
+    dialogue.text = ""
     dialogue.show_timer = Timer()
     dialogue.character_timer = Timer()
     dialogue.complete_timer = Timer()
@@ -115,7 +113,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
 
     dialogue_packet = DialoguePacket()
     dialogue_packet.graphic = a.DEBUG_SPRITE_64
-    last_character_id = None
+    last_character_id = "default"
 
     for ln in dialogue.script_scenes[scene_name]:
         if not ln.strip():
@@ -143,12 +141,12 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
             case "style":
                 dialogue_packet.style = DialogueStyle(content)
                 if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
-                    play_sound(AudioChannel.UI, a.ZOMBIE_CHASE)  # todo
+                    play_sound(AudioChannel.UI, a.COMMS_OPEN)
                     timer_reset(dialogue.show_timer, 0.5)
 
             case "char":
                 args = content.split(" ", 1)
-                if len(args) > 1:
+                if len(args) > 1 and args[1] in a.DIALOGUE_CHARACTERS:
                     character = a.DIALOGUE_CHARACTERS[args[1]]
                     last_character_id = args[1]
                 else:
@@ -199,7 +197,7 @@ def dialogue_update(
             if not is_complete:
                 # Skip writing
                 dialogue.char_index = len(active_packet.message)
-                dialogue.text = dialogue.font.render(active_packet.message, False, c.WHITE)
+                dialogue.text = active_packet.message
                 timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
             elif dialogue.complete_timer.remaining <= 0:
@@ -247,8 +245,7 @@ def dialogue_update(
         if dialogue.character_timer.remaining <= 0:
             new_char = active_packet.message[dialogue.char_index]
             dialogue.char_index += 1
-            new_string = active_packet.message[: dialogue.char_index]
-            dialogue.text = dialogue.font.render(new_string, False, c.WHITE)
+            dialogue.text = active_packet.message[: dialogue.char_index]
 
             # now is complete
             if dialogue.char_index >= len(active_packet.message):
@@ -257,12 +254,13 @@ def dialogue_update(
             else:
                 if new_char == " ":
                     timer_reset(dialogue.character_timer, SPACE_SPEED)
-                elif new_char in "?!.":
-                    timer_reset(dialogue.character_timer, END_SENTENCE_SPEED)
                 else:
                     if active_packet.sounds and dialogue.char_index % 4 == 0:
                         play_sound(AudioChannel.UI, random.choice(active_packet.sounds))
-                    timer_reset(dialogue.character_timer, LETTER_SPEED)
+                    if new_char in "?!.":
+                        timer_reset(dialogue.character_timer, END_SENTENCE_SPEED)
+                    else:
+                        timer_reset(dialogue.character_timer, LETTER_SPEED)
 
     return True
 
@@ -275,12 +273,13 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
 
     active_packet = dialogue.queue[0]
 
-    # background
+    # styling
     inner_rect = dialogue.rect.copy()
     inner_rect.x += 1
     inner_rect.w -= 2
     inner_rect.y += 1
     inner_rect.h -= 2
+    fg_color = c.WHITE
     match active_packet.style:
         case DialogueStyle.DEFAULT:
             pygame.draw.rect(surface, c.BLACK, dialogue.rect)
@@ -288,13 +287,17 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
         case DialogueStyle.PHONE:
             pygame.draw.rect(surface, c.GRAY, dialogue.rect, 0, 8)
             pygame.draw.rect(surface, c.WHITE, dialogue.rect, 1, 8)
+        case DialogueStyle.SIGN:
+            pygame.draw.rect(surface, c.WHITE, dialogue.rect)
+            pygame.draw.rect(surface, c.BLACK, dialogue.rect, 1)
+            fg_color = c.BLACK
         case DialogueStyle.COMMS:
             pygame.draw.rect(surface, (0, 128, 0), dialogue.rect)
             pygame.draw.rect(surface, (0, 255, 0), inner_rect, 1)
 
     graphic = active_packet.graphic
     surface.blit(graphic, (dialogue.rect.x + 3, dialogue.rect.y + 3), (0, 0, 64, 64))
-    name = a.DEBUG_FONT.render(active_packet.name, False, c.WHITE)
+    name = a.DEBUG_FONT.render(active_packet.name, False, fg_color)
     surface.blit(
         name,
         (
@@ -303,7 +306,10 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
         ),
     )
 
-    surface.blit(dialogue.text, (dialogue.rect.x + 80, dialogue.rect.y + 10))
+    surface.blit(
+        dialogue.font.render(dialogue.text, False, fg_color),
+        (dialogue.rect.x + 80, dialogue.rect.y + 10),
+    )
     if dialogue.char_index >= len(active_packet.message) and dialogue.complete_timer.remaining <= 0:
         x = dialogue.rect.right - 10
         y = dialogue.rect.bottom - 2
@@ -317,7 +323,7 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
                 if button.selected:
                     pygame.draw.polygon(
                         surface,
-                        c.WHITE,
+                        fg_color,
                         [
                             (x - 4, y - button_icon.get_height() // 2),
                             (x - 7, y - button_icon.get_height() + 3),
@@ -326,18 +332,16 @@ def dialogue_render(dialogue: DialogueSystem, surface: pygame.Surface) -> bool:
                     )
                 x -= 20
         else:
+            continue_icon = a.DEBUG_FONT.render("<A> to continue", False, fg_color)
             surface.blit(
-                CONTINUE_ICON,
-                (
-                    x - CONTINUE_ICON.get_width(),
-                    y - CONTINUE_ICON.get_height(),
-                ),
+                continue_icon,
+                (x - continue_icon.get_width(), y - continue_icon.get_height()),
             )
 
 
 def dialogue_reset_packet(dialogue: DialogueSystem) -> None:
     dialogue.char_index = 0
-    dialogue.text = a.DEBUG_FONT.render("", False, c.WHITE)
+    dialogue.text = ""
 
 
 def dialogue_reset_queue(dialogue: DialogueSystem) -> None:

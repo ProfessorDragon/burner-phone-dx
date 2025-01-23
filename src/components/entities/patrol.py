@@ -1,5 +1,6 @@
 import pygame
 
+from components.audio import AudioChannel, play_sound
 from components.entities.entity_util import path_from_json, path_to_json, render_shadow
 import core.assets as a
 from components.animation import (
@@ -97,15 +98,23 @@ class PatrolEnemy(Entity):
                 compile_sight(self.sight_data, grid_collision)
             if collide_sight(player, self.sight_data):
                 player_caught(player, camera, PlayerCaughtStyle.SIGHT)
+        motion_update(self.motion, dt)
 
         # animation
         if self.motion.velocity.magnitude_squared() > 0:
             animator_switch_animation(self.animator, f"walk_{self.direction}")
         else:
             animator_switch_animation(self.animator, f"idle_{self.direction}")
-        animator_update(self.animator, dt)
 
-        motion_update(self.motion, dt)
+        prev_frame = self.animator.frame_index
+        animator_update(self.animator, dt)
+        if self.motion.velocity.magnitude_squared() > 0:
+            step_frames = (7, 3)
+            if prev_frame not in step_frames and self.animator.frame_index in step_frames:
+                play_sound(
+                    AudioChannel.SFX,
+                    a.FOOTSTEPS[2 if self.animator.frame_index == step_frames[0] else 3],
+                )
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         frame = animator_get_frame(self.animator)

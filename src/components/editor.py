@@ -376,6 +376,7 @@ def editor_update(
     # debug shortcuts
     if just_pressed[pygame.K_r]:
         scene_reset(editor.scene)
+        editor.scene.dialogue.executed_scenes.clear()
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
     if just_pressed[pygame.K_t]:

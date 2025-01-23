@@ -2,6 +2,7 @@ from enum import IntEnum, auto
 import pygame
 
 from components.audio import AudioChannel, play_sound
+from components.dialogue import DialogueSystem, dialogue_execute_script_scene
 from components.entities.entity_util import render_shadow
 from components.tiles import grid_collision_rect
 from components.timer import Timer, timer_reset
@@ -47,29 +48,29 @@ class Player:
         self.z_position = 0
         self.z_velocity = 0
         self.animator = Animator()
-        self.direction = Direction.E
-        self.walk_speed = 150
-        self.caught_timer = Timer()
-        self.caught_style = PlayerCaughtStyle.NONE
-
-
-def player_initialise() -> Player:
-    player = Player()
-    animation_mapping = walking_animation_mapping(a.PLAYER_FRAMES)
-    animation_mapping.update(
-        directional_animation_mapping(
-            {
-                "jump": [
-                    Animation(a.PLAYER_FRAMES[55:60], 0.08, False),
-                    Animation(a.PLAYER_FRAMES[45:50], 0.08, False),
-                    Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
-                    Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
-                ],
-            }
+        animation_mapping = walking_animation_mapping(a.PLAYER_FRAMES)
+        animation_mapping.update(
+            directional_animation_mapping(
+                {
+                    "jump": [
+                        Animation(a.PLAYER_FRAMES[55:60], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[45:50], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
+                    ],
+                }
+            )
         )
-    )
-    animator_initialise(player.animator, animation_mapping)
-    return player
+        animator_initialise(self.animator, animation_mapping)
+
+        self.direction = Direction.E
+        self.caught_timer = Timer()  # resets scene and player when completed
+        self.caught_style = PlayerCaughtStyle.NONE
+        self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
+
+        # consts
+        self.walk_speed = 150
+        self.jump_velocity = 120
 
 
 def player_rect(motion: Motion):
@@ -147,16 +148,21 @@ def player_update(
     action_buffer: t.InputBuffer,
     grid_collision: set[tuple[int, int]],
     walls: list[pygame.Rect],
+    dialogue: DialogueSystem,
 ) -> None:
 
     # movement
     if player.caught_timer.remaining <= 0:
         _player_movement(player, dt, action_buffer)
-        # jumping
-        if player.z_position == 0 and t.is_pressed(action_buffer, t.Action.A):
-            player.z_velocity = -120
-            animator_reset(player.animator)
-            play_sound(AudioChannel.PLAYER, a.JUMP)
+        if t.is_pressed(action_buffer, t.Action.A):
+            # interact
+            if player.interact_scene is not None:
+                dialogue_execute_script_scene(dialogue, player.interact_scene)
+            # jump
+            elif player.z_position == 0:
+                player.z_velocity = -player.jump_velocity
+                animator_reset(player.animator)
+                play_sound(AudioChannel.PLAYER, a.JUMP)
 
     # collision
     dx, dy = player.motion.velocity

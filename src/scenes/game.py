@@ -1,3 +1,4 @@
+from collections import deque
 from dataclasses import dataclass
 from functools import partial
 import pygame
@@ -21,13 +22,13 @@ from components.dialogue import (
 from components.editor import Editor, editor_render, editor_update
 from components.entities.entity import Entity, entity_render, entity_reset, entity_update
 from components.player import (
+    Player,
     PlayerCaughtStyle,
     player_reset,
     player_rect,
     player_render_overlays,
     player_update,
     player_render,
-    player_initialise,
 )
 from components.tiles import (
     TileData,
@@ -79,7 +80,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = player_initialise()
+        self.player = Player()
         self.player.motion.position = _tile_size_vec(6.5, -11.5)
 
         self.camera = Camera.empty()
@@ -151,7 +152,9 @@ class Game(Scene):
                 stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player
-                player_update(self.player, dt, action_buffer, self.grid_collision, self.walls)
+                player_update(
+                    self.player, dt, action_buffer, self.grid_collision, self.walls, self.dialogue
+                )
 
                 # entities
                 for entity in self.entities:
@@ -190,20 +193,23 @@ class Game(Scene):
         )
 
         # behind player
-        not_bg_tiles = []
+        cutoff_bg_tiles = deque()
+        cutoff_fg_tiles = deque()
         for y in range(tile_bounds.top, tile_bounds.bottom + 1):
             for x in range(tile_bounds.left, tile_bounds.right + 1):
                 for tile in self.grid_tiles.get((x, y), []):
                     if tile.render_z < 0:
                         render_tile(surface, self.camera, x, y, tile)
+                    elif terrain_cutoff > (y + tile.render_z + 1) * c.TILE_SIZE:
+                        cutoff_bg_tiles.append((x, y, tile))
                     else:
-                        not_bg_tiles.append((x, y, tile))
+                        cutoff_fg_tiles.append((x, y, tile))
         for entity in self.entities:
             if entity_bounds.collidepoint(entity.get_hitbox().center):
                 entity_render(entity, surface, self.camera, RenderLayer.RAYS)
-        for x, y, tile in not_bg_tiles:
-            if terrain_cutoff > (y + tile.render_z + 1) * c.TILE_SIZE:
-                render_tile(surface, self.camera, x, y, tile)
+        while cutoff_bg_tiles:
+            x, y, tile = cutoff_bg_tiles.popleft()
+            render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.collidepoint(entity.get_hitbox().center):
                 entity_render(
@@ -221,9 +227,9 @@ class Game(Scene):
         player_render(self.player, surface, self.camera)
 
         # in front of player
-        for x, y, tile in not_bg_tiles:
-            if terrain_cutoff <= (y + tile.render_z + 1) * c.TILE_SIZE:
-                render_tile(surface, self.camera, x, y, tile)
+        while cutoff_fg_tiles:
+            x, y, tile = cutoff_fg_tiles.popleft()
+            render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.collidepoint(entity.get_hitbox().center):
                 entity_render(
