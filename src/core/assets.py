@@ -45,6 +45,7 @@ THEME_MUSIC = [
 
 # player
 JUMP = pygame.mixer.Sound(SFX + "jump.ogg")
+ROLL = pygame.mixer.Sound(SFX + "roll.ogg")
 FOOTSTEPS = [
     pygame.mixer.Sound(SFX + "footstep_1.ogg"),
     pygame.mixer.Sound(SFX + "footstep_2.ogg"),

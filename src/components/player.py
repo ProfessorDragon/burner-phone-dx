@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
+import random
 import pygame
 
-from components.audio import AudioChannel, play_sound
+from components.audio import AudioChannel, channel_busy, play_sound
 from components.dialogue import DialogueSystem, dialogue_execute_script_scene
 from components.entities.entity_util import render_shadow
 from components.tiles import grid_collision_rect
-from components.timer import Timer, timer_reset
+from components.timer import Timer, timer_reset, timer_update
 import core.input as t
 import core.assets as a
 import core.constants as c
@@ -59,6 +60,7 @@ class Player:
     def __init__(self, spawn_position: pygame.Vector2):
         self.motion = Motion.empty()
         self.motion.position = spawn_position
+        self.directional_input = pygame.Vector2()
         self.z_position = 0
         self.z_velocity = 0
         self.animator = Animator()
@@ -77,15 +79,20 @@ class Player:
         )
         animator_initialise(self.animator, animation_mapping)
 
-        self.direction = Direction.E
         self.progression = PlayerProgression()
         self.progression.checkpoint = self.motion.position.copy()
+
+        self.direction = Direction.E
+        self.roll_start_timer = Timer()  # detects double tap input
+        self.roll_max_timer = Timer()  # max duration for a roll
+        self.roll_cooldown_timer = Timer()  # delay before another roll can be performed
         self.caught_timer = Timer()  # resets scene and player when completed
         self.caught_style = PlayerCaughtStyle.NONE
         self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
 
         # consts
         self.walk_speed = 150
+        self.roll_speed = 250
         self.jump_velocity = 120
 
 
@@ -95,18 +102,17 @@ def player_rect(motion: Motion):
 
 
 def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
+    player.directional_input = pygame.Vector2(
+        t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT),
+        t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP),
+    )
+    # no roll control
+    if player.roll_max_timer.remaining > 0:
+        return
     # lateral movement
-    dx = t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT)
-    dy = t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP)
-    if dx != 0 and dy != 0:
-        # trig shortcut, normalizing the vector
-        dx *= 0.707
-        dy *= 0.707
-
-    player.motion.velocity.x = dx * player.walk_speed
-    player.motion.velocity.y = dy * player.walk_speed * c.PERSPECTIVE
-    if player.z_position > 0:
-        pass  # maybe reduce air control if jumping?
+    player.motion.velocity = player.directional_input * player.walk_speed
+    if player.directional_input.x != 0 and player.directional_input.y != 0:
+        player.motion.velocity *= 0.707  # trig shortcut, normalizing the vector
 
 
 def _player_collision(
@@ -167,9 +173,17 @@ def player_update(
     dialogue: DialogueSystem,
 ) -> None:
 
+    prev_input = player.directional_input.copy()
+    prev_has_input = prev_input.magnitude_squared() > 0
+    has_input = False
+    is_moving = False
+
     # movement
     if player.caught_timer.remaining <= 0:
         _player_movement(player, dt, action_buffer)
+        has_input = player.directional_input.magnitude_squared() > 0
+        is_moving = player.motion.velocity.magnitude_squared() > 0
+
         if t.is_pressed(action_buffer, t.Action.A):
             # interact
             if player.interact_scene is not None:
@@ -181,32 +195,63 @@ def player_update(
                 animator_reset(player.animator)
                 play_sound(AudioChannel.PLAYER, a.JUMP)
 
-    # collision
-    dx, dy = player.motion.velocity
-    _player_collision(player, dt, grid_collision, walls)
+        if is_moving:
+            prev_direction = player.direction
+            player.direction = direction_from_delta(*player.motion.velocity)
+            if player.direction != prev_direction:
+                timer_reset(player.roll_start_timer, 0)  # cancel double tap
 
+        # start roll
+        if (
+            has_input  # trying to go in a direction
+            and not prev_has_input  # just pressed
+            and player.roll_start_timer.remaining > 0  # is double tap
+            and player.roll_max_timer.remaining <= 0  # not currently rolling
+            and player.z_position == 0  # is grounded
+        ):
+            player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
+            timer_reset(player.roll_max_timer, 0.3)
+            timer_reset(player.roll_cooldown_timer, 0.6)
+            play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
+        # double tap detection
+        elif (
+            not has_input  # stopped trying to go in a direction
+            and prev_has_input  # just released
+            and player.roll_cooldown_timer.remaining <= 0  # double tap must not start on cooldown
+        ):
+            timer_reset(player.roll_start_timer, 0.13)
+
+        # timers
+        timer_update(player.roll_start_timer, dt)
+        timer_update(player.roll_max_timer, dt)
+        timer_update(player.roll_cooldown_timer, dt)
+
+    # collision
+    _player_collision(player, dt, grid_collision, walls)
     motion_update(player.motion, dt)
     player.z_velocity += 600 * dt
     player.z_position = min(player.z_position + player.z_velocity * dt, 0)
 
-    if dx != 0 or dy != 0:
-        player.direction = direction_from_delta(dx, dy)
+    # animation
+    step_frames = ()
     if player.z_position < 0:
         animator_switch_animation(player.animator, f"jump_{player.direction}")
-    elif dx != 0 or dy != 0:
-        animator_switch_animation(player.animator, f"walk_{player.direction}")
+    elif is_moving:
+        if player.motion.velocity.magnitude() < player.roll_speed:
+            animator_switch_animation(player.animator, f"walk_{player.direction}")
+            step_frames = (7, 3)
+        else:
+            animator_switch_animation(player.animator, f"jump_{player.direction}")
     else:
         animator_switch_animation(player.animator, f"idle_{player.direction}")
 
     prev_frame = player.animator.frame_index
     animator_update(player.animator, dt)
-    if player.z_position >= 0 and (dx != 0 or dy != 0):
-        step_frames = (7, 3)
-        if prev_frame not in step_frames and player.animator.frame_index in step_frames:
-            play_sound(
-                AudioChannel.PLAYER,
-                a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
-            )
+    if prev_frame not in step_frames and player.animator.frame_index in step_frames:
+        play_sound(
+            AudioChannel.PLAYER,
+            a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
+        )
 
 
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
@@ -215,6 +260,7 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
     timer_reset(player.caught_timer, 0.5)
     player.caught_style = style
     player.motion.velocity = pygame.Vector2()
+    player.directional_input = pygame.Vector2()
     camera.trauma = 0.4
     if style == PlayerCaughtStyle.HOLE:
         play_sound(AudioChannel.PLAYER, a.CAUGHT_HOLE)

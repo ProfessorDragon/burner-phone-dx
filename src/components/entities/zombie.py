@@ -72,7 +72,7 @@ class ZombieEnemy(Entity):
                     self.chasing = False
                     self.randomize_walk_speed()
                     if player_dist.magnitude() < self.movement_radius * 3:
-                        play_sound(AudioChannel.SFX, a.ZOMBIE_RETREAT)
+                        play_sound(AudioChannel.ENTITY, a.ZOMBIE_RETREAT)
             else:
                 if center_dist.magnitude_squared() > DIST_THRESHOLD * dt:
                     entity_follow(self, center_dist, self.walk_speed)
@@ -80,7 +80,7 @@ class ZombieEnemy(Entity):
                     self.chasing = True
                     self.randomize_walk_speed()
                     if player_dist.magnitude() < self.movement_radius * 3:
-                        play_sound(AudioChannel.SFX, a.ZOMBIE_CHASE)
+                        play_sound(AudioChannel.ENTITY, a.ZOMBIE_CHASE)
         if self.motion.velocity.magnitude_squared() > 0:
             self.direction = direction_from_delta(*self.motion.velocity)
         elif random.randint(1, 300) == 1:

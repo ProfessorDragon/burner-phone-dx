@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import pygame
 
-from components.audio import AudioChannel, play_sound
+from components.audio import AudioChannel, play_sound, set_music_volume, set_sfx_volume
 import core.constants as c
 import core.input as t
 import core.assets as a
@@ -60,10 +60,8 @@ class Settings:
         # the slider currently being dragged by the mouse
         self.selected_slider = None
 
-        pygame.mixer.Channel(AudioChannel.MUSIC).set_volume(slider_percent(self.ui_music_slider))
-        pygame.mixer.Channel(AudioChannel.PLAYER).set_volume(slider_percent(self.ui_sfx_slider))
-        pygame.mixer.Channel(AudioChannel.UI).set_volume(slider_percent(self.ui_sfx_slider))
-        pygame.mixer.Channel(AudioChannel.SFX).set_volume(slider_percent(self.ui_sfx_slider))
+        set_music_volume(slider_percent(self.ui_music_slider))
+        set_sfx_volume(slider_percent(self.ui_sfx_slider))
 
 
 def settings_update(

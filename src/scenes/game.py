@@ -2,7 +2,7 @@ from collections import deque
 from functools import partial
 import pygame
 
-from components.audio import AudioChannel, play_sound, stop_all_sounds
+from components.audio import AudioChannel, play_sound, channel_busy, stop_all_sounds
 from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
 import core.assets as a
 import core.constants as c
@@ -106,7 +106,7 @@ class Game(Scene):
         dialogue_reset_queue(self.dialogue)
         for entity in self.entities:
             entity_reset(entity)
-        # if not pygame.Channel(AudioChannel.MUSIC).get_busy():
+        # if not channel_busy(AudioChannel.MUSIC):
         #     play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
     def execute(

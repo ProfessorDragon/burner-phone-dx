@@ -1,6 +1,6 @@
 import pygame
 
-from components.audio import AudioChannel, play_sound
+from components.audio import AudioChannel, channel_busy, play_sound
 from components.entities.entity_util import path_from_json, path_to_json, render_shadow
 import core.assets as a
 from components.animation import (
@@ -108,11 +108,11 @@ class PatrolEnemy(Entity):
 
         prev_frame = self.animator.frame_index
         animator_update(self.animator, dt)
-        if self.motion.velocity.magnitude_squared() > 0:
+        if self.motion.velocity.magnitude_squared() > 0 and not channel_busy(AudioChannel.ENTITY):
             step_frames = (7, 3)
             if prev_frame not in step_frames and self.animator.frame_index in step_frames:
                 play_sound(
-                    AudioChannel.SFX,
+                    AudioChannel.ENTITY,
                     a.FOOTSTEPS[2 if self.animator.frame_index == step_frames[0] else 3],
                 )
 

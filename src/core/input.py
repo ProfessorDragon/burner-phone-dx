@@ -50,8 +50,8 @@ action_mappings = {
     Action.RIGHT: [pygame.K_d, pygame.K_RIGHT],
     Action.UP: [pygame.K_w, pygame.K_UP],
     Action.DOWN: [pygame.K_s, pygame.K_DOWN],
-    Action.A: [pygame.K_z, pygame.K_SLASH, pygame.K_SPACE],
-    Action.B: [pygame.K_x, pygame.K_PERIOD],
+    Action.A: [pygame.K_z, pygame.K_SLASH, pygame.K_k, pygame.K_SPACE],
+    Action.B: [pygame.K_x, pygame.K_PERIOD, pygame.K_l],
     Action.SELECT: [pygame.K_LSHIFT, pygame.K_RSHIFT],
     Action.START: [pygame.K_RETURN],
 }

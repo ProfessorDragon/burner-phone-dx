@@ -53,14 +53,8 @@ class Entity(ABC):
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None: ...
 
 
-# extension 2 mathematics put to use (kinda)
 def entity_follow(entity: Entity, dist: pygame.Vector2, speed: float):
     entity.motion.velocity = dist.normalize() * speed
-    entity.motion.velocity *= (
-        (0.5 - c.PERSPECTIVE / 2) * cos(2 * radians(dist.angle_to(pygame.Vector2(1, 0))))
-        + 0.5
-        + c.PERSPECTIVE / 2
-    )
 
 
 def entity_reset(entity: Entity) -> None:
