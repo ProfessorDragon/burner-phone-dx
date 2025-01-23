@@ -209,10 +209,11 @@ def player_update(
             and player.roll_max_timer.remaining <= 0  # not currently rolling
             and player.z_position == 0  # is grounded
         ):
-            player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
-            timer_reset(player.roll_max_timer, 0.3)
-            timer_reset(player.roll_cooldown_timer, 0.6)
-            play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
+            if player.roll_start_timer.elapsed > 0.04:  # debouncing
+                player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
+                timer_reset(player.roll_max_timer, 0.3)
+                timer_reset(player.roll_cooldown_timer, 0.6)
+                play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
         # double tap detection
         elif (
             not has_input  # stopped trying to go in a direction

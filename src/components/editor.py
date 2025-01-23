@@ -20,30 +20,26 @@ from components.camera import (
     camera_to_screen_shake_rect,
 )
 from scenes.scene import Scene, scene_reset
+from utilities.math import list_range
 
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_GROUPS = {
-    0: [
-        [9, 10, 11] + [0] * 3,
-        [12, 13, 14] + [3] * 3,
+    0: [  # floor
+        [9, 10, 11] + [0] * 6,
+        [12, 13, 14] + [3] * 6,
         [20, 21, 22, 23],
     ],
-    3: [
-        [3, 4, 5, 6, 7] + [0] * 6,
-        [8, 9, 10, 11, 12] + [1] * 6,
-        [31, 32, 33, 34] + [30] * 6,
+    4: [  # above floor
+        list_range(3, 7) + [0] * 9,
+        list_range(8, 12) + [1] * 9,
+        list_range(14, 17) + [2] * 9,
     ],
-    4: [
-        [1] * 3 + [2, 3, 4, 5, 6, 7],
-        [9] * 3 + [10, 11, 12, 13, 14],
-        [16, 16, 17, 17, 18, 19],
+    5: [  # bottom edging
+        [1, 2] * 3 + list_range(3, 7),
+        [9, 10] * 3 + list_range(11, 14),
     ],
-    5: [
-        [0, 1],
-        [4, 5],
-        [8, 9],
-    ],
+    7: [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11]],  # side edging
 }
 
 
@@ -233,7 +229,9 @@ class Editor:
                 f"{self.tile_data.x}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
             )
         else:
-            self.debug_text = f"GROUP {self.tile_group_index}"
+            self.debug_text = (
+                f"GROUP {self.tile_group_index}, {self.tile_data.y}, {int(self.tile_data.render_z)}"
+            )
         if self.a_held:
             self.debug_text += " z+"
         if self.b_held:
@@ -449,16 +447,13 @@ def editor_update(
 
     if just_pressed[pygame.K_1]:
         editor.set_mode(EditorMode.VIEW)
-        c.DEBUG_HITBOXES = False
     elif just_pressed[pygame.K_2]:
         editor.set_mode(EditorMode.WALLS)
         c.DEBUG_HITBOXES = True
     elif just_pressed[pygame.K_3]:
         editor.set_mode(EditorMode.TILES)
-        c.DEBUG_HITBOXES = False
     elif just_pressed[pygame.K_4]:
         editor.set_mode(EditorMode.ENTITIES)
-        c.DEBUG_HITBOXES = True
 
     match editor.mode:
         case EditorMode.VIEW:
