@@ -36,6 +36,12 @@ SFX = "assets/sfx/"
 
 # music
 DEBUG_THEME_MENU = pygame.mixer.Sound(SFX + "menu.ogg")
+THEME_MUSIC = [
+    pygame.mixer.Sound(SFX + "theme-0.ogg"),
+    pygame.mixer.Sound(SFX + "theme-1.ogg"),
+    pygame.mixer.Sound(SFX + "theme-2.ogg"),
+    pygame.mixer.Sound(SFX + "theme-3.ogg"),
+]
 
 # player
 JUMP = pygame.mixer.Sound(SFX + "jump.ogg")

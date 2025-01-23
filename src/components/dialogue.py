@@ -142,7 +142,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 dialogue_packet.style = DialogueStyle(content)
                 if dialogue_packet.style == DialogueStyle.COMMS and not dialogue.queue:
                     play_sound(AudioChannel.UI, a.COMMS_OPEN)
-                    timer_reset(dialogue.show_timer, 0.5)
+                    timer_reset(dialogue.show_timer, 0.7)
 
             case "char":
                 args = content.split(" ", 1)

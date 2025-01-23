@@ -26,10 +26,10 @@ class Settings:
         self.graphic_disabled = a.DEBUG_FONT.render("N", False, c.RED)
 
         self.ui_music_slider = Slider(pygame.Rect(10, 100, 100, 10), 0, 100)
-        slider_set_value(self.ui_music_slider, 30)
+        slider_set_value(self.ui_music_slider, 50)
 
         self.ui_sfx_slider = Slider(pygame.Rect(10, 120, 100, 10), 0, 100)
-        slider_set_value(self.ui_sfx_slider, 30)
+        slider_set_value(self.ui_sfx_slider, 50)
 
         self.ui_fullscreen_checkbox = Checkbox(
             pygame.Rect(10, 140, 15, 15),
