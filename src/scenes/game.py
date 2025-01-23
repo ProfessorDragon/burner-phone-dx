@@ -1,5 +1,4 @@
 from collections import deque
-from dataclasses import dataclass
 from functools import partial
 import pygame
 
@@ -22,6 +21,7 @@ from components.dialogue import (
 from components.editor import Editor, editor_render, editor_update
 from components.entities.entity import Entity, entity_render, entity_reset, entity_update
 from components.player import (
+    MainStoryProgress,
     Player,
     PlayerCaughtStyle,
     player_reset,
@@ -50,12 +50,6 @@ import scenes.scenemapping as scene
 from components.statemachine import StateMachine, statemachine_change_state
 
 
-@dataclass
-class GameProgression:
-    checkpoint: pygame.Vector2 = None
-    has_comms: bool = True
-
-
 def _tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
     return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, w * c.TILE_SIZE, h * c.TILE_SIZE)
 
@@ -80,8 +74,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player()
-        self.player.motion.position = _tile_size_vec(6.5, -11.5)
+        self.player = Player(_tile_size_vec(6.5, -11.5))
 
         self.camera = Camera.empty()
         self.camera.motion.position = pygame.Vector2(player_rect(self.player.motion).center)
@@ -90,9 +83,6 @@ class Game(Scene):
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
-
-        self.progression = GameProgression()
-        self.progression.checkpoint = self.player.motion.position.copy()
 
         self.post_death_stopwatch = Stopwatch()
 
@@ -111,7 +101,7 @@ class Game(Scene):
         for entity in self.entities:
             entity_reset(entity)
         if not pygame.Channel(AudioChannel.MUSIC).get_busy():
-            play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
+            play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[0], -1)
 
     def execute(
         self,
@@ -145,12 +135,12 @@ class Game(Scene):
                 # timers
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
-                    if self.progression.has_comms:
+                    if self.player.progression.main_story >= MainStoryProgress.COMMS:
                         bindings = {
                             0.5: partial(_post_death_comms, self.dialogue, self.player.caught_style)
                         }
                         stopwatch_reset(self.post_death_stopwatch, bindings)
-                    player_reset(self.player, self.progression.checkpoint)
+                    player_reset(self.player)
                 stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player
@@ -165,9 +155,8 @@ class Game(Scene):
 
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):
-                    # self.paused = True
-                    dialogue_execute_script_scene(self.dialogue, "shadowless tree")
-                    dialogue_update(self.dialogue, dt)
+                    self.paused = True
+                    play_sound(AudioChannel.UI, a.UI_SELECT)
 
             # general
             camera_follow(self.camera, *player_rect(self.player.motion).center)
@@ -177,6 +166,7 @@ class Game(Scene):
             # paused
             if t.is_pressed(action_buffer, t.Action.SELECT):
                 self.paused = False
+                play_sound(AudioChannel.UI, a.UI_HOVER)
 
         # RENDER
 

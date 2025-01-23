@@ -163,9 +163,26 @@ char 0 rogan
 - don't forget... you are... eheh... the weapon...
 
 
-## SIGNS
+
+## SIGNS AND NOTES
+
 
 [DEFAULT SIGN]
+
 style sign
 char 0 sign
 - Made for the Pirate Software Game Jam 16 (2025)
+
+
+[YOUR MAILBOX]
+
+style sign
+char 0 sign
+- -- 2 Forest Rd --\nHome sweet home
+
+
+[LAB MAILBOX]
+
+style sign
+char 0 sign
+- -- 1 Forest Rd --\nBiological research laboratory

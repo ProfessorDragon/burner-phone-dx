@@ -12,7 +12,7 @@ from components.animation import (
 )
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import TURN_THRESHOLD, Entity
-from components.motion import Direction, direction_from_angle
+from components.motion import direction_from_angle
 from components.player import Player, PlayerCaughtStyle, player_caught
 from components.ray import SightData, collide_sight, compile_sight, render_sight
 from scenes.scene import PLAYER_LAYER, RenderLayer

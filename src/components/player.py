@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import IntEnum, auto
 import pygame
 
@@ -35,6 +36,17 @@ from components.animation import (
 )
 
 
+class MainStoryProgress(IntEnum):
+    INTRO = 0
+    COMMS = auto()
+
+
+@dataclass
+class PlayerProgression:
+    checkpoint: pygame.Vector2 = None
+    main_story: MainStoryProgress = MainStoryProgress.INTRO
+
+
 class PlayerCaughtStyle(IntEnum):
     NONE = 0
     SIGHT = auto()
@@ -43,8 +55,9 @@ class PlayerCaughtStyle(IntEnum):
 
 
 class Player:
-    def __init__(self):
+    def __init__(self, spawn_position: pygame.Vector2):
         self.motion = Motion.empty()
+        self.motion.position = spawn_position
         self.z_position = 0
         self.z_velocity = 0
         self.animator = Animator()
@@ -64,6 +77,8 @@ class Player:
         animator_initialise(self.animator, animation_mapping)
 
         self.direction = Direction.E
+        self.progression = PlayerProgression()
+        self.progression.checkpoint = self.motion.position.copy()
         self.caught_timer = Timer()  # resets scene and player when completed
         self.caught_style = PlayerCaughtStyle.NONE
         self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
@@ -157,6 +172,7 @@ def player_update(
         if t.is_pressed(action_buffer, t.Action.A):
             # interact
             if player.interact_scene is not None:
+                player.direction = Direction.N
                 dialogue_execute_script_scene(dialogue, player.interact_scene)
             # jump
             elif player.z_position == 0:
@@ -205,8 +221,8 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
         play_sound(AudioChannel.PLAYER, a.CAUGHT_SIGHT)
 
 
-def player_reset(player: Player, position: pygame.Vector2) -> None:
-    player.motion.position = position.copy()
+def player_reset(player: Player) -> None:
+    player.motion.position = player.progression.checkpoint.copy()
     player.motion.velocity = pygame.Vector2()
     player.motion.acceleration = pygame.Vector2()
     player.caught_style = PlayerCaughtStyle.NONE

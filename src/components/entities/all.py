@@ -1,5 +1,6 @@
 from typing import Any
 from components.entities.button import ButtonEntity
+from components.entities.checkpoint import CheckpointEntity
 from components.entities.entity import Entity
 from components.entities.patrol import PatrolEnemy
 from components.entities.security_camera import SecurityCameraEnemy
@@ -19,6 +20,7 @@ ENTITY_CLASSES = [
     # other
     ButtonEntity,
     SignEntity,
+    CheckpointEntity,
 ]
 
 

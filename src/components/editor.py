@@ -8,6 +8,7 @@ import pygame
 
 from components.entities.all import ENTITY_CLASSES, entity_from_json
 from components.entities.entity import render_path
+from components.player import player_reset
 from components.tiles import TileData, render_tile, render_tile_hitbox
 import core.input as t
 import core.constants as c
@@ -377,6 +378,8 @@ def editor_update(
     if just_pressed[pygame.K_r]:
         scene_reset(editor.scene)
         editor.scene.dialogue.executed_scenes.clear()
+        if t.is_held(action_buffer, t.Action.SELECT):
+            player_reset(editor.scene.player)
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
     if just_pressed[pygame.K_t]:

@@ -1,4 +1,3 @@
-from functools import partial
 import pygame
 
 import core.assets as a
@@ -56,7 +55,11 @@ class SignEntity(Entity):
         if self.show_arrow and layer in PLAYER_OR_FG:
             x, y = self.motion.position
             x += frame.get_width() // 2
-            y -= 4
+            y -= 6
+            points = [(x - 4, y - 13), (x + 4, y - 13), (x + 4, y - 1), (x, y + 2), (x - 4, y - 1)]
+            pygame.draw.polygon(
+                surface, c.BLACK, [camera_to_screen_shake(camera, *point) for point in points]
+            )
             points = (x - 3, y - 3), (x, y), (x + 3, y - 3)
             pygame.draw.polygon(
                 surface, c.WHITE, [camera_to_screen_shake(camera, *point) for point in points]
