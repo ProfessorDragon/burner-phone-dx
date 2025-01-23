@@ -23,11 +23,28 @@ from scenes.scene import Scene, scene_reset
 
 
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
-TILE_GROUPS = [
-    [(9, 0), (10, 0), (11, 0)] + [(0, 0)] * 3,
-    [(12, 0), (13, 0), (14, 0)] + [(3, 0)] * 3,
-    [(20, 0), (21, 0), (22, 0), (23, 0)],
-]
+TILE_GROUPS = {
+    0: [
+        [9, 10, 11] + [0] * 3,
+        [12, 13, 14] + [3] * 3,
+        [20, 21, 22, 23],
+    ],
+    3: [
+        [3, 4, 5, 6, 7] + [0] * 6,
+        [8, 9, 10, 11, 12] + [1] * 6,
+        [31, 32, 33, 34] + [30] * 6,
+    ],
+    4: [
+        [1] * 3 + [2, 3, 4, 5, 6, 7],
+        [9] * 3 + [10, 11, 12, 13, 14],
+        [16, 16, 17, 17, 18, 19],
+    ],
+    5: [
+        [0, 1],
+        [4, 5],
+        [8, 9],
+    ],
+}
 
 
 class EditorMode(Enum):
@@ -66,11 +83,16 @@ class Editor:
         self.a_held = False
         self.b_held = False
         self.debug_text: str = None
+        # any mode
         self.drag_start: pygame.Vector2 = None
         self.drag_tile: tuple[int, int] = None
+        # view mode
+        self.measure_tile: tuple[int, int] = None
+        # tile mode
         self.tile_data = TileData()
         self.stored_tile_data = TileData()
         self.tile_group_index = -1
+        # entity mode
         self.entity_index = 0
         self.entity_path: list[pygame.Vector2] = []
 
@@ -128,14 +150,23 @@ class Editor:
         self.b_held = t.is_held(self.action_buffer, t.Action.B)
 
     def view_mode(self) -> None:
-        dx = t.is_held(self.action_buffer, t.Action.RIGHT) - t.is_held(
-            self.action_buffer, t.Action.LEFT
+        move_vec = pygame.Vector2(
+            t.is_held(self.action_buffer, t.Action.RIGHT)
+            - t.is_held(self.action_buffer, t.Action.LEFT),
+            t.is_held(self.action_buffer, t.Action.DOWN)
+            - t.is_held(self.action_buffer, t.Action.UP),
         )
-        dy = t.is_held(self.action_buffer, t.Action.DOWN) - t.is_held(
-            self.action_buffer, t.Action.UP
-        )
-        move_vec = pygame.Vector2(dx, dy) * self.dt * (50 if self.a_held else 250)
-        self.scene.player.motion.position += move_vec
+        self.scene.player.motion.position += move_vec * self.dt * (50 if self.a_held else 250)
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
+            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+            if self.measure_tile == (x, y):
+                self.measure_tile = None
+            else:
+                self.measure_tile = (x, y)
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
+            self.measure_tile = None
 
     def wall_mode(self) -> None:
         if self.a_held:
@@ -216,9 +247,9 @@ class Editor:
                     tile_copy.render_z += 1
                 new_tile_data.append(tile_copy)
             else:
-                for x, y in TILE_GROUPS[self.tile_group_index]:
+                for x in TILE_GROUPS[self.tile_data.y][self.tile_group_index]:
                     tile_copy = self.tile_data.copy()
-                    tile_copy.x, tile_copy.y = x, y
+                    tile_copy.x = x
                     if self.a_held:
                         tile_copy.render_z += 1
                     new_tile_data.append(tile_copy)
@@ -259,20 +290,27 @@ class Editor:
                 else:
                     self.stored_tile_data = self.tile_data.copy()
                     self.tile_data = tile.copy()
+            self.tile_group_index = -1
 
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
             if self.a_held:
-                if self.tile_group_index < 0:
-                    self.tile_group_index = 0
-                self.tile_group_index = (self.tile_group_index - 1) % len(TILE_GROUPS)
-                self.tile_data.x, self.tile_data.y = TILE_GROUPS[self.tile_group_index][0]
+                if self.tile_data.y in TILE_GROUPS:
+                    if self.tile_group_index < 0:
+                        self.tile_group_index = 0
+                    self.tile_group_index = (self.tile_group_index - 1) % len(
+                        TILE_GROUPS[self.tile_data.y]
+                    )
+                    self.tile_data.x = TILE_GROUPS[self.tile_data.y][self.tile_group_index][0]
             else:
                 self.tile_group_index = -1
                 self.tile_data.x = (self.tile_data.x - 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
             if self.a_held:
-                self.tile_group_index = (self.tile_group_index + 1) % len(TILE_GROUPS)
-                self.tile_data.x, self.tile_data.y = TILE_GROUPS[self.tile_group_index][0]
+                if self.tile_data.y in TILE_GROUPS:
+                    self.tile_group_index = (self.tile_group_index + 1) % len(
+                        TILE_GROUPS[self.tile_data.y]
+                    )
+                    self.tile_data.x = TILE_GROUPS[self.tile_data.y][self.tile_group_index][0]
             else:
                 self.tile_group_index = -1
                 self.tile_data.x = (self.tile_data.x + 1) % (a.TERRAIN.get_width() // c.TILE_SIZE)
@@ -438,10 +476,48 @@ def editor_update(
 
 
 def editor_render(editor: Editor, surface: pygame.Surface):
+    if c.DEBUG_HITBOXES:
+        origin = camera_to_screen_shake(editor.scene.camera, 0, 0)
+        screen = (origin[0] % surface.get_width(), origin[1] % surface.get_height())
+        pygame.draw.line(surface, c.BLACK, (0, screen[1]), (surface.get_width(), screen[1]))
+        pygame.draw.line(surface, c.BLACK, (screen[0], 0), (screen[0], surface.get_height()))
+
     if not editor.enabled:
         return
 
     match editor.mode:
+        case EditorMode.VIEW:
+            if editor.measure_tile is not None:
+                pygame.draw.rect(
+                    surface,
+                    c.BLACK,
+                    camera_to_screen_shake_rect(
+                        editor.scene.camera,
+                        editor.measure_tile[0] * c.TILE_SIZE,
+                        editor.measure_tile[1] * c.TILE_SIZE,
+                        c.TILE_SIZE,
+                        c.TILE_SIZE,
+                    ),
+                    1,
+                )
+                text = a.DEBUG_FONT.render(
+                    f"{editor.measure_tile[0]},{editor.measure_tile[1]}", False, c.WHITE, c.BLACK
+                )
+                y_offset = (
+                    -text.get_height() - 0.25 * c.TILE_SIZE
+                    if _camera_from_mouse(editor.scene.camera).y
+                    > (editor.measure_tile[1] + 1) * c.TILE_SIZE
+                    else 1.25 * c.TILE_SIZE
+                )
+                surface.blit(
+                    text,
+                    camera_to_screen_shake(
+                        editor.scene.camera,
+                        (editor.measure_tile[0] + 0.5) * c.TILE_SIZE - text.get_width() // 2,
+                        editor.measure_tile[1] * c.TILE_SIZE + y_offset,
+                    ),
+                )
+
         case EditorMode.TILES:
             x, y = _floor_point(_camera_from_mouse(editor.scene.camera), False)
             if editor.tile_data in editor.scene.grid_tiles.get((x, y), []):

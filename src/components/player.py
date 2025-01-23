@@ -91,9 +91,9 @@ class Player:
         self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
 
         # consts
-        self.walk_speed = 150
-        self.roll_speed = 250
-        self.jump_velocity = 120
+        self.walk_speed = 150  # allows jumping a 3 tile gap
+        self.roll_speed = 250  # allows jumping a 4 tile gap
+        self.jump_velocity = 120  # about a tile high
 
 
 def player_rect(motion: Motion):

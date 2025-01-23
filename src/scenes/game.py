@@ -247,13 +247,6 @@ class Game(Scene):
 
         # hitboxes
         if c.DEBUG_HITBOXES:
-            origin_text = a.DEBUG_FONT.render("0", False, c.WHITE)
-            surface.blit(
-                origin_text,
-                camera_to_screen_shake(
-                    self.camera, -origin_text.get_width() // 2, -origin_text.get_height() // 2
-                ),
-            )
             for i, wall in enumerate(self.walls):
                 render_wall(surface, self.camera, i, wall)
             for y in range(tile_bounds.top, tile_bounds.bottom + 1):
