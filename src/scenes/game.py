@@ -93,7 +93,7 @@ class Game(Scene):
         self.global_stopwatch = Stopwatch()
         self.post_death_stopwatch = Stopwatch()
 
-        self.music_index = 2
+        self.music_index = 1
 
         self.grid_collision: set[tuple[int, int]] = set()
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
@@ -223,13 +223,13 @@ class Game(Scene):
                     else:
                         cutoff_fg_tiles.append((x, y, tile))
         for entity in self.entities:
-            if entity_bounds.collidepoint(entity.get_hitbox().center):
+            if entity_bounds.colliderect(entity.get_hitbox()):
                 entity_render(entity, surface, self.camera, RenderLayer.RAYS)
         while cutoff_bg_tiles:
             x, y, tile = cutoff_bg_tiles.popleft()
             render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
-            if entity_bounds.collidepoint(entity.get_hitbox().center):
+            if entity_bounds.colliderect(entity.get_hitbox()):
                 entity_render(
                     entity,
                     surface,
@@ -249,7 +249,7 @@ class Game(Scene):
             x, y, tile = cutoff_fg_tiles.popleft()
             render_tile(surface, self.camera, x, y, tile)
         for entity in self.entities:
-            if entity_bounds.collidepoint(entity.get_hitbox().center):
+            if entity_bounds.colliderect(entity.get_hitbox()):
                 entity_render(
                     entity,
                     surface,

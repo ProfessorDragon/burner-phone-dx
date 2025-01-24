@@ -163,13 +163,19 @@ class Editor:
         self.b_held = t.is_held(self.action_buffer, t.Action.B)
 
     def view_mode(self) -> None:
-        move_vec = pygame.Vector2(
+        vec = pygame.Vector2(
             t.is_held(self.action_buffer, t.Action.RIGHT)
             - t.is_held(self.action_buffer, t.Action.LEFT),
             t.is_held(self.action_buffer, t.Action.DOWN)
             - t.is_held(self.action_buffer, t.Action.UP),
         )
-        self.scene.player.motion.position += move_vec * self.dt * (50 if self.a_held else 250)
+        if self.a_held:
+            vec *= 50
+        elif self.b_held:
+            vec *= 1000
+        else:
+            vec *= self.scene.player.walk_speed * 2
+        self.scene.player.motion.position += vec * self.dt
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
             x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)

@@ -10,13 +10,6 @@ from components.camera import (
     camera_reset,
 )
 from components.settings import Settings, settings_render, settings_update
-from components.dialogue import (
-    DialogueSystem,
-    dialogue_initialise,
-    dialogue_update,
-    dialogue_render,
-    dialogue_reset_queue,
-)
 
 from scenes.scene import Scene
 import scenes.scenemapping as scene
@@ -30,13 +23,11 @@ class Menu(Scene):
         self.camera = Camera.empty()
 
         self.settings = Settings()
-        self.dialogue = DialogueSystem()
-        dialogue_initialise(self.dialogue)
+        self.in_settings = False
 
     def enter(self) -> None:
-        dialogue_reset_queue(self.dialogue)
         camera_reset(self.camera)
-        play_sound(AudioChannel.MUSIC, a.DEBUG_THEME_MENU, -1)
+        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[0], -1)
 
     def execute(
         self,
@@ -55,16 +46,11 @@ class Menu(Scene):
 
         # UPDATE
         camera_update(self.camera, dt)
-        in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
-
-        if not in_dialogue:
-            settings_update(self.settings, dt, action_buffer, mouse_buffer)
 
         # RENDER
         surface.fill(c.WHITE)
-        dialogue_render(self.dialogue, surface)
 
-        if not in_dialogue:
+        if self.in_settings:
             settings_render(self.settings, surface)
 
     def exit(self) -> None:
