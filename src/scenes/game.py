@@ -40,6 +40,7 @@ from components.tiles import (
 from components.camera import (
     Camera,
     camera_follow,
+    camera_rect,
     camera_update,
     camera_reset,
 )
@@ -132,15 +133,14 @@ class Game(Scene):
         in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
 
         # update and render entities within this area
-        entity_bounds = pygame.Rect(
-            self.camera.motion.position.x - self.camera.offset.x - c.TILE_SIZE * 6,
-            self.camera.motion.position.y - self.camera.offset.y - c.TILE_SIZE * 6,
-            surface.get_width() + c.TILE_SIZE * 12,
-            surface.get_height() + c.TILE_SIZE * 12,
-        )
+        entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
-            if not self.editor.enabled and not in_dialogue:
+            if self.editor.enabled:
+                camera_follow(self.camera, *player_rect(self.player.motion).center)
+                camera_update(self.camera, dt)
+
+            elif not in_dialogue:
                 # timers
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
@@ -161,6 +161,10 @@ class Game(Scene):
                 player_update(
                     self.player, dt, action_buffer, self.grid_collision, self.walls, self.dialogue
                 )
+
+                # camera (after player so it can follow, before entities to enact bounds)
+                camera_follow(self.camera, *player_rect(self.player.motion).center)
+                camera_update(self.camera, dt)
 
                 # entities
                 for entity in self.entities:
@@ -183,10 +187,6 @@ class Game(Scene):
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     self.paused = True
                     play_sound(AudioChannel.UI, a.UI_SELECT)
-
-            # general
-            camera_follow(self.camera, *player_rect(self.player.motion).center)
-            camera_update(self.camera, dt)
 
         else:
             # paused

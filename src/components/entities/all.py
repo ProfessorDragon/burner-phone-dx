@@ -1,5 +1,6 @@
 from typing import Any
 from components.entities.button import ButtonEntity
+from components.entities.camera_boundary import CameraBoundaryEntity
 from components.entities.checkpoint import CheckpointEntity
 from components.entities.entity import Entity
 from components.entities.lake import LakeEnemy
@@ -23,6 +24,7 @@ ENTITY_CLASSES = [
     ButtonEntity,
     SignEntity,
     CheckpointEntity,
+    CameraBoundaryEntity,
 ]
 
 

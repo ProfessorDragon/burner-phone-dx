@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import random
-
 import pygame
 
+import core.constants as c
 from components.motion import Motion, motion_update
 from utilities.math import clamp
 
@@ -19,6 +19,15 @@ class Camera:
     @staticmethod
     def empty():
         return Camera(Motion.empty(), pygame.Vector2(), pygame.Vector2(), pygame.Vector2(30, 30))
+
+
+def camera_rect(camera: Camera) -> pygame.Rect:
+    return pygame.Rect(
+        camera.motion.position.x - camera.offset.x,
+        camera.motion.position.y - camera.offset.y,
+        c.WINDOW_WIDTH,
+        c.WINDOW_HEIGHT,
+    )
 
 
 def camera_follow(camera: Camera, x: float, y: float, speed: float = 8) -> None:

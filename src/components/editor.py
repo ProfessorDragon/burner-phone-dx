@@ -7,7 +7,7 @@ import subprocess
 import pygame
 
 from components.entities.all import ENTITY_CLASSES, entity_from_json
-from components.entities.entity import render_path
+from components.entities.entity import Entity, render_path
 from components.player import player_reset
 from components.tiles import TileData, render_tile, render_tile_hitbox
 import core.input as t
@@ -30,14 +30,19 @@ TILE_GROUPS = {
         [12, 13, 14] + [3] * 6,
         [20, 21, 22, 23],
     ],
+    3: [  # walls
+        list_range(0, 4),
+        list_range(5, 16),
+        list_range(17, 21),
+    ],
     4: [  # above floor
-        list_range(3, 7) + [0] * 9,
-        list_range(8, 12) + [1] * 9,
-        list_range(14, 17) + [2] * 9,
+        list_range(3, 7) + [0] * 12,
+        list_range(8, 12) + [1] * 12,
+        list_range(14, 17) + [2] * 12,
     ],
     5: [  # bottom edging
-        [1, 2] * 3 + list_range(3, 7),
-        [9, 10] * 3 + list_range(11, 14),
+        [1, 2] * 6 + list_range(3, 7),
+        [9, 10] * 6 + list_range(11, 14),
     ],
     7: [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11]],  # side edging
 }
@@ -66,6 +71,18 @@ def _ceil_point(vec: pygame.Vector2, upscale=True) -> pygame.Vector2:
     if upscale:
         return vec * c.TILE_SIZE
     return vec
+
+
+def _nudge_entity(scene: Scene, ent: Entity, dx: float, dy: float) -> None:
+    js = ent.to_json()
+    js["class"] = ent.__class__.__name__
+    if "pos" in js:
+        js["pos"] = (js["pos"][0] + dx, js["pos"][1] + dy)
+    if "path" in js:
+        js["path"] = [(point[0] + dx, point[1] + dy) for point in js["path"]]
+    scene.entities.remove(ent)
+    new_ent = entity_from_json(js)
+    scene.entities.append(new_ent)
 
 
 class Editor:
@@ -193,7 +210,7 @@ class Editor:
                     self.scene.walls.pop(len(self.scene.walls) - 1 - i)
                     break
 
-        if self.drag_start:
+        if self.drag_start is not None:
             start = self.drag_start.copy()
             end = _camera_from_mouse(self.scene.camera)
             if self.a_held:
@@ -387,7 +404,7 @@ class Editor:
 
         ent = self.scene.entities[-1] if len(self.scene.entities) > 0 else None
 
-        if self.drag_start and ent:
+        if self.drag_start is not None and ent:
             end = _camera_from_mouse(self.scene.camera)
             dx, dy = _floor_point(end, False) - _floor_point(self.drag_start, False)
             ent.w, ent.h = max(dx + 1, 1), max(dy + 1, 1)
@@ -400,22 +417,20 @@ class Editor:
 
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
             if self.a_held:
-                if ent:
-                    ent.motion.position.x -= c.HALF_TILE_SIZE
+                _nudge_entity(self.scene, ent, -c.HALF_TILE_SIZE, 0)
             else:
                 self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
             if self.a_held:
-                if ent:
-                    ent.motion.position.x += c.HALF_TILE_SIZE
+                _nudge_entity(self.scene, ent, c.HALF_TILE_SIZE, 0)
             else:
                 self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.UP):
-            if self.a_held and ent:
-                ent.motion.position.y -= c.HALF_TILE_SIZE
+            if self.a_held:
+                _nudge_entity(self.scene, ent, 0, -c.HALF_TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
-            if self.a_held and ent:
-                ent.motion.position.y += c.HALF_TILE_SIZE
+            if self.a_held:
+                _nudge_entity(self.scene, ent, 0, c.HALF_TILE_SIZE)
 
         entity_name = ENTITY_CLASSES[self.entity_index].__name__
         entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
