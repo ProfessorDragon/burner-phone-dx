@@ -1,3 +1,4 @@
+import sys
 import pygame
 
 # game constants
@@ -18,6 +19,7 @@ WINDOW_SETUP = {
     "vsync": 1,
 }
 
+IS_WEB = sys.platform == "emscripten"
 CAPTION = "Pirate Software - Game Jam 16"
 FPS = 0  # 0 = Uncapped -> let VSYNC decide best tick speed if enabled
 MAX_DT = 1 / 60

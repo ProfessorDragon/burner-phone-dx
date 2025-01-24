@@ -41,7 +41,7 @@ class DialoguePacket:
     style: DialogueStyle = DialogueStyle.DEFAULT
     graphic: pygame.Surface = None
     name: str = ""
-    sounds: list[pygame.Sound] = None
+    sounds: list[pygame.mixer.Sound] = None
     message: str = ""
     buttons: list[DialogueButton] = None
 

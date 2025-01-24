@@ -17,12 +17,12 @@ def channel_busy(channel: AudioChannel) -> bool:
 
 
 # play a sound in the given channel, overriding any existing sound in that channel
-def play_sound(channel: AudioChannel, sound: pygame.Sound, *args) -> None:
+def play_sound(channel: AudioChannel, sound: pygame.mixer.Sound, *args) -> None:
     pygame.mixer.Channel(channel).play(sound, *args)
 
 
 # play a sound in the given channel if not busy. returns true if successful
-def try_play_sound(channel: AudioChannel, sound: pygame.Sound, *args) -> bool:
+def try_play_sound(channel: AudioChannel, sound: pygame.mixer.Sound, *args) -> bool:
     if channel_busy(channel):
         return False
     play_sound(channel, sound, *args)

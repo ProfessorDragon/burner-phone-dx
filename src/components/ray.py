@@ -97,7 +97,8 @@ def render_sight(surface: pygame.Surface, camera: Camera, data: SightData) -> No
         return
     color = (162, 48, 0, 96)
     sight_surf = pygame.Surface((data.radius * 2, data.radius * 2), pygame.SRCALPHA)
-    gfxdraw.aapolygon(sight_surf, data.render_segs, color)
+    if not c.IS_WEB:
+        gfxdraw.aapolygon(sight_surf, data.render_segs, color)
     pygame.draw.polygon(sight_surf, color, data.render_segs)
     surface.blit(
         sight_surf,

@@ -80,7 +80,7 @@ with open("assets/script.txt") as script:
 class DialogueCharacter:
     name: str
     sprites: list[pygame.Surface]
-    sounds: list[pygame.Sound]
+    sounds: list[pygame.mixer.Sound]
 
 
 DIALOGUE_PLACEHOLDER_AVATARS = slice_sheet(IMG + "dialogue_placeholder_avatars.png", 64, 64)
