@@ -52,18 +52,27 @@ class CameraBoundaryEntity(Entity):
         camera: Camera,
         grid_collision: set[tuple[int, int]],
     ) -> None:
+        # because collision uses the actual camera position, the bounds will only 'unlock'
+        # once the velocity of the camera is great enough to to avoid collision over the
+        # span of one frame. this gives the locking a nice snappy feel. however, if the
+        # boundary is approached from the wrong direction, this makes it practically
+        # impossible to unlock until the player crosses the boundary onto the correct side.
         crect = camera_rect(camera)
         hitbox = self.get_hitbox()
-        if crect.colliderect(hitbox.inflate(2, 2)):
-            match self.direction:
-                case Direction.N:
-                    camera.motion.position.y = hitbox.top - crect.h // 2
-                case Direction.E:
-                    camera.motion.position.x = hitbox.right + crect.width // 2
-                case Direction.S:
-                    camera.motion.position.y = hitbox.bottom + crect.h // 2
-                case Direction.W:
-                    camera.motion.position.x = hitbox.left - crect.width // 2
+        if self.direction in (Direction.N, Direction.S):
+            if crect.colliderect(hitbox.inflate(0, 2)):
+                if self.direction == Direction.N:
+                    target = hitbox.top - crect.h // 2
+                else:
+                    target = hitbox.bottom + crect.h // 2
+                camera.motion.position.y = target
+        elif self.direction in (Direction.E, Direction.W):
+            if crect.colliderect(hitbox.inflate(2, 0)):
+                if self.direction == Direction.E:
+                    target = hitbox.right + crect.width // 2
+                else:
+                    target = hitbox.left - crect.width // 2
+                camera.motion.position.x = target
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:

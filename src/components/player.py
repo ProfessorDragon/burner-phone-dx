@@ -211,7 +211,7 @@ def player_update(
             and player.roll_max_timer.remaining <= 0  # not currently rolling
             and player.z_position == 0  # is grounded
         ):
-            if player.roll_start_timer.elapsed > 0.04:  # debouncing
+            if player.roll_start_timer.elapsed > 0.03:  # debouncing
                 player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
                 timer_reset(player.roll_max_timer, 0.3)
                 timer_reset(player.roll_cooldown_timer, 0.5)
@@ -222,7 +222,7 @@ def player_update(
             and prev_has_input  # just released
             and player.roll_cooldown_timer.remaining <= 0  # double tap must not start on cooldown
         ):
-            timer_reset(player.roll_start_timer, 0.1)
+            timer_reset(player.roll_start_timer, 0.11)
 
         # timers
         timer_update(player.roll_start_timer, dt)

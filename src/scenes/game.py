@@ -80,7 +80,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player(_tile_size_vec(6.5, -11.5))
+        self.player = Player(_tile_size_vec(6.5, -10.5))
 
         self.camera = Camera.empty()
         self.camera.motion.position = pygame.Vector2(player_rect(self.player.motion).center)
@@ -111,7 +111,7 @@ class Game(Scene):
         for entity in self.entities:
             entity_reset(entity)
         # 'try' so it does't restart music when player dies
-        try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+        # try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
 
     def execute(
         self,
