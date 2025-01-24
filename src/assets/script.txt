@@ -1,10 +1,20 @@
 # this file will be processed by the game and split into different scenes accordingly.
 # syntax is as follows, where items in <> are parameters (never actually write out the <>)
+
 # [<SCENE NAME:str>]
+
+# message
 # style <DialogueStyle:Str>
 # char <SpriteIndex:int> <CharacterId:str=LastCharacterId>
 # - <Message:str>
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
+
+# delay
+# delay <Duration:float>
+
+# camera pan
+# pan <Duration:float> <XTile:float> <YTile:float>
+# ignores camera bounds. omit x and y to target the player's position.
 
 
 
@@ -179,6 +189,9 @@ char 0 sign
 style sign
 char 0 sign
 - -- 2 Forest Rd --\nHome sweet home
+pan .5 16 -18
+delay .5
+pan .5
 
 
 [LAB MAILBOX]

@@ -130,14 +130,17 @@ class Game(Scene):
 
         editor_update(self.editor, dt, action_buffer, mouse_buffer)
 
-        in_dialogue = dialogue_update(self.dialogue, dt, action_buffer, mouse_buffer)
+        camera_target = pygame.Vector2(player_rect(self.player.motion).center)
+        in_dialogue = dialogue_update(
+            self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
+        )
 
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
-                camera_follow(self.camera, *player_rect(self.player.motion).center)
+                camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
 
             elif not in_dialogue:
@@ -163,7 +166,7 @@ class Game(Scene):
                 )
 
                 # camera (after player so it can follow, before entities to enact bounds)
-                camera_follow(self.camera, *player_rect(self.player.motion).center)
+                camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
 
                 # entities

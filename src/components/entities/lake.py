@@ -1,7 +1,7 @@
 import pygame
 
 import core.constants as c
-from components.camera import Camera, camera_to_screen_shake
+from components.camera import Camera
 from components.entities.entity import Entity
 from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
 from scenes.scene import RenderLayer
@@ -14,11 +14,12 @@ class LakeEnemy(Entity):
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
+        # small hitboxes are good! but make sure to patch any holes as a result.
         return pygame.Rect(
-            self.motion.position.x + 4,
-            self.motion.position.y + 2,
-            c.TILE_SIZE * self.w - 8,
-            c.TILE_SIZE * self.h - 4,
+            self.motion.position.x + 5,
+            self.motion.position.y + 5,
+            c.TILE_SIZE * self.w - 10,
+            c.TILE_SIZE * self.h - 10,
         )
 
     def to_json(self):

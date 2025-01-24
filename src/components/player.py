@@ -58,6 +58,13 @@ class PlayerCaughtStyle(IntEnum):
     ZOMBIE = auto()
 
 
+@dataclass(slots=True)
+class DoubleTapDetectionData:
+    last_action: t.Action = None
+    action_vector: pygame.Vector2 = None
+    action_timer: Timer = None
+
+
 class Player:
     def __init__(self, spawn_position: pygame.Vector2):
         self.motion = Motion.empty()
@@ -76,7 +83,13 @@ class Player:
                         Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
                         Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
                     ],
-                }
+                    "roll": [  # todo
+                        Animation(a.PLAYER_FRAMES[55:60], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[45:50], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
+                        Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
+                    ],
+                },
             )
         )
         animator_initialise(self.animator, animation_mapping)
@@ -85,12 +98,17 @@ class Player:
         self.progression.checkpoint = self.motion.position.copy()
 
         self.direction = Direction.E
-        self.roll_start_timer = Timer()  # detects double tap input
-        self.roll_max_timer = Timer()  # max duration for a roll
-        self.roll_cooldown_timer = Timer()  # delay before another roll can be performed
         self.caught_timer = Timer()  # resets scene and player when completed
         self.caught_style = PlayerCaughtStyle.NONE
         self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
+
+        # rolling
+        self.double_tap_h = DoubleTapDetectionData()  # for detecting when a roll should begin
+        self.double_tap_h.action_timer = Timer()
+        self.double_tap_v = DoubleTapDetectionData()  # for detecting when a roll should begin
+        self.double_tap_v.action_timer = Timer()
+        self.roll_max_timer = Timer()  # duration of the current roll
+        self.roll_cooldown_timer = Timer()  # delay before another roll can be performed
 
         # consts
         self.walk_speed = 150  # allows jumping a 3 tile gap
@@ -98,12 +116,12 @@ class Player:
         self.jump_velocity = 120  # about a tile high
 
 
-def player_rect(motion: Motion):
+def player_rect(motion: Motion) -> pygame.Rect:
     # round for accurate collision.
     return pygame.Rect(round(motion.position.x) + 11, round(motion.position.y) + 28, 10, 4)
 
 
-def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
+def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer) -> None:
     player.directional_input = pygame.Vector2(
         t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT),
         t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP),
@@ -117,9 +135,51 @@ def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer):
         player.motion.velocity *= 0.707  # trig shortcut, normalizing the vector
 
 
+def _player_roll_logic(player: Player, dt: float, action_buffer: t.InputBuffer) -> None:
+    # timers
+    timer_update(player.double_tap_h.action_timer, dt)
+    timer_update(player.double_tap_v.action_timer, dt)
+    timer_update(player.roll_max_timer, dt)
+    timer_update(player.roll_cooldown_timer, dt)
+
+    # don't allow double taps to start on cooldown
+    if player.roll_cooldown_timer.remaining > 0:
+        return
+
+    # register currently held directions
+    for double_tap, directions in (
+        (player.double_tap_h, ((1, 0, t.Action.RIGHT), (-1, 0, t.Action.LEFT))),
+        (player.double_tap_v, ((0, 1, t.Action.DOWN), (0, -1, t.Action.UP))),
+    ):
+        for dx, dy, inp in directions:
+            if t.is_held(action_buffer, inp):
+                double_tap.last_action = inp
+                double_tap.action_vector = pygame.Vector2(dx, dy)
+                timer_reset(double_tap.action_timer, 0.11)
+                break
+
+    # maybe start rolling
+    if (
+        player.roll_max_timer.remaining <= 0  # not currently rolling
+        and player.z_position == 0  # is grounded
+    ):
+        # detect double tap
+        for double_tap in (player.double_tap_h, player.double_tap_v):
+            if (
+                double_tap.last_action is not None
+                and t.is_pressed(action_buffer, double_tap.last_action)
+                and double_tap.action_timer.remaining > 0
+                and double_tap.action_timer.elapsed > 0.03
+            ):
+                player.motion.velocity = double_tap.action_vector * player.roll_speed
+                timer_reset(player.roll_max_timer, 0.3)
+                timer_reset(player.roll_cooldown_timer, 0.6)
+                play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
+
+
 def _player_collision(
     player: Player, dt: float, grid_collision: set[tuple[int, int]], walls: list[pygame.Rect]
-):
+) -> None:
     # I'VE PLAYED THESE GAMES BEFOREEEE
     # horizontal collision
     if player.motion.velocity.x != 0:
@@ -175,21 +235,24 @@ def player_update(
     dialogue: DialogueSystem,
 ) -> None:
 
-    prev_input = player.directional_input.copy()
-    prev_has_input = prev_input.magnitude_squared() > 0
-    has_input = False
     is_moving = False
 
     # movement
     if player.caught_timer.remaining <= 0:
         _player_movement(player, dt, action_buffer)
-        has_input = player.directional_input.magnitude_squared() > 0
         is_moving = player.motion.velocity.magnitude_squared() > 0
+
+        if is_moving:
+            player.direction = direction_from_delta(*player.motion.velocity)
 
         if t.is_pressed(action_buffer, t.Action.A):
             # interact
             if player.interact_scene is not None:
-                player.direction = Direction.N
+                player.direction = Direction.N  # face towards sign
+                player.motion.position.x = int(player.motion.position.x)  # reduces jitter
+                player.motion.position.y = int(player.motion.position.y)
+                player.motion.velocity = pygame.Vector2()
+                is_moving = False
                 dialogue_execute_script_scene(dialogue, player.interact_scene)
             # jump
             elif player.z_position == 0:
@@ -197,37 +260,7 @@ def player_update(
                 animator_reset(player.animator)
                 play_sound(AudioChannel.PLAYER, a.JUMP)
 
-        if is_moving:
-            prev_direction = player.direction
-            player.direction = direction_from_delta(*player.motion.velocity)
-            if player.direction != prev_direction:
-                timer_reset(player.roll_start_timer, 0)  # cancel double tap
-
-        # start roll
-        if (
-            has_input  # trying to go in a direction
-            and not prev_has_input  # just pressed
-            and player.roll_start_timer.remaining > 0  # is double tap
-            and player.roll_max_timer.remaining <= 0  # not currently rolling
-            and player.z_position == 0  # is grounded
-        ):
-            if player.roll_start_timer.elapsed > 0.03:  # debouncing
-                player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
-                timer_reset(player.roll_max_timer, 0.3)
-                timer_reset(player.roll_cooldown_timer, 0.5)
-                play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
-        # double tap detection
-        elif (
-            not has_input  # stopped trying to go in a direction
-            and prev_has_input  # just released
-            and player.roll_cooldown_timer.remaining <= 0  # double tap must not start on cooldown
-        ):
-            timer_reset(player.roll_start_timer, 0.11)
-
-        # timers
-        timer_update(player.roll_start_timer, dt)
-        timer_update(player.roll_max_timer, dt)
-        timer_update(player.roll_cooldown_timer, dt)
+        _player_roll_logic(player, dt, action_buffer)
 
     # collision
     _player_collision(player, dt, grid_collision, walls)
@@ -236,25 +269,25 @@ def player_update(
     player.z_position = min(player.z_position + player.z_velocity * dt, 0)
 
     # animation
-    step_frames = ()
-    if player.z_position < 0:
-        animator_switch_animation(player.animator, f"jump_{player.direction}")
-    elif is_moving:
-        if player.motion.velocity.magnitude() < player.roll_speed:
+    if player.caught_timer.remaining <= 0:
+        step_frames = ()
+        if player.roll_max_timer.remaining > 0:
+            animator_switch_animation(player.animator, f"roll_{player.direction}")  # todo!
+        elif player.z_position < 0:
+            animator_switch_animation(player.animator, f"jump_{player.direction}")
+        elif is_moving:
             animator_switch_animation(player.animator, f"walk_{player.direction}")
             step_frames = (7, 3)
         else:
-            animator_switch_animation(player.animator, f"jump_{player.direction}")
-    else:
-        animator_switch_animation(player.animator, f"idle_{player.direction}")
+            animator_switch_animation(player.animator, f"idle_{player.direction}")
 
-    prev_frame = player.animator.frame_index
-    animator_update(player.animator, dt)
-    if prev_frame not in step_frames and player.animator.frame_index in step_frames:
-        play_sound(
-            AudioChannel.PLAYER,
-            a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
-        )
+        prev_frame = player.animator.frame_index
+        animator_update(player.animator, dt)
+        if prev_frame not in step_frames and player.animator.frame_index in step_frames:
+            play_sound(
+                AudioChannel.PLAYER,
+                a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
+            )
 
 
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
@@ -264,6 +297,7 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
     player.caught_style = style
     player.motion.velocity = pygame.Vector2()
     player.directional_input = pygame.Vector2()
+    timer_reset(player.roll_max_timer, 0)
     camera.trauma = 0.4
     if style == PlayerCaughtStyle.HOLE:
         play_sound(AudioChannel.PLAYER, a.CAUGHT_HOLE)
