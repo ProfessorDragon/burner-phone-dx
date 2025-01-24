@@ -60,6 +60,7 @@ UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")
 UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
 
 # entities
+CAMERA_HUM = pygame.mixer.Sound(SFX + "camera_hum.ogg")
 ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
 ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 

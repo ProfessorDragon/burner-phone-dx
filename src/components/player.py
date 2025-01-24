@@ -3,7 +3,7 @@ from enum import IntEnum, auto
 import random
 import pygame
 
-from components.audio import AudioChannel, channel_busy, play_sound
+from components.audio import AudioChannel, play_sound
 from components.dialogue import DialogueSystem, dialogue_execute_script_scene
 from components.entities.entity_util import render_shadow
 from components.tiles import grid_collision_rect
@@ -41,6 +41,8 @@ class MainStoryProgress(IntEnum):
     INTRO = 0
     COMMS = auto()
     HALFWAY = auto()
+    LAB = auto()
+    FINALE = auto()
 
 
 @dataclass
@@ -212,7 +214,7 @@ def player_update(
             if player.roll_start_timer.elapsed > 0.04:  # debouncing
                 player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
                 timer_reset(player.roll_max_timer, 0.3)
-                timer_reset(player.roll_cooldown_timer, 0.6)
+                timer_reset(player.roll_cooldown_timer, 0.5)
                 play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
         # double tap detection
         elif (
@@ -220,7 +222,7 @@ def player_update(
             and prev_has_input  # just released
             and player.roll_cooldown_timer.remaining <= 0  # double tap must not start on cooldown
         ):
-            timer_reset(player.roll_start_timer, 0.13)
+            timer_reset(player.roll_start_timer, 0.1)
 
         # timers
         timer_update(player.roll_start_timer, dt)

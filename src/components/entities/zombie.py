@@ -54,7 +54,12 @@ class ZombieEnemy(Entity):
         self.walk_speed = 200 * random.uniform(0.8, 1.2)
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         self.motion.velocity = pygame.Vector2()
         prect = player_rect(player.motion)

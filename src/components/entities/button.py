@@ -31,7 +31,12 @@ class ButtonEntity(Entity):
         self.activated = False
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         # collision
         if player.z_position == 0:

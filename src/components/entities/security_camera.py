@@ -1,6 +1,9 @@
+from math import pi, sin
 import pygame
 
+from components.audio import AudioChannel, try_play_sound
 import core.assets as a
+import core.constants as c
 from components.animation import (
     Animation,
     Animator,
@@ -38,10 +41,10 @@ class SecurityCameraEnemy(Entity):
         )
         animator_initialise(self.animator, animation_mapping)
         self.facing = 0
-        self.sight_data = SightData(96, 30)
+        self.inverse_direction = False
+        self.sight_data = SightData(c.TILE_SIZE * 5.5, 45)
         self.swivel = 0
         self.swivel_angle = 60
-        self.swivel_forwards = True
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -51,6 +54,7 @@ class SecurityCameraEnemy(Entity):
         return {
             "pos": (*self.motion.position,),
             "facing": self.facing,
+            "inverse": self.inverse_direction,
             "z": self.sight_data.z_offset,
         }
 
@@ -59,31 +63,24 @@ class SecurityCameraEnemy(Entity):
         enemy = SecurityCameraEnemy()
         enemy.motion.position = pygame.Vector2(js["pos"])
         enemy.facing = js.get("facing", 0)
+        enemy.inverse_direction = js.get("inverse", False)
         enemy.sight_data.z_offset = js.get("z", 0)
         return enemy
 
     def reset(self) -> None:
-        self.swivel = 0
+        pass
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
-        if self.swivel_forwards:
-            target_swivel = self.swivel_angle / 2
-        else:
-            target_swivel = -self.swivel_angle / 2
-        turn = (target_swivel - self.swivel) % 360
-        if turn > 180:
-            turn -= 360
-        # not facing in correct direction, turn
-        if abs(turn) > TURN_THRESHOLD * dt:
-            if self.swivel_forwards:
-                self.swivel += 30 * dt
-            else:
-                self.swivel -= 30 * dt
-        # inverse swivel direction
-        else:
-            self.swivel_forwards = not self.swivel_forwards
+        self.swivel = self.swivel_angle / 2 * sin(pi * time / 2)
+        self.swivel *= -1 if self.inverse_direction else 1
+        try_play_sound(AudioChannel.ENTITY_ALT, a.CAMERA_HUM)
 
         # collision
         self.sight_data.center = self.motion.position + pygame.Vector2(8, 8)
@@ -93,7 +90,7 @@ class SecurityCameraEnemy(Entity):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         # animation
-        direction = direction_from_angle(self.facing)  # looks better without adding swivel
+        direction = direction_from_angle(self.facing + self.swivel)
         animator_switch_animation(self.animator, f"swivel_{direction}")
         animator_update(self.animator, dt)
 

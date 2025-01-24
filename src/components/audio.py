@@ -8,14 +8,25 @@ class AudioChannel(IntEnum):
     PLAYER = auto()
     PLAYER_ALT = auto()
     ENTITY = auto()
+    ENTITY_ALT = auto()
 
 
+# returns true if the channel is currently playing a sound
+def channel_busy(channel: AudioChannel) -> bool:
+    return pygame.mixer.Channel(channel).get_busy()
+
+
+# play a sound in the given channel, overriding any existing sound in that channel
 def play_sound(channel: AudioChannel, sound: pygame.Sound, *args) -> None:
     pygame.mixer.Channel(channel).play(sound, *args)
 
 
-def channel_busy(channel: AudioChannel) -> bool:
-    return pygame.mixer.Channel(channel).get_busy()
+# play a sound in the given channel if not busy. returns true if successful
+def try_play_sound(channel: AudioChannel, sound: pygame.Sound, *args) -> bool:
+    if channel_busy(channel):
+        return False
+    play_sound(channel, sound, *args)
+    return True
 
 
 def stop_all_sounds() -> None:

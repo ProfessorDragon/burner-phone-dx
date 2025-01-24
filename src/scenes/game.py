@@ -2,7 +2,7 @@ from collections import deque
 from functools import partial
 import pygame
 
-from components.audio import AudioChannel, play_sound, channel_busy, stop_all_sounds
+from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
 from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
 import core.assets as a
 import core.constants as c
@@ -40,7 +40,6 @@ from components.tiles import (
 from components.camera import (
     Camera,
     camera_follow,
-    camera_to_screen_shake,
     camera_update,
     camera_reset,
 )
@@ -90,7 +89,10 @@ class Game(Scene):
         dialogue_initialise(self.dialogue)
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
+        self.global_stopwatch = Stopwatch()
         self.post_death_stopwatch = Stopwatch()
+
+        self.music_index = 2
 
         self.grid_collision: set[tuple[int, int]] = set()
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
@@ -104,10 +106,11 @@ class Game(Scene):
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
+        stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
-        # if not channel_busy(AudioChannel.MUSIC):
-        #     play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
+        # 'try' so it does't restart music when player dies
+        try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
 
     def execute(
         self,
@@ -151,6 +154,7 @@ class Game(Scene):
                     }
                     stopwatch_reset(self.post_death_stopwatch, bindings)
                     player_reset(self.player)
+                stopwatch_update(self.global_stopwatch, dt)
                 stopwatch_update(self.post_death_stopwatch, dt)
 
                 # player
@@ -161,7 +165,14 @@ class Game(Scene):
                 # entities
                 for entity in self.entities:
                     if entity_bounds.collidepoint(entity.get_hitbox().center):
-                        entity_update(entity, dt, self.player, self.camera, self.grid_collision)
+                        entity_update(
+                            entity,
+                            dt,
+                            self.global_stopwatch.elapsed,
+                            self.player,
+                            self.camera,
+                            self.grid_collision,
+                        )
 
                 # dialogue
                 if t.is_pressed(action_buffer, t.Action.SELECT):

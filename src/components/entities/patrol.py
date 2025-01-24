@@ -1,8 +1,9 @@
 import pygame
 
+import core.assets as a
+import core.constants as c
 from components.audio import AudioChannel, channel_busy, play_sound
 from components.entities.entity_util import path_from_json, path_to_json, render_shadow
-import core.assets as a
 from components.animation import (
     Animator,
     animator_get_frame,
@@ -27,7 +28,7 @@ class PatrolEnemy(Entity):
         self.path: list[pygame.Vector2] = path
         self.facing = 0
         self.direction = Direction.N
-        self.sight_data = SightData(80, 14)
+        self.sight_data = SightData(c.TILE_SIZE * 5, 14)
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -61,7 +62,12 @@ class PatrolEnemy(Entity):
             self.active_point = 0
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         if len(self.path) > 1:
             target = self.path[self.active_point]

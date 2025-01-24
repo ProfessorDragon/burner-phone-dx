@@ -48,7 +48,12 @@ class SpikeTrapEnemy(Entity):
         animator_switch_animation(self.animator, "activated" if self.activated else "idle")
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         # collision
         prect = player_rect(player.motion)

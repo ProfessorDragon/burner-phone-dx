@@ -379,11 +379,16 @@ class Editor:
                 if entity.get_hitbox().collidepoint(pos):
                     self.entity_index = ENTITY_CLASSES.index(entity.__class__)
                     self.entity_path = [point.copy() for point in entity.get_path() or []]
+                    # bring to front
+                    self.scene.entities.append(
+                        self.scene.entities.pop(len(self.scene.entities) - 1 - i)
+                    )
                     break
 
-        if self.drag_start:
+        ent = self.scene.entities[-1] if len(self.scene.entities) > 0 else None
+
+        if self.drag_start and ent:
             end = _camera_from_mouse(self.scene.camera)
-            ent = self.scene.entities[-1]
             dx, dy = _floor_point(end, False) - _floor_point(self.drag_start, False)
             ent.w, ent.h = max(dx + 1, 1), max(dy + 1, 1)
             if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
@@ -394,9 +399,23 @@ class Editor:
                 self.drag_start = None
 
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
-            self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
+            if self.a_held:
+                if ent:
+                    ent.motion.position.x -= c.HALF_TILE_SIZE
+            else:
+                self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-            self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
+            if self.a_held:
+                if ent:
+                    ent.motion.position.x += c.HALF_TILE_SIZE
+            else:
+                self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
+        if t.is_pressed(self.action_buffer, t.Action.UP):
+            if self.a_held and ent:
+                ent.motion.position.y -= c.HALF_TILE_SIZE
+        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+            if self.a_held and ent:
+                ent.motion.position.y += c.HALF_TILE_SIZE
 
         entity_name = ENTITY_CLASSES[self.entity_index].__name__
         entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
@@ -515,7 +534,10 @@ def editor_render(editor: Editor, surface: pygame.Surface):
 
         case EditorMode.TILES:
             x, y = _floor_point(_camera_from_mouse(editor.scene.camera), False)
-            if editor.tile_data in editor.scene.grid_tiles.get((x, y), []):
+            new_tile_data = editor.tile_data.copy()
+            if editor.a_held:
+                new_tile_data.render_z += 1
+            if new_tile_data in editor.scene.grid_tiles.get((x, y), []):
                 pygame.draw.rect(
                     surface,
                     c.WHITE,
@@ -529,18 +551,15 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                     1,
                 )
             else:
-                new_tile_data = editor.tile_data.copy()
-                if editor.a_held:
-                    new_tile_data.render_z += 1
                 render_tile(surface, editor.scene.camera, x, y, new_tile_data)
                 render_tile_hitbox(surface, editor.scene.camera, x, y, new_tile_data)
             surface.blit(
                 a.TERRAIN,
                 (
-                    surface.get_width() // 2 - c.HALF_TILE_SIZE - editor.tile_data.x * c.TILE_SIZE,
+                    surface.get_width() // 2 - c.HALF_TILE_SIZE - new_tile_data.x * c.TILE_SIZE,
                     surface.get_height() - c.TILE_SIZE,
                 ),
-                (0, editor.tile_data.y * c.TILE_SIZE, a.TERRAIN.get_width(), c.TILE_SIZE),
+                (0, new_tile_data.y * c.TILE_SIZE, a.TERRAIN.get_width(), c.TILE_SIZE),
             )
             pygame.draw.rect(
                 surface,

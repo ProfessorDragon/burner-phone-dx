@@ -41,7 +41,7 @@ def grid_raycast(
     return 1
 
 
-def compile_sight(data: SightData, grid_collision: set[tuple[int, int]]) -> None:
+def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) -> None:
     assert data.center is not None
     # fwiw, this is relatively cheap. my computer can handle almost 200 steps without lag
     # so, as long as there isn't an excessive amount of raycasting entities on screen at once, it's fine
@@ -54,7 +54,10 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]]) -> None
         percent = float(i) / (segs - 1)
         sight = pygame.Vector2(data.radius, 0).rotate(-data.facing + data.angle * (percent - 0.5))
         sight.y -= data.z_offset
-        depth = grid_raycast(sight, offset_center, grid_collision, steps, 2)
+        if grid_collision is not None:
+            depth = grid_raycast(sight, offset_center, grid_collision, steps, 4)
+        else:
+            depth = 1
         data.collision_depths.append(depth)
         sight *= depth
         sight.y += data.z_offset

@@ -35,7 +35,12 @@ class LakeEnemy(Entity):
         pass
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         prect = player_rect(player.motion)
         if prect.colliderect(self.get_hitbox()) and player.z_position == 0:

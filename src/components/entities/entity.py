@@ -46,7 +46,12 @@ class Entity(ABC):
 
     @abstractmethod
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None: ...
 
     @abstractmethod
@@ -62,9 +67,14 @@ def entity_reset(entity: Entity) -> None:
 
 
 def entity_update(
-    entity: Entity, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+    entity: Entity,
+    dt: float,
+    time: float,
+    player: Player,
+    camera: Camera,
+    grid_collision: set[tuple[int, int]],
 ) -> None:
-    entity.update(dt, player, camera, grid_collision)
+    entity.update(dt, time, player, camera, grid_collision)
 
 
 def entity_render(

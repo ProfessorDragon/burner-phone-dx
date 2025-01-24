@@ -33,6 +33,7 @@ class SignEntity(Entity):
     def update(
         self,
         dt: float,
+        time: float,
         player: Player,
         camera: Camera,
         grid_collision: set[tuple[int, int]],

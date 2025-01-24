@@ -1,5 +1,6 @@
 import pygame
 
+import core.constants as c
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import DIST_THRESHOLD, Entity, entity_follow
 from components.entities.entity_util import path_from_json, path_to_json
@@ -14,7 +15,7 @@ class SpotlightEnemy(Entity):
         super().__init__()
         self.path: list[pygame.Vector2] = path
         self.active_point = 0
-        self.light_radius = 48
+        self.light_radius = c.TILE_SIZE * 3
         self.reset()
 
     def get_path(self) -> list[pygame.Vector2]:
@@ -32,7 +33,12 @@ class SpotlightEnemy(Entity):
         self.active_point = 0
 
     def update(
-        self, dt: float, player: Player, camera: Camera, grid_collision: set[tuple[int, int]]
+        self,
+        dt: float,
+        time: float,
+        player: Player,
+        camera: Camera,
+        grid_collision: set[tuple[int, int]],
     ) -> None:
         if len(self.path) > 0:
             target = self.path[self.active_point]
