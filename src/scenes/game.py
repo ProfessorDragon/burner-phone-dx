@@ -133,10 +133,10 @@ class Game(Scene):
 
         # update and render entities within this area
         entity_bounds = pygame.Rect(
-            self.camera.motion.position.x - self.camera.offset.x - c.TILE_SIZE * 8,
-            self.camera.motion.position.y - self.camera.offset.y - c.TILE_SIZE * 8,
-            surface.get_width() + c.TILE_SIZE * 16,
-            surface.get_height() + c.TILE_SIZE * 16,
+            self.camera.motion.position.x - self.camera.offset.x - c.TILE_SIZE * 6,
+            self.camera.motion.position.y - self.camera.offset.y - c.TILE_SIZE * 6,
+            surface.get_width() + c.TILE_SIZE * 12,
+            surface.get_height() + c.TILE_SIZE * 12,
         )
 
         if not self.paused:
@@ -164,7 +164,12 @@ class Game(Scene):
 
                 # entities
                 for entity in self.entities:
-                    if entity_bounds.collidepoint(entity.get_hitbox().center):
+                    path = entity.get_path()
+                    if path:
+                        bound_rects = [pygame.Rect(point, (1, 1)) for point in path]
+                    else:
+                        bound_rects = [entity.get_hitbox()]
+                    if entity_bounds.collidelist(bound_rects) >= 0:
                         entity_update(
                             entity,
                             dt,

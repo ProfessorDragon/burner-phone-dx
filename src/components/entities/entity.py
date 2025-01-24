@@ -20,6 +20,7 @@ class Entity(ABC):
         self.motion = Motion.empty()
 
     # some standard methods to make it easier on the editor
+    # hitbox used for cursor collision in editor, e.g. deleting
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(
             self.motion.position.x - c.HALF_TILE_SIZE,
@@ -28,9 +29,11 @@ class Entity(ABC):
             c.TILE_SIZE,
         )
 
+    # 'feet position' of enemy to determine layering
     def get_terrain_cutoff(self) -> float:
         return self.motion.position.y + 16
 
+    # path used to calculate loading bounds, and is rendered alongside hitbox
     def get_path(self) -> list[pygame.Vector2]:
         return None
 
