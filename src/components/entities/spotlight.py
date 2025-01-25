@@ -54,7 +54,7 @@ class SpotlightEnemy(Entity):
 
         # collision
         prect = player_rect(player.motion)
-        if point_in_circle(*prect.center, *self.motion.position, self.light_radius - 4):
+        if point_in_circle(*prect.center, *self.motion.position, self.light_radius - 1):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         motion_update(self.motion, dt)

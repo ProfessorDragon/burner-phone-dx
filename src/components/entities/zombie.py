@@ -54,7 +54,7 @@ class ZombieEnemy(Entity):
         self.randomize_walk_speed()
 
     def randomize_walk_speed(self) -> None:
-        self.walk_speed = 300 if self.fast else 200
+        self.walk_speed = 100 if self.fast else 100
         self.walk_speed *= random.uniform(0.8, 1.2)
 
     def update(
@@ -70,7 +70,7 @@ class ZombieEnemy(Entity):
         hitbox = self.get_hitbox()
         # only move when player moves
         player_dist = pygame.Vector2(prect.center) - pygame.Vector2(hitbox.center)
-        if player.motion.velocity.magnitude_squared() > 0:
+        if player.motion.velocity.magnitude_squared() > 0 or True:
             center_dist = (
                 self.movement_center + pygame.Vector2(16, 30) - pygame.Vector2(hitbox.center)
             )
