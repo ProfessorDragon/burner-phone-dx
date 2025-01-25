@@ -27,7 +27,9 @@ class CheckpointEntity(Entity):
             "pos": (*self.motion.position,),
             "w": self.w,
             "h": self.h,
-            "main_story": self.main_story_progress.name,
+            "main_story": (
+                None if self.main_story_progress is None else self.main_story_progress.name
+            ),
         }
 
     @staticmethod
@@ -35,7 +37,7 @@ class CheckpointEntity(Entity):
         ent = CheckpointEntity()
         ent.motion.position = pygame.Vector2(js["pos"])
         ent.w, ent.h = js.get("w", 1), js.get("h", 1)
-        if "main_story" in js:
+        if js.get("main_story"):
             ent.main_story_progress = MainStoryProgress[js["main_story"]]
         return ent
 

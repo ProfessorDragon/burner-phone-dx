@@ -58,13 +58,6 @@ class PlayerCaughtStyle(IntEnum):
     ZOMBIE = auto()
 
 
-@dataclass(slots=True)
-class DoubleTapDetectionData:
-    last_action: t.Action = None
-    action_vector: pygame.Vector2 = None
-    action_timer: Timer = None
-
-
 class Player:
     def __init__(self, spawn_position: pygame.Vector2):
         self.motion = Motion.empty()
@@ -103,17 +96,13 @@ class Player:
         self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
 
         # rolling
-        self.double_tap_h = DoubleTapDetectionData()  # for detecting when a roll should begin
-        self.double_tap_h.action_timer = Timer()
-        self.double_tap_v = DoubleTapDetectionData()  # for detecting when a roll should begin
-        self.double_tap_v.action_timer = Timer()
         self.roll_max_timer = Timer()  # duration of the current roll
         self.roll_cooldown_timer = Timer()  # delay before another roll can be performed
 
         # consts
         self.walk_speed = 150  # allows jumping a 3 tile gap
         self.roll_speed = 250  # allows jumping a 4 tile gap
-        self.jump_velocity = 120  # about a tile high
+        self.jump_velocity = 130  # about a tile high
 
 
 def player_rect(motion: Motion) -> pygame.Rect:
@@ -133,48 +122,6 @@ def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer) ->
     player.motion.velocity = player.directional_input * player.walk_speed
     if player.directional_input.x != 0 and player.directional_input.y != 0:
         player.motion.velocity *= 0.707  # trig shortcut, normalizing the vector
-
-
-def _player_roll_logic(player: Player, dt: float, action_buffer: t.InputBuffer) -> None:
-    # timers
-    timer_update(player.double_tap_h.action_timer, dt)
-    timer_update(player.double_tap_v.action_timer, dt)
-    timer_update(player.roll_max_timer, dt)
-    timer_update(player.roll_cooldown_timer, dt)
-
-    # don't allow double taps to start on cooldown
-    if player.roll_cooldown_timer.remaining > 0:
-        return
-
-    # register currently held directions
-    for double_tap, directions in (
-        (player.double_tap_h, ((1, 0, t.Action.RIGHT), (-1, 0, t.Action.LEFT))),
-        (player.double_tap_v, ((0, 1, t.Action.DOWN), (0, -1, t.Action.UP))),
-    ):
-        for dx, dy, inp in directions:
-            if t.is_held(action_buffer, inp):
-                double_tap.last_action = inp
-                double_tap.action_vector = pygame.Vector2(dx, dy)
-                timer_reset(double_tap.action_timer, 0.11)
-                break
-
-    # maybe start rolling
-    if (
-        player.roll_max_timer.remaining <= 0  # not currently rolling
-        and player.z_position == 0  # is grounded
-    ):
-        # detect double tap
-        for double_tap in (player.double_tap_h, player.double_tap_v):
-            if (
-                double_tap.last_action is not None
-                and t.is_pressed(action_buffer, double_tap.last_action)
-                and double_tap.action_timer.remaining > 0
-                and double_tap.action_timer.elapsed > 0.03
-            ):
-                player.motion.velocity = double_tap.action_vector * player.roll_speed
-                timer_reset(player.roll_max_timer, 0.3)
-                timer_reset(player.roll_cooldown_timer, 0.6)
-                play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
 
 
 def _player_collision(
@@ -254,13 +201,29 @@ def player_update(
                 player.motion.velocity = pygame.Vector2()
                 is_moving = False
                 dialogue_execute_script_scene(dialogue, player.interact_scene)
-            # jump
+            # jumping
             elif player.z_position == 0:
                 player.z_velocity = -player.jump_velocity
                 animator_reset(player.animator)
                 play_sound(AudioChannel.PLAYER, a.JUMP)
 
-        _player_roll_logic(player, dt, action_buffer)
+        if t.is_pressed(action_buffer, t.Action.B):
+            # maybe start rolling
+            if (
+                is_moving
+                and player.roll_cooldown_timer.remaining <= 0  # not on cooldown
+                and player.roll_max_timer.remaining <= 0  # not currently rolling
+                and player.z_position == 0  # is grounded
+            ):
+                player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
+                animator_reset(player.animator)
+                timer_reset(player.roll_max_timer, 0.3)
+                timer_reset(player.roll_cooldown_timer, 0.7)
+                play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
+
+        # timers
+        timer_update(player.roll_max_timer, dt)
+        timer_update(player.roll_cooldown_timer, dt)
 
     # collision
     _player_collision(player, dt, grid_collision, walls)

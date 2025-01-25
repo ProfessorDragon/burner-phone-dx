@@ -25,8 +25,9 @@ TERRAIN = pygame.image.load(IMG + "terrain.png")
 
 # entities
 PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
-SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
+ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
 SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
+SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 SIGN = get_sprite_from_sheet(TERRAIN, 0, 6 * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE)
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from math import pi
+from math import pi, radians, sin
 import pygame
 from pygame import gfxdraw
 
@@ -12,11 +12,11 @@ from utilities.math import point_in_circle
 @dataclass
 class SightData:
     # parameters
-    radius: float
-    angle: float
-    z_offset: float = 0
-    center: pygame.Vector2 = None
-    facing: float = 0
+    radius: float  # radius of the cone of sight
+    angle: float  # angle of the cone of sight
+    z_offset: float = 0  # how high up the raycast starts (negative is higher)
+    center: pygame.Vector2 = None  # start position of raycast
+    facing: float = 0  # current rotation of the raycast
 
     # compiled data
     compiled: bool = False
@@ -47,6 +47,8 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) 
     # so, as long as there isn't an excessive amount of raycasting entities on screen at once, it's fine
     segs = int(pi / 360 * data.radius * data.angle)
     steps = int(data.radius / 4)
+    # strategically ignore some collision at the start
+    start_step = int((data.z_offset * sin(radians(data.facing)) - data.z_offset) / 4) + 2
     offset_center = data.center + pygame.Vector2(0, data.z_offset)
     data.collision_depths = []
     data.render_segs = [(data.radius, data.radius + data.z_offset)]
@@ -55,7 +57,7 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) 
         sight = pygame.Vector2(data.radius, 0).rotate(-data.facing + data.angle * (percent - 0.5))
         sight.y -= data.z_offset
         if grid_collision is not None:
-            depth = grid_raycast(sight, offset_center, grid_collision, steps, 4)
+            depth = grid_raycast(sight, offset_center, grid_collision, steps, start_step)
         else:
             depth = 1
         data.collision_depths.append(depth)

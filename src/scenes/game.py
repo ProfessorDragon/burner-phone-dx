@@ -208,8 +208,10 @@ class Game(Scene):
 
         # render tiles within this area
         tile_bounds = pygame.Rect(
-            (self.camera.motion.position.x - self.camera.offset.x) // c.TILE_SIZE,
-            (self.camera.motion.position.y - self.camera.offset.y) // c.TILE_SIZE,
+            (self.camera.motion.position.x - self.camera.offset.x - self.camera.shake_offset.x)
+            // c.TILE_SIZE,
+            (self.camera.motion.position.y - self.camera.offset.y - self.camera.shake_offset.y)
+            // c.TILE_SIZE,
             surface.get_width() // c.TILE_SIZE,
             surface.get_height() // c.TILE_SIZE,
         )

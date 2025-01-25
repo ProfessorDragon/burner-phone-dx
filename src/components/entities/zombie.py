@@ -24,10 +24,11 @@ class ZombieEnemy(Entity):
     def __init__(self, movement_center: pygame.Vector2):
         super().__init__()
         self.animator = Animator()
-        animator_initialise(self.animator, walking_animation_mapping(a.PATROL_FRAMES, 0.07))
+        animator_initialise(self.animator, walking_animation_mapping(a.ZOMBIE_FRAMES, 0.07))
         self.direction = Direction.N
         self.movement_center = movement_center
         self.movement_radius = 96
+        self.fast = False
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -39,11 +40,13 @@ class ZombieEnemy(Entity):
         return self.motion.position.y + 32
 
     def to_json(self):
-        return {"pos": (*self.movement_center,)}
+        return {"pos": (*self.movement_center,), "fast": self.fast}
 
     @staticmethod
     def from_json(js):
-        return ZombieEnemy(pygame.Vector2(js["pos"]))
+        enemy = ZombieEnemy(pygame.Vector2(js["pos"]))
+        enemy.fast = js.get("fast", False)
+        return enemy
 
     def reset(self) -> None:
         self.motion.position = self.movement_center.copy()
@@ -51,7 +54,8 @@ class ZombieEnemy(Entity):
         self.randomize_walk_speed()
 
     def randomize_walk_speed(self) -> None:
-        self.walk_speed = 200 * random.uniform(0.8, 1.2)
+        self.walk_speed = 300 if self.fast else 200
+        self.walk_speed *= random.uniform(0.8, 1.2)
 
     def update(
         self,

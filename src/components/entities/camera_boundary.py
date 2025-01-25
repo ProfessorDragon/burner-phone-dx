@@ -37,7 +37,7 @@ class CameraBoundaryEntity(Entity):
         ent = CameraBoundaryEntity()
         ent.motion.position = pygame.Vector2(js["pos"])
         ent.w, ent.h = js.get("w", 1), js.get("h", 1)
-        if "direction" in js:
+        if js.get("direction"):
             ent.direction = Direction[js["direction"]]
         return ent
 

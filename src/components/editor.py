@@ -416,7 +416,7 @@ class Editor:
             ent.w, ent.h = max(dx + 1, 1), max(dy + 1, 1)
             if (end - self.drag_start).magnitude() > c.TILE_SIZE * 1.5:
                 ent.facing = (
-                    round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 10.0) * 10
+                    round((end - self.drag_start).angle_to(pygame.Vector2(1, 0)) / 15.0) * 15
                 )
             if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
                 self.drag_start = None
