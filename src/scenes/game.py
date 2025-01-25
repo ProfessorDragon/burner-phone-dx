@@ -3,6 +3,7 @@ from functools import partial
 import pygame
 
 from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
+from components.decor import Decor
 from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
 import core.assets as a
 import core.constants as c
@@ -33,9 +34,9 @@ from components.player import (
 from components.tiles import (
     TileData,
     grid_collision_rect,
-    render_tile,
-    render_tile_hitbox,
-    render_wall,
+    tile_render,
+    tile_render_hitbox,
+    wall_render,
 )
 from components.camera import (
     Camera,
@@ -99,7 +100,7 @@ class Game(Scene):
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
         self.walls: list[pygame.Rect] = []
         self.entities: list[Entity] = []
-        # self.decor: list[Decor] = []
+        self.decor: list[Decor] = []
 
         self.editor = Editor(self)
         self.editor.load()
@@ -220,7 +221,7 @@ class Game(Scene):
             for x in range(tile_bounds.left, tile_bounds.right + 1):
                 for tile in self.grid_tiles.get((x, y), []):
                     if tile.render_z < 0:
-                        render_tile(surface, self.camera, x, y, tile)
+                        tile_render(surface, self.camera, x, y, tile)
                     elif terrain_cutoff > (y + tile.render_z + 1) * c.TILE_SIZE:
                         cutoff_bg_tiles.append((x, y, tile))
                     else:
@@ -230,7 +231,7 @@ class Game(Scene):
                 entity_render(entity, surface, self.camera, RenderLayer.RAYS)
         while cutoff_bg_tiles:
             x, y, tile = cutoff_bg_tiles.popleft()
-            render_tile(surface, self.camera, x, y, tile)
+            tile_render(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.colliderect(entity.get_hitbox()):
                 entity_render(
@@ -250,7 +251,7 @@ class Game(Scene):
         # in front of player
         while cutoff_fg_tiles:
             x, y, tile = cutoff_fg_tiles.popleft()
-            render_tile(surface, self.camera, x, y, tile)
+            tile_render(surface, self.camera, x, y, tile)
         for entity in self.entities:
             if entity_bounds.colliderect(entity.get_hitbox()):
                 entity_render(
@@ -267,14 +268,14 @@ class Game(Scene):
         # hitboxes
         if c.DEBUG_HITBOXES:
             for i, wall in enumerate(self.walls):
-                render_wall(surface, self.camera, i, wall)
+                wall_render(surface, self.camera, i, wall)
             for y in range(tile_bounds.top, tile_bounds.bottom + 1):
                 for x in range(tile_bounds.left, tile_bounds.right + 1):
                     crect = grid_collision_rect(self.grid_collision, x, y)
                     if crect is not None:
-                        render_wall(surface, self.camera, None, crect)
+                        wall_render(surface, self.camera, None, crect)
                     for tile in self.grid_tiles.get((x, y), []):
-                        render_tile_hitbox(surface, self.camera, x, y, tile)
+                        tile_render_hitbox(surface, self.camera, x, y, tile)
 
         # player again
         player_render_overlays(self.player, surface, self.camera)

@@ -26,7 +26,7 @@ def grid_collision_rect(grid_collision: set[tuple[int, int]], x: int, y: int) ->
     return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE)
 
 
-def render_tile(
+def tile_render(
     surface: pygame.Surface,
     camera: Camera,
     grid_x: float,
@@ -40,7 +40,7 @@ def render_tile(
     )
 
 
-def render_tile_hitbox(
+def tile_render_hitbox(
     surface: pygame.Surface,
     camera: Camera,
     grid_x: float,
@@ -64,7 +64,7 @@ def render_tile_hitbox(
     )
 
 
-def render_wall(
+def wall_render(
     surface: pygame.Surface, camera: Camera, index: Any | None, wall: pygame.Rect
 ) -> None:
     pygame.draw.rect(

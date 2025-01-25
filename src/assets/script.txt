@@ -189,9 +189,6 @@ char 0 sign
 style sign
 char 0 sign
 - -- 2 Forest Rd --\nHome sweet home
-pan .5 16 -18
-delay .5
-pan .5
 
 
 [LAB MAILBOX]

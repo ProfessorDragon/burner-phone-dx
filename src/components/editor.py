@@ -9,7 +9,7 @@ import pygame
 from components.entities.all import ENTITY_CLASSES, entity_from_json
 from components.entities.entity import Entity, render_path
 from components.player import player_reset
-from components.tiles import TileData, render_tile, render_tile_hitbox
+from components.tiles import TileData, tile_render, tile_render_hitbox
 import core.input as t
 import core.constants as c
 import core.assets as a
@@ -572,8 +572,8 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                     1,
                 )
             else:
-                render_tile(surface, editor.scene.camera, x, y, new_tile_data)
-                render_tile_hitbox(surface, editor.scene.camera, x, y, new_tile_data)
+                tile_render(surface, editor.scene.camera, x, y, new_tile_data)
+                tile_render_hitbox(surface, editor.scene.camera, x, y, new_tile_data)
             surface.blit(
                 a.TERRAIN,
                 (

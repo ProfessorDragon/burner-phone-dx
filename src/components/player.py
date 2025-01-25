@@ -83,11 +83,11 @@ class Player:
                         Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
                         Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
                     ],
-                    "roll": [  # todo
-                        Animation(a.PLAYER_FRAMES[55:60], 0.08, False),
-                        Animation(a.PLAYER_FRAMES[45:50], 0.08, False),
-                        Animation(a.PLAYER_FRAMES[40:45], 0.08, False),
-                        Animation(a.PLAYER_FRAMES[50:55], 0.08, False),
+                    "roll": [
+                        Animation(a.PLAYER_FRAMES[70:75], 0.07, False),
+                        Animation(a.PLAYER_FRAMES[65:70], 0.07, False),
+                        Animation(a.PLAYER_FRAMES[60:65], 0.07, False),
+                        Animation(a.PLAYER_FRAMES[75:80], 0.07, False),
                     ],
                 },
             )

@@ -30,6 +30,12 @@ SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 1
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 SIGN = get_sprite_from_sheet(TERRAIN, 0, 6 * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE)
 
+# decor
+DECOR = [
+    pygame.image.load(IMG + "decor/shipping_container.png"),  # 0
+    *slice_sheet(IMG + "decor/trees.png", 64, 64),  # 1-8
+]
+
 
 ## AUDIO (ogg for web compatibility)
 SFX = "assets/sfx/"
