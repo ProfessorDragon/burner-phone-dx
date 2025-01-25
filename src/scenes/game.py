@@ -156,12 +156,16 @@ class Game(Scene):
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
-        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
-            timer_reset(
-                self.phone_timer,
-                1,
-                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
-            )
+        if c.DEBUG_NO_STORY:
+            if self.player.progression.main_story == MainStoryProgress.INTRO:
+                self.player.progression.main_story = MainStoryProgress.COMMS
+        else:
+            if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
+                timer_reset(
+                    self.phone_timer,
+                    1,
+                    lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
+                )
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
@@ -189,7 +193,7 @@ class Game(Scene):
         in_dialogue = dialogue_update(
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
-        if not in_dialogue:
+        if not in_dialogue and not c.DEBUG_NO_STORY:
             _story_progression_logic(self.player, self.dialogue, self.phone_timer)
 
         # update and render entities within this area

@@ -42,7 +42,7 @@ class SecurityCameraEnemy(Entity):
         animator_initialise(self.animator, animation_mapping)
         self.facing = 0
         self.inverse_direction = False
-        self.sight_data = SightData(c.TILE_SIZE * 5.5, 45)
+        self.sight_data = SightData(c.TILE_SIZE * 5.5, 45, -16)
         self.swivel = 0
         self.swivel_angle = 60
         self.min_story: MainStoryProgress = None

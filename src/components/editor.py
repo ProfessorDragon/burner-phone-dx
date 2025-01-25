@@ -26,9 +26,10 @@ from utilities.math import list_range
 EDITOR_DEFAULT_LEVEL = "assets/default_level.json"
 TILE_GROUPS = {
     0: [  # floor + lake
-        [9, 10, 11] + [0] * 6,
-        [12, 13, 14] + [3] * 6,
-        [20, 21, 22, 23],
+        list_range(9, 11) + [0] * 6,
+        list_range(12, 14) + [3] * 6,
+        list_range(20, 23),
+        list_range(42, 44),
     ],
     3: [  # walls
         list_range(1, 4) + [0],

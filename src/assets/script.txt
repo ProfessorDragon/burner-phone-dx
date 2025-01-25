@@ -6,6 +6,7 @@
 # message
 # style <DialogueStyle:str> <Args:str>
 # char <SpriteIndex:int> <CharacterId:str=LastCharacterId>
+# noskip
 # goto <SCENE NAME:str>
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
 # - <Message:str>
@@ -68,14 +69,18 @@ goto OPENING ACCEPT MAIN
 
 style phone silent
 char 0 luke
+noskip
 - listen, our monitoring systems detected that you're immune.\ndo you know what that means?
 # i think this is rather amusing dialogue
 - you're a titanium wall of biological defense, a lucky horse in the universal race titled "life", remaining strong as an elder oak rooted in the soils of time...
 - ...basically, you're extremely valuable to us.
 char 1
+noskip
 - we're giving you an opportunity to save the world right now.\nmaybe i can throw a bit of cash on top to sweeten the pot.
 char 0
-- if you're in, start heading north. stand under the tree with no shadow, and i'll set you up.
+noskip
+- if you're in, find the tree with no shadow. stand underneath it, and my assistant will set you up.
+noskip
 - oh, and maybe keep this on the down low. we don't want any... interference.\n**sksrkck**
 music 2
 
@@ -101,12 +106,15 @@ style phone silent
 char 2 rogan_no_comms
 - eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
 char 0
+noskip
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
 pan 0 48 -62
 pan 1 48 -63
-- ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
+noskip
+- ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
 char 1
+noskip
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
 pan 0
 char 0
@@ -123,7 +131,7 @@ char 1 rogan
 
 style comms
 char 2 rogan
-- hey hey, look who's making progress! agent, you've exceeded expectations by two entire miles.
+- hey hey, looks like the weapon's making progress! you've certainly exceeded my expectations.
 char 0
 - now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
 
@@ -204,26 +212,35 @@ char 1
 
 
 ## PROGRESS COMMUNICATIONS
-# short lines i think are funny, can be played when the player reaches a checkpoint
+# short lines i think are funny, random ones can be played throughout the game
 
 
 [PROGRESS 1]
+
 style comms
 char 2 rogan
-- keep up the good work
+- so how is my weapon going? keep up the good work!
 
 
 [PROGRESS 2]
+
 style comms
 char 1 rogan
 - victory is within my grasp!\nno time to waste!
 
 
 [PROGRESS 3]
+
 style comms
 char 0 rogan
 - don't forget... you are... eheh... the weapon...
 
+
+[PROGRESS 4]
+
+style comms
+char 0 rogan
+- you are the weapon... our weapon. do you understand that? you are humanities last hope...
 
 
 ## SIGNS AND NOTES
@@ -233,7 +250,7 @@ char 0 rogan
 
 style sign
 char 0 sign
-- Made for the Pirate Software Game Jam 16 (2025)
+- Made for the Pirate Software Game Jam 16 (2025)\nTheme: You Are The Weapon
 
 
 [YOUR MAILBOX]

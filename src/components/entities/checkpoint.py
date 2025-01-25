@@ -1,10 +1,11 @@
 import pygame
 
+import core.assets as a
 import core.constants as c
-from components.camera import Camera
+from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.player import MainStoryProgress, Player, PlayerInteraction, player_rect
-from scenes.scene import RenderLayer
+from scenes.scene import PLAYER_OR_FG, RenderLayer
 
 
 class CheckpointEntity(Entity):
@@ -62,4 +63,20 @@ class CheckpointEntity(Entity):
                 player.interaction = PlayerInteraction(self.scene_name, False)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        pass
+        if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:
+            content = ""
+            if self.story is not None:
+                content = self.story.name
+            if self.scene_name is not None:
+                content += "*"
+            if content:
+                text = a.DEBUG_FONT.render(content, False, c.RED)
+                hitbox = self.get_hitbox()
+                surface.blit(
+                    text,
+                    camera_to_screen_shake(
+                        camera,
+                        hitbox.centerx - text.get_width() // 2,
+                        hitbox.centery - text.get_height() // 2,
+                    ),
+                )

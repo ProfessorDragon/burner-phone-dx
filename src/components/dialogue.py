@@ -47,6 +47,7 @@ class DialogueMessagePacket:
     sounds: list[pygame.mixer.Sound] = None
     message: str = ""
     buttons: list[DialogueButton] = None
+    skippable = True
 
 
 # delays for the specified duration and optionally plays a sound when it starts
@@ -200,6 +201,9 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 dialogue_packet.name = character.name
                 dialogue_packet.sounds = character.sounds
 
+            case "noskip":
+                dialogue_packet.skippable = False
+
             case "goto":
                 dialogue_packet.buttons = [
                     DialogueButton(
@@ -255,10 +259,11 @@ def _dialogue_update_message(
     # confirm
     if t.is_pressed(action_buffer, t.Action.A):
         if not is_complete:
-            # Skip writing
-            dialogue.char_index = len(packet.message)
-            dialogue.text = packet.message
-            timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
+            if packet.skippable:
+                # Skip writing
+                dialogue.char_index = len(packet.message)
+                dialogue.text = packet.message
+                timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
         elif dialogue.complete_timer.remaining <= 0:
             # play_sound(AudioChannel.UI, a.UI_SELECT) # sounds bad
