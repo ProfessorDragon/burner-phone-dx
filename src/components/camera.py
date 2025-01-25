@@ -96,3 +96,5 @@ def camera_reset(camera: Camera) -> None:
     camera.trauma = 0.0
     camera.shake_offset.x = 0.0
     camera.shake_offset.y = 0.0
+    camera.motion.velocity = pygame.Vector2()
+    camera.motion.acceleration = pygame.Vector2()

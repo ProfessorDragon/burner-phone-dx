@@ -24,7 +24,7 @@ class ZombieEnemy(Entity):
     def __init__(self, movement_center: pygame.Vector2):
         super().__init__()
         self.animator = Animator()
-        animator_initialise(self.animator, walking_animation_mapping(a.ZOMBIE_FRAMES, 0.07))
+        animator_initialise(self.animator, walking_animation_mapping(a.ZOMBIE_FRAMES, 0.09))
         self.direction = Direction.N
         self.movement_center = movement_center
         self.movement_radius = 96
@@ -52,8 +52,8 @@ class ZombieEnemy(Entity):
         self.randomize_walk_speed()
 
     def randomize_walk_speed(self) -> None:
-        self.walk_speed = 100
-        self.walk_speed *= random.uniform(0.8, 1.2)
+        self.walk_speed = 120
+        self.walk_speed *= random.uniform(0.9, 1.1)
 
     def update(
         self,

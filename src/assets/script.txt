@@ -4,38 +4,62 @@
 # [<SCENE NAME:str>]
 
 # message
-# style <DialogueStyle:Str>
+# style <DialogueStyle:str> <Args:str>
 # char <SpriteIndex:int> <CharacterId:str=LastCharacterId>
-# - <Message:str>
+# goto <SCENE NAME:str>
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
-
-# delay
-# delay <Duration:float>
+# - <Message:str>
 
 # camera pan
 # pan <Duration:float> <XTile:float> <YTile:float>
 # ignores camera bounds. omit x and y to target the player's position.
 
+# misc
+# delay <Duration:float>
+
 
 
 ## MAIN STORY
 
-[OPENING VOICEMAIL]
+[OPENING CALL]
 
 style phone
 char 0 phone
-- -- 1 unread voicemail --
-- hello, this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company.
-- call me back on 0200-666-391.\n**shrkckk**
+buttons Accept=OPENING ACCEPT 1|Decline=OPENING DECLINE
+- Incoming call: 0200-666-391
 # 66639 is the phone code for MONEY
-- ...
-- Thank you for calling Pharm-O-Rite LLC. Please wait while we transfer you to an operator.
-- Due to environmental conditions at this time, we are currently not accepting walk ins.
-- ...
+
+
+[OPENING DECLINE]
+
+delay 0.2
+style phone
+char 0 phone
+buttons Accept=OPENING ACCEPT 2|Decline=OPENING DECLINE
+- Incoming call: 0200-666-391
+
+
+[OPENING ACCEPT 1]
+
+style phone silent
 char 0 luke
-- ah, mr jones, we've been expecting you. all i'll need is a minute of your time.
+goto OPENING ACCEPT MAIN
+- hello, this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company. all i'll need is a minute of your time.
+
+
+[OPENING ACCEPT 2]
+
+style phone silent
+char 0 luke
+goto OPENING ACCEPT MAIN
+- hello, luke speaking. as you can tell, we are extremely committed to outstanding service here at pharm-o-rite llc. all i'll need is a minute of your time.
+
+
+[OPENING ACCEPT MAIN]
+
+style phone silent
+char 0 luke
 - listen, our monitoring systems detected that you're immune.\ndo you know what that means?
-# ^ we also know you can throw a ferocious punch.
 # i think this is rather amusing dialogue
 - you're a titanium wall of biological defense, a lucky horse in the universal race titled "life", remaining strong as an elder oak rooted in the soils of time...
 - ...basically, you're extremely valuable to us.
@@ -54,19 +78,25 @@ buttons Accept=SETUP ACCEPT|Decline=
 - Incoming call: Unknown number
 
 
+[REVOKE COMMS]
+
+# does nothing. is important because the game will collect a checkpoint which executes this scene,
+# which then revokes comms privileges and reset the shadowless tree dialogue
+
+
 [SETUP ACCEPT]
 
-style phone
+style phone silent
 char 2 rogan_no_comms
 - eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
 char 0
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
-# TODO: show underground lab
+pan 0 48 -63
 - ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
 char 1
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
-# TODO: cut back to game environment
+pan 0
 char 0
 - alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
 - it's like a phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
@@ -126,7 +156,14 @@ char 1 rogan
 
 style comms
 char 1 rogan
-- what, you fell in another hole? it ain't funny! we've got lives at stake here!
+- what, you fell in another lake? it ain't funny! we've got lives at stake here!
+
+
+[THIRD CAUGHT HOLE]
+
+style comms
+char 1 rogan
+- that didn't look pleasant.
 
 
 [FIRST CAUGHT ZOMBIE]

@@ -27,6 +27,7 @@ class DialogueStyle(Enum):
     DEFAULT = "default"
     PHONE = "phone"
     SIGN = "sign"
+    NOTE = "note"
     COMMS = "comms"
 
 
@@ -123,6 +124,14 @@ def dialogue_has_executed_scene(dialogue: DialogueSystem, scene_name: str) -> bo
     return scene_name.lower() in dialogue.executed_scenes
 
 
+def dialogue_remove_executed_scene(dialogue: DialogueSystem, scene_name: str) -> bool:
+    if dialogue_has_executed_scene(dialogue, scene_name):
+        dialogue.executed_scenes.remove(scene_name.lower())
+        return True
+    return False
+
+
+# executes a section from the currently loaded script.
 def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> None:
     if not scene_name:
         return
@@ -131,6 +140,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
         print(f"ERROR: Scene {scene_name} does not exist in dialogue scenes")
         return
 
+    print(f"Executing script scene {scene_name.upper()}")
     dialogue_reset_queue(dialogue)
     dialogue.executed_scenes.add(scene_name)
 
@@ -162,23 +172,39 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 dialogue_packet = new_packet
 
             case "style":
-                dialogue_packet.style = DialogueStyle(content)
-                # play the opening sound for comms, and delay a bit
-                if dialogue_packet.style == DialogueStyle.COMMS:
-                    delay = DialogueDelayPacket(0.6)
-                    delay.sound = a.COMMS_OPEN
-                    dialogue_add_packet(dialogue, delay)
+                args = content.split(" ")
+                dialogue_packet.style = DialogueStyle(args[0])
+                if len(args) <= 1 or args[1] != "silent":
+                    # play the opening sound for phone or comms, and delay until sound is finished
+                    if dialogue_packet.style == DialogueStyle.PHONE:
+                        delay = DialogueDelayPacket(0.6)
+                        delay.sound = a.OPEN_PHONE
+                        dialogue_add_packet(dialogue, delay)
+                    elif dialogue_packet.style == DialogueStyle.COMMS:
+                        delay = DialogueDelayPacket(0.6)
+                        delay.sound = a.OPEN_COMMS
+                        dialogue_add_packet(dialogue, delay)
 
             case "char":
                 args = content.split(" ", 1)
                 if len(args) > 1 and args[1] in a.DIALOGUE_CHARACTERS:
-                    character = a.DIALOGUE_CHARACTERS[args[1]]
+                    character = a.DIALOGUE_CHARACTERS.get(args[1], a.DIALOGUE_CHARACTERS["default"])
                     last_character_id = args[1]
                 else:
-                    character = a.DIALOGUE_CHARACTERS[last_character_id]
-                dialogue_packet.graphic = character.sprites[int(args[0])]
+                    character = a.DIALOGUE_CHARACTERS.get(
+                        last_character_id, a.DIALOGUE_CHARACTERS["default"]
+                    )
+                if int(args[0]) < len(character.sprites):
+                    dialogue_packet.graphic = character.sprites[int(args[0])]
                 dialogue_packet.name = character.name
                 dialogue_packet.sounds = character.sounds
+
+            case "goto":
+                dialogue_packet.buttons = [
+                    DialogueButton(
+                        "", partial(dialogue_execute_script_scene, dialogue, content), True
+                    )
+                ]
 
             case "buttons":
                 dialogue_packet.buttons = []
@@ -217,10 +243,9 @@ def _dialogue_update_message(
     mouse_bufffer: t.InputBuffer,
 ) -> None:
     is_complete = dialogue.char_index >= len(packet.message)
-    has_buttons = packet.buttons is not None
 
     # confirm
-    if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(mouse_bufffer, t.Action.LEFT):
+    if t.is_pressed(action_buffer, t.Action.A):
         if not is_complete:
             # Skip writing
             dialogue.char_index = len(packet.message)
@@ -230,7 +255,7 @@ def _dialogue_update_message(
         elif dialogue.complete_timer.remaining <= 0:
             # play_sound(AudioChannel.UI, a.UI_SELECT) # sounds bad
             # Activate selected button
-            if has_buttons:
+            if packet.buttons is not None:
                 selected_index = [i for i, btn in enumerate(packet.buttons) if btn.selected]
                 if len(selected_index) > 0:
                     dialogue_pop_packet(dialogue)
@@ -243,7 +268,7 @@ def _dialogue_update_message(
 
         return
 
-    if has_buttons:
+    if packet.buttons is not None and len(packet.buttons) > 1:
         dx = t.is_pressed(action_buffer, t.Action.RIGHT) - t.is_pressed(
             action_buffer, t.Action.LEFT
         )
@@ -316,7 +341,9 @@ def _dialogue_update_camera_pan(
     if packet.target is not None:
         camera_target = packet.target
 
-    if timer_update(dialogue.delay_timer, dt):
+    timer_update(dialogue.delay_timer, dt)
+
+    if dialogue.delay_timer.remaining <= 0:
         camera.motion.position = camera_target
         dialogue_pop_packet(dialogue)
     else:
@@ -396,7 +423,7 @@ def _dialogue_render_message(
     if dialogue.char_index >= len(packet.message) and dialogue.complete_timer.remaining <= 0:
         x = dialogue.rect.right - 10
         y = dialogue.rect.bottom - 2
-        if packet.buttons is not None:
+        if packet.buttons is not None and len(packet.buttons) > 1:
             for button in packet.buttons[::-1]:
                 button_icon = dialogue.font.render(
                     button.text, False, c.WHITE if button.selected else (200, 200, 200)

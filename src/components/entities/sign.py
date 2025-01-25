@@ -4,7 +4,7 @@ import core.assets as a
 import core.constants as c
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
-from components.player import Player, player_rect
+from components.player import Player, PlayerInteraction, player_rect
 from scenes.scene import PLAYER_LAYER, PLAYER_OR_FG, RenderLayer
 
 
@@ -40,11 +40,11 @@ class SignEntity(Entity):
     ) -> None:
         if player.z_position == 0 and player_rect(player.motion).colliderect(self.get_hitbox()):
             self.show_arrow = True
-            player.interact_scene = self.scene_name
+            player.interaction = PlayerInteraction(self.scene_name, True)
         else:
             self.show_arrow = False
-            if player.interact_scene == self.scene_name:
-                player.interact_scene = None
+            if player.interaction.scene_name == self.scene_name:
+                player.interaction.scene_name = None
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         frame = a.SIGN

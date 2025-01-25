@@ -4,6 +4,7 @@ import pygame
 
 from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
 from components.decor import Decor
+from components.entities.camera_boundary import CameraBoundaryEntity
 from components.timer import (
     Stopwatch,
     Timer,
@@ -22,6 +23,7 @@ from components.dialogue import (
     dialogue_has_executed_scene,
     dialogue_initialise,
     dialogue_load_script,
+    dialogue_remove_executed_scene,
     dialogue_render,
     dialogue_reset_queue,
     dialogue_update,
@@ -66,6 +68,28 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
+def _story_progression_logic(player: Player, dialogue: DialogueSystem) -> None:
+    # story progression
+    # this is REQUIRED to make the shadowless tree dialogue go smoothly.
+    # and yes this took like two hours to figure out. please don't change it :'(
+    if (
+        player.progression.main_story == MainStoryProgress.INTRO
+        and dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
+        and not dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
+    ):
+        # if trying to revoke comms but it hasn't played shadowless tree yet, stop trying to revoke comms
+        dialogue_remove_executed_scene(dialogue, "REVOKE COMMS")
+    elif (
+        player.progression.main_story == MainStoryProgress.COMMS
+        and dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
+        and dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
+        and not dialogue_has_executed_scene(dialogue, "SETUP ACCEPT")
+    ):
+        # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
+        player.progression.main_story = MainStoryProgress.INTRO
+        dialogue_remove_executed_scene(dialogue, "SHADOWLESS TREE")
+
+
 def _post_death_comms(
     story: MainStoryProgress, dialogue: DialogueSystem, caught_style: PlayerCaughtStyle
 ) -> None:
@@ -79,12 +103,8 @@ def _post_death_comms(
         dialogue_execute_script_scene(dialogue, scene_name)
 
 
-def _main_story_progress_comms(story: MainStoryProgress, dialogue: DialogueSystem) -> None:
-    scene_name = None
-    if story == MainStoryProgress.OUTDOORS:
-        scene_name = "BEGIN OUTDOORS COMMS"
-    if scene_name:
-        dialogue_execute_script_scene(dialogue, scene_name)
+def _camera_target(player: Player) -> pygame.Vector2:
+    return pygame.Vector2(player_rect(player.motion).center)
 
 
 class Game(Scene):
@@ -99,7 +119,6 @@ class Game(Scene):
         self.player = Player(_tile_size_vec(6.5, -10.5))
 
         self.camera = Camera.empty()
-        self.camera.motion.position = pygame.Vector2(player_rect(self.player.motion).center)
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
 
         self.dialogue = DialogueSystem()
@@ -120,14 +139,22 @@ class Game(Scene):
         self.editor = Editor(self)
         self.editor.load()
 
+    # everything here runs when the player dies as wel as when the game begins
+    # anything exclusive to the game beginning should go in init
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL"):
+            timer_reset(
+                self.comms_timer,
+                0.5,
+                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL"),
+            )
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
-        # 'try' so it does't restart music when player dies
-        # try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+        # 'try' so it does't restart when player dies
+        try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
 
     def execute(
         self,
@@ -146,10 +173,12 @@ class Game(Scene):
 
         editor_update(self.editor, dt, action_buffer, mouse_buffer)
 
-        camera_target = pygame.Vector2(player_rect(self.player.motion).center)
+        camera_target = _camera_target(self.player)
         in_dialogue = dialogue_update(
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
+
+        _story_progression_logic(self.player, self.dialogue)
 
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
@@ -174,10 +203,23 @@ class Game(Scene):
                         ),
                     )
                     player_reset(self.player)
+
+                    # instantly update the camera to the target so any boundaries don't accidentally get locked on
+                    camera_target = _camera_target(self.player)
+                    self.camera.motion.position = camera_target
+                    for ent in self.entities:
+                        if isinstance(ent, CameraBoundaryEntity):
+                            entity_update(
+                                ent,
+                                dt,
+                                self.global_stopwatch.elapsed,
+                                self.player,
+                                self.camera,
+                                self.grid_collision,
+                            )
+
                 stopwatch_update(self.global_stopwatch, dt)
                 timer_update(self.comms_timer, dt)
-
-                prev_main_story = self.player.progression.main_story
 
                 # player
                 player_update(
@@ -204,18 +246,6 @@ class Game(Scene):
                             self.camera,
                             self.grid_collision,
                         )
-
-                # check if progress has been made
-                if self.player.progression.main_story != prev_main_story:
-                    timer_reset(
-                        self.comms_timer,
-                        0.1,
-                        partial(
-                            _main_story_progress_comms,
-                            self.player.progression.main_story,
-                            self.dialogue,
-                        ),
-                    )
 
                 # pausing
                 if t.is_pressed(action_buffer, t.Action.SELECT):
@@ -272,7 +302,7 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_BG
-                        if entity.get_terrain_cutoff() <= terrain_cutoff
+                        if entity.get_terrain_cutoff() < terrain_cutoff
                         else RenderLayer.BACKGROUND
                     ),
                 )
@@ -292,7 +322,7 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_FG
-                        if entity.get_terrain_cutoff() > terrain_cutoff
+                        if entity.get_terrain_cutoff() >= terrain_cutoff
                         else RenderLayer.FOREGROUND
                     ),
                 )

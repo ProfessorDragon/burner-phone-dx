@@ -102,7 +102,8 @@ DIALOGUE_PLACEHOLDER_SOUNDS = [
     pygame.mixer.Sound(SFX + "dialogue_sign_2.ogg"),
 ]
 
-COMMS_OPEN = pygame.mixer.Sound(SFX + "comms_open.ogg")
+OPEN_PHONE = pygame.mixer.Sound(SFX + "open_phone.ogg")
+OPEN_COMMS = pygame.mixer.Sound(SFX + "open_comms.ogg")
 
 DIALOGUE_CHARACTERS = {
     "default": DialogueCharacter(

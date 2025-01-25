@@ -4,7 +4,11 @@ import random
 import pygame
 
 from components.audio import AudioChannel, play_sound
-from components.dialogue import DialogueSystem, dialogue_execute_script_scene
+from components.dialogue import (
+    DialogueSystem,
+    dialogue_execute_script_scene,
+    dialogue_has_executed_scene,
+)
 from components.entities.entity_util import render_shadow
 from components.tiles import grid_collision_rect
 from components.timer import Timer, timer_reset, timer_update
@@ -52,6 +56,12 @@ class PlayerProgression:
     main_story: MainStoryProgress = MainStoryProgress.INTRO
 
 
+@dataclass
+class PlayerInteraction:
+    scene_name: str | None
+    requires_input: bool
+
+
 class PlayerCaughtStyle(IntEnum):
     NONE = 0
     SIGHT = auto()
@@ -94,7 +104,7 @@ class Player:
         self.direction = Direction.E
         self.caught_timer = Timer()  # resets scene and player when completed
         self.caught_style = PlayerCaughtStyle.NONE
-        self.interact_scene = None  # if set, runs the dialogue script scene when jump is pressed
+        self.interaction = PlayerInteraction(None, False)
 
         # rolling
         self.roll_max_timer = Timer()  # duration of the current roll
@@ -193,15 +203,20 @@ def player_update(
         if is_moving:
             player.direction = direction_from_delta(*player.motion.velocity)
 
+        if player.interaction.scene_name is not None and not player.interaction.requires_input:
+            if not dialogue_has_executed_scene(dialogue, player.interaction.scene_name):
+                dialogue_execute_script_scene(dialogue, player.interaction.scene_name)
+                player.interaction.scene_name = None
+
         if t.is_pressed(action_buffer, t.Action.A):
             # interact
-            if player.interact_scene is not None:
+            if player.interaction.scene_name is not None and player.interaction.requires_input:
                 player.direction = Direction.N  # face towards sign
+                is_moving = False
                 player.motion.position.x = int(player.motion.position.x)  # reduces jitter
                 player.motion.position.y = int(player.motion.position.y)
                 player.motion.velocity = pygame.Vector2()
-                is_moving = False
-                dialogue_execute_script_scene(dialogue, player.interact_scene)
+                dialogue_execute_script_scene(dialogue, player.interaction.scene_name)
             # jumping
             elif player.z_position == 0:
                 player.z_velocity = -player.jump_velocity
