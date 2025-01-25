@@ -70,13 +70,14 @@ class DialogueSystem:
     font: pygame.Font = None
     rect: pygame.Rect = None
     text: str = None
+    script_scenes: dict[str, list[str]] = None
+    executed_scenes: set[str] = None
     show_timer: Timer = None  # delay before dialogue is shown or updated
     complete_timer: Timer = None  # delay before dialogue can be dismissed
     character_timer: Timer = None  # delay between characters in a message
     delay_timer: Timer = None  # used by delay and camera pan packets
     pan_start: pygame.Vector2 = None  # camera's position at the start of the current camera pan
-    script_scenes: dict[str, list[str]] = None
-    executed_scenes: set[str] = None
+    desired_music_index: int = None  # used to change music inside a scene
 
 
 def dialogue_wrap_message(message: str) -> str:
@@ -229,6 +230,13 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 if len(args) > 2:
                     pan.target = pygame.Vector2(args[1] * c.TILE_SIZE, args[2] * c.TILE_SIZE)
                 dialogue_add_packet(dialogue, pan)
+
+            case "music":
+                dialogue.desired_music_index = int(content)
+
+            case "require":
+                if not dialogue_has_executed_scene(dialogue, content):
+                    return
 
             case _:
                 print(f"ERROR: Invalid script line in scene {scene_name}:\n{ln}")

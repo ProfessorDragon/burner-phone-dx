@@ -33,7 +33,7 @@ TILE_GROUPS = {
     3: [  # walls
         list_range(1, 4) + [0],
         list_range(5, 16) + [0],
-        list_range(17, 21),
+        list_range(18, 21) + [17] * 6,
     ],
     4: [  # above floor
         list_range(3, 7) + [0] * 12,

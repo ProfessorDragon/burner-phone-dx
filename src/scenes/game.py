@@ -68,26 +68,37 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
-def _story_progression_logic(player: Player, dialogue: DialogueSystem) -> None:
-    # story progression
-    # this is REQUIRED to make the shadowless tree dialogue go smoothly.
-    # and yes this took like two hours to figure out. please don't change it :'(
-    if (
-        player.progression.main_story == MainStoryProgress.INTRO
-        and dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
-        and not dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
-    ):
-        # if trying to revoke comms but it hasn't played shadowless tree yet, stop trying to revoke comms
-        dialogue_remove_executed_scene(dialogue, "REVOKE COMMS")
-    elif (
-        player.progression.main_story == MainStoryProgress.COMMS
-        and dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
-        and dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
-        and not dialogue_has_executed_scene(dialogue, "SETUP ACCEPT")
-    ):
-        # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
-        player.progression.main_story = MainStoryProgress.INTRO
-        dialogue_remove_executed_scene(dialogue, "SHADOWLESS TREE")
+def _story_progression_logic(player: Player, dialogue: DialogueSystem, phone_timer: Timer) -> None:
+    if player.progression.main_story == MainStoryProgress.INTRO:
+        # opening call
+        if (
+            dialogue_has_executed_scene(dialogue, "OPENING CALL 1")
+            and not dialogue_has_executed_scene(dialogue, "OPENING ACCEPT MAIN")
+            and phone_timer.remaining <= 0
+        ):
+            timer_reset(
+                phone_timer,
+                5,
+                lambda: dialogue_execute_script_scene(dialogue, "OPENING CALL 2"),
+            )
+
+        # this is REQUIRED to make the shadowless tree dialogue go smoothly.
+        # and yes this took like two hours to figure out. please don't change it :'(
+        if dialogue_has_executed_scene(
+            dialogue, "REVOKE COMMS"
+        ) and not dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE"):
+            # if trying to revoke comms but it hasn't played shadowless tree yet, stop trying to revoke comms
+            dialogue_remove_executed_scene(dialogue, "REVOKE COMMS")
+
+    elif player.progression.main_story == MainStoryProgress.COMMS:
+        if (
+            dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
+            and dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
+            and not dialogue_has_executed_scene(dialogue, "SETUP ACCEPT")
+        ):
+            # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
+            player.progression.main_story = MainStoryProgress.INTRO
+            dialogue_remove_executed_scene(dialogue, "SHADOWLESS TREE")
 
 
 def _post_death_comms(
@@ -126,6 +137,7 @@ class Game(Scene):
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
         self.global_stopwatch = Stopwatch()
+        self.phone_timer = Timer()
         self.comms_timer = Timer()
 
         self.music_index = 1
@@ -144,11 +156,11 @@ class Game(Scene):
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
-        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL"):
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
             timer_reset(
-                self.comms_timer,
-                0.5,
-                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL"),
+                self.phone_timer,
+                1,
+                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
             )
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
@@ -177,8 +189,8 @@ class Game(Scene):
         in_dialogue = dialogue_update(
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
-
-        _story_progression_logic(self.player, self.dialogue)
+        if not in_dialogue:
+            _story_progression_logic(self.player, self.dialogue, self.phone_timer)
 
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
@@ -189,7 +201,13 @@ class Game(Scene):
                 camera_update(self.camera, dt)
 
             elif not in_dialogue:
-                # timers
+                # change music after dialogue finished
+                if self.dialogue.desired_music_index is not None:
+                    self.music_index = self.dialogue.desired_music_index
+                    play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+                    self.dialogue.desired_music_index = None
+
+                # reset scene after player is caught
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
                     timer_reset(
@@ -219,7 +237,9 @@ class Game(Scene):
                             )
 
                 stopwatch_update(self.global_stopwatch, dt)
-                timer_update(self.comms_timer, dt)
+                if self.player.caught_timer.remaining <= 0:
+                    timer_update(self.phone_timer, dt)
+                    timer_update(self.comms_timer, dt)
 
                 # player
                 player_update(

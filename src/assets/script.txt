@@ -10,18 +10,23 @@
 # buttons <Option:str>=<SCENE NAME:str>|<Option>=<SCENE NAME>...
 # - <Message:str>
 
-# camera pan
 # pan <Duration:float> <XTile:float> <YTile:float>
-# ignores camera bounds. omit x and y to target the player's position.
+# pans the camera to the desired location, ignoring camera bounds. omit x and y to target the player's position.
 
-# misc
 # delay <Duration:float>
+# delay before showing dialogue
+
+# music <ThemeIndex:int>
+# changes music after dialogue closes
+
+# require <SCENE NAME:str>
+# will only execute this scene if the other given scene has been executed
 
 
 
 ## MAIN STORY
 
-[OPENING CALL]
+[OPENING CALL 1]
 
 style phone
 char 0 phone
@@ -30,13 +35,17 @@ buttons Accept=OPENING ACCEPT 1|Decline=OPENING DECLINE
 # 66639 is the phone code for MONEY
 
 
-[OPENING DECLINE]
+[OPENING CALL 2]
 
-delay 0.2
 style phone
 char 0 phone
 buttons Accept=OPENING ACCEPT 2|Decline=OPENING DECLINE
 - Incoming call: 0200-666-391
+
+
+[OPENING DECLINE]
+
+# does nothing. the game's story progression logic will run opening call 2 after a delay.
 
 
 [OPENING ACCEPT 1]
@@ -68,10 +77,12 @@ char 1
 char 0
 - if you're in, start heading north. stand under the tree with no shadow, and i'll set you up.
 - oh, and maybe keep this on the down low. we don't want any... interference.\n**sksrkck**
+music 2
 
 
 [SHADOWLESS TREE]
 
+require OPENING ACCEPT MAIN
 style phone
 char 0 phone
 buttons Accept=SETUP ACCEPT|Decline=
@@ -92,7 +103,8 @@ char 2 rogan_no_comms
 char 0
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
-pan 0 48 -63
+pan 0 48 -62
+pan 1 48 -63
 - ya see this unmarked building? they're developing a cure, but entry's tight. they only selling it to the highest bidder.
 char 1
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
@@ -114,6 +126,14 @@ char 2 rogan
 - hey hey, look who's making progress! agent, you've exceeded expectations by two entire miles.
 char 0
 - now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
+
+
+[BEFORE LAB COMMS]
+
+style comms
+char 0 rogan
+- i'm so close...\nthe lab's only steps away...
+music 3
 
 
 
