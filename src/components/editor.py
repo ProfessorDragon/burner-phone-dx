@@ -31,8 +31,8 @@ TILE_GROUPS = {
         [20, 21, 22, 23],
     ],
     3: [  # walls
-        list_range(0, 4),
-        list_range(5, 16),
+        list_range(1, 4) + [0],
+        list_range(5, 16) + [0],
         list_range(17, 21),
     ],
     4: [  # above floor

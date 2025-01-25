@@ -125,7 +125,7 @@ class PatrolEnemy(Entity):
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         frame = animator_get_frame(self.animator)
         if layer == RenderLayer.RAYS:
-            render_sight(surface, camera, self.sight_data)
+            render_sight(surface, camera, self.sight_data, (162, 48, 0, 96))
         if layer in PLAYER_LAYER:
             render_shadow(surface, camera, self.motion, self.direction)
             surface.blit(

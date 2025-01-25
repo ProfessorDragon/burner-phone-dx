@@ -61,8 +61,9 @@ class SpotlightEnemy(Entity):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_OR_FG:
+            color = (254, 242, 147, 96)
             rx, ry = self.light_radius, self.light_radius
             render_position = (self.motion.position.x - rx, self.motion.position.y - ry)
             sprite = pygame.Surface((rx * 2, ry * 2), pygame.SRCALPHA)
-            pygame.draw.ellipse(sprite, (255, 255, 0, 96), sprite.get_rect())
+            pygame.draw.ellipse(sprite, color, sprite.get_rect())
             surface.blit(sprite, camera_to_screen_shake(camera, *render_position))

@@ -4,7 +4,14 @@ import pygame
 
 from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
 from components.decor import Decor
-from components.timer import Stopwatch, stopwatch_reset, stopwatch_update, timer_update
+from components.timer import (
+    Stopwatch,
+    Timer,
+    stopwatch_reset,
+    stopwatch_update,
+    timer_reset,
+    timer_update,
+)
 import core.assets as a
 import core.constants as c
 import core.input as t
@@ -60,15 +67,23 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
 
 
 def _post_death_comms(
-    progress: MainStoryProgress, dialogue: DialogueSystem, caught_style: PlayerCaughtStyle
+    story: MainStoryProgress, dialogue: DialogueSystem, caught_style: PlayerCaughtStyle
 ) -> None:
-    if progress < MainStoryProgress.COMMS:
+    if story < MainStoryProgress.COMMS:
         return
     state_name = "FIRST"
-    if progress >= MainStoryProgress.HALFWAY:
+    if story >= MainStoryProgress.HALFWAY:
         state_name = "SECOND"
     scene_name = f"{state_name} CAUGHT {caught_style.name}"
     if not dialogue_has_executed_scene(dialogue, scene_name):
+        dialogue_execute_script_scene(dialogue, scene_name)
+
+
+def _main_story_progress_comms(story: MainStoryProgress, dialogue: DialogueSystem) -> None:
+    scene_name = None
+    if story == MainStoryProgress.OUTDOORS:
+        scene_name = "BEGIN OUTDOORS COMMS"
+    if scene_name:
         dialogue_execute_script_scene(dialogue, scene_name)
 
 
@@ -92,7 +107,7 @@ class Game(Scene):
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
         self.global_stopwatch = Stopwatch()
-        self.post_death_stopwatch = Stopwatch()
+        self.comms_timer = Timer()
 
         self.music_index = 1
 
@@ -148,18 +163,21 @@ class Game(Scene):
                 # timers
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
-                    bindings = {
-                        0.5: partial(
+                    timer_reset(
+                        self.comms_timer,
+                        0.5,
+                        partial(
                             _post_death_comms,
                             self.player.progression.main_story,
                             self.dialogue,
                             self.player.caught_style,
-                        )
-                    }
-                    stopwatch_reset(self.post_death_stopwatch, bindings)
+                        ),
+                    )
                     player_reset(self.player)
                 stopwatch_update(self.global_stopwatch, dt)
-                stopwatch_update(self.post_death_stopwatch, dt)
+                timer_update(self.comms_timer, dt)
+
+                prev_main_story = self.player.progression.main_story
 
                 # player
                 player_update(
@@ -187,7 +205,19 @@ class Game(Scene):
                             self.grid_collision,
                         )
 
-                # dialogue
+                # check if progress has been made
+                if self.player.progression.main_story != prev_main_story:
+                    timer_reset(
+                        self.comms_timer,
+                        0.1,
+                        partial(
+                            _main_story_progress_comms,
+                            self.player.progression.main_story,
+                            self.dialogue,
+                        ),
+                    )
+
+                # pausing
                 if t.is_pressed(action_buffer, t.Action.SELECT):
                     self.paused = True
                     play_sound(AudioChannel.UI, a.UI_SELECT)

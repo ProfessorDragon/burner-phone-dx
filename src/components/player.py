@@ -40,6 +40,7 @@ from components.animation import (
 class MainStoryProgress(IntEnum):
     INTRO = 0
     COMMS = auto()
+    OUTDOORS = auto()
     HALFWAY = auto()
     LAB = auto()
     FINALE = auto()

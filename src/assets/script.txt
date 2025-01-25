@@ -28,12 +28,7 @@ char 0 phone
 - hello, this is luke from pharm-o-rite llc. you have been selected as candidate for an exclusive position within the company.
 - call me back on 0200-666-391.\n**shrkckk**
 # 66639 is the phone code for MONEY
-
-
-[RETURN THE CALL]
-
-style phone
-char 0 phone
+- ...
 - Thank you for calling Pharm-O-Rite LLC. Please wait while we transfer you to an operator.
 - Due to environmental conditions at this time, we are currently not accepting walk ins.
 - ...
@@ -82,7 +77,7 @@ char 1 rogan
 - well, the lab is west. get moving!
 
 
-[BEGIN OUTDOORS]
+[BEGIN OUTDOORS COMMS]
 
 style comms
 char 2 rogan
@@ -196,3 +191,10 @@ char 0 sign
 style sign
 char 0 sign
 - -- 1 Forest Rd --\nBiological research laboratory
+
+
+[BEGIN OUTDOORS SIGN]
+
+style sign
+char 0 sign
+- Next gas station: 498 miles

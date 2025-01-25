@@ -62,7 +62,8 @@ class Entity(ABC):
 
 
 def entity_follow(entity: Entity, dist: pygame.Vector2, speed: float):
-    entity.motion.velocity = dist.normalize() * speed
+    if dist.magnitude_squared() > 0:
+        entity.motion.velocity = dist.normalize() * speed
 
 
 def entity_reset(entity: Entity) -> None:

@@ -94,10 +94,11 @@ def collide_sight(player: Player, data: SightData) -> bool:
     return False
 
 
-def render_sight(surface: pygame.Surface, camera: Camera, data: SightData) -> None:
+def render_sight(
+    surface: pygame.Surface, camera: Camera, data: SightData, color: pygame.Color
+) -> None:
     if data.render_segs is None:
         return
-    color = (162, 48, 0, 96)
     sight_surf = pygame.Surface((data.radius * 2, data.radius * 2), pygame.SRCALPHA)
     if not c.IS_WEB:
         gfxdraw.aapolygon(sight_surf, data.render_segs, color)

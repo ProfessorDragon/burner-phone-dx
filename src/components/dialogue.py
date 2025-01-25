@@ -371,8 +371,8 @@ def _dialogue_render_message(
             pygame.draw.rect(surface, c.GRAY, dialogue.rect, 0, 8)
             pygame.draw.rect(surface, c.WHITE, dialogue.rect, 1, 8)
         case DialogueStyle.SIGN:
-            pygame.draw.rect(surface, c.WHITE, dialogue.rect)
-            pygame.draw.rect(surface, c.BLACK, dialogue.rect, 1)
+            pygame.draw.rect(surface, (195, 178, 253), dialogue.rect)
+            pygame.draw.rect(surface, (68, 13, 113), dialogue.rect, 1)
             fg_color = c.BLACK
         case DialogueStyle.COMMS:
             pygame.draw.rect(surface, (0, 128, 0), dialogue.rect)

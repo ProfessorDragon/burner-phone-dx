@@ -28,7 +28,6 @@ class ZombieEnemy(Entity):
         self.direction = Direction.N
         self.movement_center = movement_center
         self.movement_radius = 96
-        self.fast = False
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -40,12 +39,11 @@ class ZombieEnemy(Entity):
         return self.motion.position.y + 32
 
     def to_json(self):
-        return {"pos": (*self.movement_center,), "fast": self.fast}
+        return {"pos": (*self.movement_center,)}
 
     @staticmethod
     def from_json(js):
         enemy = ZombieEnemy(pygame.Vector2(js["pos"]))
-        enemy.fast = js.get("fast", False)
         return enemy
 
     def reset(self) -> None:
@@ -54,7 +52,7 @@ class ZombieEnemy(Entity):
         self.randomize_walk_speed()
 
     def randomize_walk_speed(self) -> None:
-        self.walk_speed = 100 if self.fast else 100
+        self.walk_speed = 100
         self.walk_speed *= random.uniform(0.8, 1.2)
 
     def update(
@@ -68,32 +66,26 @@ class ZombieEnemy(Entity):
         self.motion.velocity = pygame.Vector2()
         prect = player_rect(player.motion)
         hitbox = self.get_hitbox()
-        # only move when player moves
         player_dist = pygame.Vector2(prect.center) - pygame.Vector2(hitbox.center)
-        if player.motion.velocity.magnitude_squared() > 0 or True:
-            center_dist = (
-                self.movement_center + pygame.Vector2(16, 30) - pygame.Vector2(hitbox.center)
-            )
-            if self.chasing:
-                if center_dist.magnitude() < self.movement_radius:
-                    entity_follow(self, player_dist, self.walk_speed)
-                else:
-                    self.chasing = False
-                    self.randomize_walk_speed()
-                    if player_dist.magnitude() < self.movement_radius * 3:
-                        play_sound(AudioChannel.ENTITY, a.ZOMBIE_RETREAT)
+        center_dist = self.movement_center + pygame.Vector2(16, 30) - pygame.Vector2(hitbox.center)
+        if self.chasing:
+            if center_dist.magnitude() < self.movement_radius:
+                entity_follow(self, player_dist, self.walk_speed)
             else:
-                if center_dist.magnitude_squared() > DIST_THRESHOLD * dt:
-                    entity_follow(self, center_dist, self.walk_speed)
-                else:
-                    self.chasing = True
-                    self.randomize_walk_speed()
-                    if player_dist.magnitude() < self.movement_radius * 3:
-                        play_sound(AudioChannel.ENTITY, a.ZOMBIE_CHASE)
+                self.chasing = False
+                self.randomize_walk_speed()
+                if player_dist.magnitude() < self.movement_radius * 3:
+                    play_sound(AudioChannel.ENTITY, a.ZOMBIE_RETREAT)
+        else:
+            if center_dist.magnitude_squared() > DIST_THRESHOLD * dt:
+                entity_follow(self, center_dist, self.walk_speed)
+            else:
+                self.chasing = True
+                self.randomize_walk_speed()
+                if player_dist.magnitude() < self.movement_radius * 3:
+                    play_sound(AudioChannel.ENTITY, a.ZOMBIE_CHASE)
         if self.motion.velocity.magnitude_squared() > 0:
             self.direction = direction_from_delta(*self.motion.velocity)
-        elif random.randint(1, 300) == 1:
-            self.direction = Direction((self.direction + 1) % 8)
 
         # collision
         if prect.colliderect(hitbox):
