@@ -19,6 +19,7 @@ DEBUG_SPRITE_64 = pygame.image.load(IMG + "debug/pirate_64.png")
 
 # player
 PLAYER_FRAMES = slice_sheet(IMG + "player.png", 32, 32)
+CAUGHT_INDICATORS = slice_sheet(IMG + "huh_sheet.png", 16, 16)
 
 # terrain
 TERRAIN = pygame.image.load(IMG + "terrain.png")
@@ -29,13 +30,17 @@ ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
 SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
-SIGN = get_sprite_from_sheet(TERRAIN, 0, 6 * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE)
 
 # decor
 DECOR = [
     pygame.image.load(IMG + "decor/shipping_container.png"),  # 0
     *slice_sheet(IMG + "decor/trees.png", 64, 64),  # 1-8
 ]
+DECOR_TRANSPARENT = []
+for surf in DECOR:
+    transparent = surf.convert_alpha()
+    transparent.set_alpha(64)
+    DECOR_TRANSPARENT.append(transparent)
 
 
 ## AUDIO (ogg for web compatibility)

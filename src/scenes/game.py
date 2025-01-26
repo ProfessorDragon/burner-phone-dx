@@ -3,7 +3,7 @@ from functools import partial
 import pygame
 
 from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
-from components.decor import Decor
+from components.decor import Decor, decor_rect, decor_render
 from components.entities.camera_boundary import CameraBoundaryEntity
 from components.timer import (
     Stopwatch,
@@ -127,7 +127,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player(_tile_size_vec(6.5, -10.5))
+        self.player = Player(_tile_size_vec(10.5, -9))
 
         self.camera = Camera.empty()
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
@@ -303,6 +303,7 @@ class Game(Scene):
         # behind player
         cutoff_bg_tiles = deque()
         cutoff_fg_tiles = deque()
+        cutoff_decor = deque()
         for y in range(tile_bounds.top, tile_bounds.bottom + 1):
             for x in range(tile_bounds.left, tile_bounds.right + 1):
                 for tile in self.grid_tiles.get((x, y), []):
@@ -330,11 +331,23 @@ class Game(Scene):
                         else RenderLayer.BACKGROUND
                     ),
                 )
+        for dec in self.decor:
+            rect = decor_rect(dec)
+            if entity_bounds.collidepoint(rect.center):
+                if rect.bottom >= terrain_cutoff and player_rect(self.player.motion).colliderect(
+                    rect
+                ):
+                    cutoff_decor.append(dec)
+                else:
+                    decor_render(dec, surface, self.camera, RenderLayer.PLAYER_BG)
 
         # player
         player_render(self.player, surface, self.camera)
 
         # in front of player
+        while cutoff_decor:
+            dec = cutoff_decor.popleft()
+            decor_render(dec, surface, self.camera, RenderLayer.PLAYER_FG)
         while cutoff_fg_tiles:
             x, y, tile = cutoff_fg_tiles.popleft()
             tile_render(surface, self.camera, x, y, tile)

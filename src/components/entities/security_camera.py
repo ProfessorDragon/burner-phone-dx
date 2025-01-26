@@ -104,7 +104,7 @@ class SecurityCameraEnemy(Entity):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer == RenderLayer.RAYS:
-            render_sight(surface, camera, self.sight_data, (162, 48, 0, 96))
+            render_sight(surface, camera, self.sight_data)
         if layer in PLAYER_LAYER:
             surface.blit(
                 animator_get_frame(self.animator),

@@ -101,7 +101,7 @@ class Player:
         self.progression = PlayerProgression()
         self.progression.checkpoint = self.motion.position.copy()
 
-        self.direction = Direction.E
+        self.direction = Direction.S
         self.caught_timer = Timer()  # resets scene and player when completed
         self.caught_style = PlayerCaughtStyle.NONE
         self.interaction = PlayerInteraction(None, False)

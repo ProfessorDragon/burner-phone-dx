@@ -95,7 +95,7 @@ def collide_sight(player: Player, data: SightData) -> bool:
 
 
 def render_sight(
-    surface: pygame.Surface, camera: Camera, data: SightData, color: pygame.Color
+    surface: pygame.Surface, camera: Camera, data: SightData, color: pygame.Color = (64, 64, 64)
 ) -> None:
     if data.render_segs is None:
         return
@@ -110,4 +110,5 @@ def render_sight(
             data.center.x - sight_surf.get_width() // 2,
             data.center.y - sight_surf.get_height() // 2,
         ),
+        special_flags=pygame.BLEND_RGB_ADD,
     )

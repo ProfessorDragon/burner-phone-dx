@@ -7,7 +7,7 @@ from components.entities.entity_util import path_from_json, path_to_json
 from components.motion import motion_update
 from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
 from scenes.scene import PLAYER_OR_FG, RenderLayer
-from utilities.math import point_in_circle
+from utilities.math import point_in_ellipse
 
 
 class SpotlightEnemy(Entity):
@@ -16,6 +16,7 @@ class SpotlightEnemy(Entity):
         self.path: list[pygame.Vector2] = path
         self.active_point = 0
         self.light_radius = c.TILE_SIZE * 3
+        self.my_special_perspective_scale = 0.6
         self.reset()
 
     def get_path(self) -> list[pygame.Vector2]:
@@ -54,16 +55,24 @@ class SpotlightEnemy(Entity):
 
         # collision
         prect = player_rect(player.motion)
-        if point_in_circle(*prect.center, *self.motion.position, self.light_radius - 1):
+        if point_in_ellipse(
+            *prect.center,
+            *self.motion.position,
+            self.light_radius - 1,
+            self.light_radius * self.my_special_perspective_scale - 1
+        ):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         motion_update(self.motion, dt)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_OR_FG:
-            color = (254, 242, 147, 96)
-            rx, ry = self.light_radius, self.light_radius
+            rx, ry = self.light_radius, self.light_radius * self.my_special_perspective_scale
             render_position = (self.motion.position.x - rx, self.motion.position.y - ry)
             sprite = pygame.Surface((rx * 2, ry * 2), pygame.SRCALPHA)
-            pygame.draw.ellipse(sprite, color, sprite.get_rect())
-            surface.blit(sprite, camera_to_screen_shake(camera, *render_position))
+            pygame.draw.ellipse(sprite, (64, 64, 64), sprite.get_rect())
+            surface.blit(
+                sprite,
+                camera_to_screen_shake(camera, *render_position),
+                special_flags=pygame.BLEND_RGB_ADD,
+            )

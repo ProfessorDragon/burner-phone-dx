@@ -6,6 +6,7 @@ import random
 import subprocess
 import pygame
 
+from components.decor import Decor, decor_from_json, decor_rect, decor_to_json
 from components.entities.all import ENTITY_CLASSES, entity_from_json
 from components.entities.entity import Entity, render_path
 from components.player import player_reset
@@ -53,7 +54,8 @@ class EditorMode(Enum):
     VIEW = "view"
     TILES = "tiles"
     WALLS = "walls"
-    ENTITIES = "entities"
+    ENTITY = "entities"
+    DECOR = "decor"
 
 
 def _camera_from_mouse(camera: Camera) -> pygame.Vector2:
@@ -109,6 +111,8 @@ class Editor:
         # entity mode
         self.entity_index = 0
         self.entity_path: list[pygame.Vector2] = []
+        # decor mode
+        self.decor_index = 0
 
     def set_mode(self, mode: EditorMode) -> None:
         if self.mode == mode:
@@ -124,6 +128,7 @@ class Editor:
                 for k, tiles in self.scene.grid_tiles.items()
             },
             "walls": [(*wall,) for wall in self.scene.walls],
+            "decor": [decor_to_json(dec) for dec in self.scene.decor],
             "entities": [
                 {"class": entity.__class__.__name__, **entity.to_json()}
                 for entity in self.scene.entities
@@ -151,6 +156,7 @@ class Editor:
         }
         self.scene.walls = [pygame.Rect(wall) for wall in data["walls"]]
         self.scene.entities = [entity_from_json(entity) for entity in data["entities"]]
+        self.scene.decor = [decor_from_json(dec) for dec in data["decor"]]
 
     def update_state(
         self, dt: float, action_buffer: t.InputBuffer, mouse_buffer: t.InputBuffer
@@ -234,18 +240,16 @@ class Editor:
                     self.scene.walls[-1].y -= 1
                 self.drag_start = None
 
-        if len(self.scene.walls) == 0 or not c.DEBUG_HITBOXES:
-            return
-
-        wall = self.scene.walls[-1]
-        if t.is_pressed(self.action_buffer, t.Action.LEFT):
-            wall.x -= 1
-        if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-            wall.x += 1
-        if t.is_pressed(self.action_buffer, t.Action.UP):
-            wall.y -= 1
-        if t.is_pressed(self.action_buffer, t.Action.DOWN):
-            wall.y += 1
+        if len(self.scene.walls) > 0 and self.a_held and c.DEBUG_HITBOXES:
+            wall = self.scene.walls[-1]
+            if t.is_pressed(self.action_buffer, t.Action.LEFT):
+                wall.x -= 1
+            if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+                wall.x += 1
+            if t.is_pressed(self.action_buffer, t.Action.UP):
+                wall.y -= 1
+            if t.is_pressed(self.action_buffer, t.Action.DOWN):
+                wall.y += 1
 
     def tile_mode(self) -> None:
         if self.tile_group_index < 0:
@@ -352,13 +356,14 @@ class Editor:
     def entity_mode(self) -> None:
         if self.a_held:
             self.debug_text = "path paint"
+        elif self.drag_start and len(self.scene.entities) > 0:
+            ent = self.scene.entities[-1]
+            self.debug_text = f"facing {getattr(ent, 'facing', '')}"
+            self.debug_text += f"\nw {getattr(ent, 'w', '')} h {getattr(ent, 'h', '')}"
         else:
-            if self.drag_start and len(self.scene.entities) > 0:
-                ent = self.scene.entities[-1]
-                self.debug_text = f"facing {getattr(ent, 'facing', '')}"
-                self.debug_text += f"\nw {getattr(ent, 'w', '')} h {getattr(ent, 'h', '')}"
-            else:
-                self.debug_text = "place entity"
+            entity_name = ENTITY_CLASSES[self.entity_index].__name__
+            entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
+            self.debug_text = f"{self.entity_index} {entity_name}"
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
             # path paint
@@ -389,7 +394,7 @@ class Editor:
             if self.a_held:
                 if len(self.entity_path) > 0:
                     self.entity_path.pop()
-            # delete ent
+            # delete entity
             else:
                 pos = _camera_from_mouse(self.scene.camera)
                 for i, entity in enumerate(self.scene.entities[::-1]):
@@ -439,9 +444,39 @@ class Editor:
             if self.a_held:
                 _nudge_entity(self.scene, ent, 0, c.HALF_TILE_SIZE)
 
-        entity_name = ENTITY_CLASSES[self.entity_index].__name__
-        entity_name = entity_name.removesuffix("Entity").removesuffix("Enemy")
-        self.debug_text += f"\n{self.entity_index} {entity_name}"
+    def decor_mode(self) -> None:
+        self.debug_text = f"{self.decor_index}/{len(a.DECOR)-1}"
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
+            pos = _floor_point(_camera_from_mouse(self.scene.camera))
+            self.scene.decor.append(Decor(pos, self.decor_index))
+
+        if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
+            pos = _camera_from_mouse(self.scene.camera)
+            for i, dec in enumerate(self.scene.decor[::-1]):
+                if decor_rect(dec).collidepoint(pos):
+                    self.scene.decor.pop(len(self.scene.decor) - 1 - i)
+                    break
+
+        dec = None
+        if len(self.scene.decor) > 0:
+            dec = self.scene.decor[-1]
+        if t.is_pressed(self.action_buffer, t.Action.LEFT):
+            if self.a_held and dec:
+                dec.position.x -= c.HALF_TILE_SIZE
+            else:
+                self.decor_index = (self.decor_index - 1) % len(a.DECOR)
+        if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+            if self.a_held and dec:
+                dec.position.x += c.HALF_TILE_SIZE
+            else:
+                self.decor_index = (self.decor_index + 1) % len(a.DECOR)
+        if t.is_pressed(self.action_buffer, t.Action.UP):
+            if self.a_held and dec:
+                dec.position.y -= c.HALF_TILE_SIZE
+        if t.is_pressed(self.action_buffer, t.Action.DOWN):
+            if self.a_held and dec:
+                dec.position.y += c.HALF_TILE_SIZE
 
 
 def editor_update(
@@ -493,7 +528,9 @@ def editor_update(
     elif just_pressed[pygame.K_3]:
         editor.set_mode(EditorMode.TILES)
     elif just_pressed[pygame.K_4]:
-        editor.set_mode(EditorMode.ENTITIES)
+        editor.set_mode(EditorMode.ENTITY)
+    elif just_pressed[pygame.K_5]:
+        editor.set_mode(EditorMode.DECOR)
 
     match editor.mode:
         case EditorMode.VIEW:
@@ -506,8 +543,11 @@ def editor_update(
         case EditorMode.TILES:
             editor.tile_mode()
 
-        case EditorMode.ENTITIES:
+        case EditorMode.ENTITY:
             editor.entity_mode()
+
+        case EditorMode.DECOR:
+            editor.decor_mode()
 
 
 def editor_render(editor: Editor, surface: pygame.Surface):
@@ -594,7 +634,7 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                 1,
             )
 
-        case EditorMode.ENTITIES:
+        case EditorMode.ENTITY:
             render_path(surface, editor.scene.camera, editor.entity_path, c.WHITE)
             x, y = _floor_point(_camera_from_mouse(editor.scene.camera))
             pygame.draw.circle(

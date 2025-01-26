@@ -12,19 +12,21 @@ class SignEntity(Entity):
     def __init__(self):
         super().__init__()
         self.scene_name = "DEFAULT SIGN"
+        self.color = 0
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(self.motion.position.x, self.motion.position.y + 16, 16, 16)
 
     def to_json(self):
-        return {"pos": (*self.motion.position,), "scene_name": self.scene_name}
+        return {"pos": (*self.motion.position,), "scene_name": self.scene_name, "color": self.color}
 
     @staticmethod
     def from_json(js):
         entity = SignEntity()
         entity.motion.position = pygame.Vector2(js["pos"])
         entity.scene_name = js.get("scene_name", "DEFAULT SIGN")
+        entity.color = js.get("color", 0)
         return entity
 
     def reset(self) -> None:
@@ -47,15 +49,15 @@ class SignEntity(Entity):
                 player.interaction.scene_name = None
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        frame = a.SIGN
         if layer in PLAYER_LAYER:
             surface.blit(
-                frame,
+                a.TERRAIN,
                 camera_to_screen_shake(camera, *self.motion.position),
+                (self.color * c.TILE_SIZE, 6 * c.TILE_SIZE, c.TILE_SIZE, c.TILE_SIZE),
             )
         if self.show_arrow and layer in PLAYER_OR_FG:
             x, y = self.motion.position
-            x += frame.get_width() // 2
+            x += c.HALF_TILE_SIZE
             y -= 6
             points = [(x - 4, y - 13), (x + 4, y - 13), (x + 4, y - 1), (x, y + 2), (x - 4, y - 1)]
             pygame.draw.polygon(
