@@ -76,16 +76,53 @@ def _ceil_point(vec: pygame.Vector2, upscale=True) -> pygame.Vector2:
     return vec
 
 
-def _nudge_entity(scene: Scene, ent: Entity, dx: float, dy: float) -> None:
-    js = ent.to_json()
-    js["class"] = ent.__class__.__name__
+def _nudge_region(scene: Scene, old_region: pygame.Rect, tdx: float, tdy: float) -> None:
+    dx, dy = tdx * c.TILE_SIZE, tdy * c.TILE_SIZE
+    vec = pygame.Vector2(dx, dy)
+    new_region = old_region.copy()
+    new_region.topleft += vec
+    tile_region = pygame.Rect(
+        new_region.x // c.TILE_SIZE,
+        new_region.y // c.TILE_SIZE,
+        new_region.w // c.TILE_SIZE,
+        new_region.h // c.TILE_SIZE,
+    )
+    for y in (
+        range(tile_region.top, tile_region.bottom)
+        if tdy <= 0
+        else range(tile_region.bottom - 1, tile_region.top - 1, -1)
+    ):
+        for x in (
+            range(tile_region.left, tile_region.right)
+            if tdx <= 0
+            else range(tile_region.right - 1, tile_region.left - 1, -1)
+        ):
+            old_id = (x - tdx, y - tdy)
+            new_id = (x, y)
+            scene.grid_tiles[new_id] = scene.grid_tiles.get(old_id, [])
+            if old_id in scene.grid_collision:
+                scene.grid_collision.remove(old_id)
+                scene.grid_collision.add(new_id)
+    for wall in scene.walls:
+        if old_region.colliderect(wall):
+            wall.topleft += vec
+    for i, ent in enumerate(scene.entities):
+        if old_region.colliderect(ent.get_hitbox()):
+            _nudge_entity(scene, i, dx, dy)
+    for dec in scene.decor:
+        if old_region.colliderect(decor_rect(dec)):
+            dec.position += vec
+    old_region.topleft += vec
+
+
+def _nudge_entity(scene: Scene, idx: int, dx: float, dy: float) -> Entity:
+    js = scene.entities[idx].to_json()
+    js["class"] = scene.entities[idx].__class__.__name__
     if "pos" in js:
         js["pos"] = (js["pos"][0] + dx, js["pos"][1] + dy)
     if "path" in js:
         js["path"] = [(point[0] + dx, point[1] + dy) for point in js["path"]]
-    scene.entities.remove(ent)
-    new_ent = entity_from_json(js)
-    scene.entities.append(new_ent)
+    scene.entities[idx] = entity_from_json(js)
 
 
 class Editor:
@@ -104,6 +141,7 @@ class Editor:
         self.drag_tile: tuple[int, int] = None
         # view mode
         self.measure_tile: tuple[int, int] = None
+        self.move_region: pygame.Rect = None
         # tile mode
         self.tile_data = TileData()
         self.stored_tile_data = TileData()
@@ -170,29 +208,54 @@ class Editor:
         self.b_held = t.is_held(self.action_buffer, t.Action.B)
 
     def view_mode(self) -> None:
-        vec = pygame.Vector2(
-            t.is_held(self.action_buffer, t.Action.RIGHT)
-            - t.is_held(self.action_buffer, t.Action.LEFT),
-            t.is_held(self.action_buffer, t.Action.DOWN)
-            - t.is_held(self.action_buffer, t.Action.UP),
-        )
-        if self.a_held:
-            vec *= 50
-        elif self.b_held:
-            vec *= 1000
-        else:
-            vec *= self.scene.player.walk_speed * 2
-        self.scene.player.motion.position += vec * self.dt
-
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
-            x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
-            if self.measure_tile == (x, y):
-                self.measure_tile = None
+            if self.a_held:
+                self.drag_start = _camera_from_mouse(self.scene.camera)
             else:
-                self.measure_tile = (x, y)
+                x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
+                if self.measure_tile == (x, y):
+                    self.measure_tile = None
+                else:
+                    self.measure_tile = (x, y)
+
+        if self.drag_start is not None:
+            end = _camera_from_mouse(self.scene.camera)
+            self.move_region = pygame.Rect(self.drag_start, (end - self.drag_start))
+            if t.is_released(self.mouse_buffer, t.MouseButton.LEFT):
+                if self.move_region.w <= 0 or self.move_region.h <= 0:
+                    self.move_region = None
+                else:
+                    self.drag_start, end = _floor_point(self.drag_start), _ceil_point(end)
+                    self.move_region = pygame.Rect(self.drag_start, (end - self.drag_start))
+                self.drag_start = None
 
         if t.is_pressed(self.mouse_buffer, t.MouseButton.RIGHT):
             self.measure_tile = None
+            self.move_region = None
+
+        if self.a_held:
+            if self.move_region is not None:
+                if t.is_pressed(self.action_buffer, t.Action.LEFT):
+                    _nudge_region(self.scene, self.move_region, -1, 0)
+                if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+                    _nudge_region(self.scene, self.move_region, 1, 0)
+                if t.is_pressed(self.action_buffer, t.Action.UP):
+                    _nudge_region(self.scene, self.move_region, 0, -1)
+                if t.is_pressed(self.action_buffer, t.Action.DOWN):
+                    _nudge_region(self.scene, self.move_region, 0, 1)
+
+        else:
+            vec = pygame.Vector2(
+                t.is_held(self.action_buffer, t.Action.RIGHT)
+                - t.is_held(self.action_buffer, t.Action.LEFT),
+                t.is_held(self.action_buffer, t.Action.DOWN)
+                - t.is_held(self.action_buffer, t.Action.UP),
+            )
+            if self.b_held:
+                vec *= 1000
+            else:
+                vec *= self.scene.player.walk_speed * 2
+            self.scene.player.motion.position += vec * self.dt
 
     def wall_mode(self) -> None:
         if self.a_held:
@@ -429,20 +492,20 @@ class Editor:
 
         if t.is_pressed(self.action_buffer, t.Action.LEFT):
             if self.a_held:
-                _nudge_entity(self.scene, ent, -c.HALF_TILE_SIZE, 0)
+                _nudge_entity(self.scene, -1, -c.HALF_TILE_SIZE, 0)
             else:
                 self.entity_index = (self.entity_index - 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.RIGHT):
             if self.a_held:
-                _nudge_entity(self.scene, ent, c.HALF_TILE_SIZE, 0)
+                _nudge_entity(self.scene, -1, c.HALF_TILE_SIZE, 0)
             else:
                 self.entity_index = (self.entity_index + 1) % len(ENTITY_CLASSES)
         if t.is_pressed(self.action_buffer, t.Action.UP):
             if self.a_held:
-                _nudge_entity(self.scene, ent, 0, -c.HALF_TILE_SIZE)
+                _nudge_entity(self.scene, -1, 0, -c.HALF_TILE_SIZE)
         if t.is_pressed(self.action_buffer, t.Action.DOWN):
             if self.a_held:
-                _nudge_entity(self.scene, ent, 0, c.HALF_TILE_SIZE)
+                _nudge_entity(self.scene, -1, 0, c.HALF_TILE_SIZE)
 
     def decor_mode(self) -> None:
         self.debug_text = f"{self.decor_index}/{len(a.DECOR)-1}"
@@ -591,6 +654,13 @@ def editor_render(editor: Editor, surface: pygame.Surface):
                         (editor.measure_tile[0] + 0.5) * c.TILE_SIZE - text.get_width() // 2,
                         editor.measure_tile[1] * c.TILE_SIZE + y_offset,
                     ),
+                )
+            if editor.move_region is not None:
+                pygame.draw.rect(
+                    surface,
+                    c.YELLOW,
+                    camera_to_screen_shake_rect(editor.scene.camera, *editor.move_region),
+                    1,
                 )
 
         case EditorMode.TILES:

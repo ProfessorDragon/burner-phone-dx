@@ -28,7 +28,7 @@ class PatrolEnemy(Entity):
         self.path: list[pygame.Vector2] = path
         self.facing = 0
         self.direction = Direction.N
-        self.sight_data = SightData(c.TILE_SIZE * 5, 14)
+        self.sight_data = SightData(c.TILE_SIZE * 5, 20, 0)
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:

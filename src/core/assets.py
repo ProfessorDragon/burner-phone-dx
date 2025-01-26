@@ -119,12 +119,7 @@ DIALOGUE_CHARACTERS = {
     ),
     "sign": DialogueCharacter(
         "Sign",
-        [DIALOGUE_AVATARS[7]],
-        DIALOGUE_SOUNDS[6:8],
-    ),
-    "note": DialogueCharacter(
-        "Note",
-        [DIALOGUE_AVATARS[9]],
+        [DIALOGUE_AVATARS[7], DIALOGUE_AVATARS[9]],
         DIALOGUE_SOUNDS[6:8],
     ),
     "phone": DialogueCharacter(

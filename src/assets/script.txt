@@ -108,8 +108,8 @@ char 0
 noskip
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
-pan 0 144 -80
-pan 1.5 144 -82
+pan 0 144 -79
+pan 1.5 144 -81
 noskip
 - ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
 char 3
@@ -242,7 +242,7 @@ char 0 rogan
 - you are the weapon... our weapon. do you understand that? you are humanities last hope...
 
 
-## SIGNS AND NOTES
+## SIGNS
 
 
 [DEFAULT SIGN]
@@ -270,7 +270,7 @@ char 0 sign
 
 style sign
 char 0 sign
-- Next gas station: 498 miles
+- WARNING: UNPAVED PATH AHEAD\nNext gas station: 498 miles
 
 
 [DETOUR SIGN]
@@ -280,19 +280,65 @@ char 0 sign
 - Road subject to seasonal flooding. Use northbound detour in the event of an emergency.
 
 
+[ROADWORK SIGN]
 
-## CLUES
+style sign
+char 0 sign
+- Operation "great desert highway"\nConstruction halted due to environmental conditions.\nEstimated date of completion: Unknown\nProject cost: $8 billion
+
+
+
+## CLUE NOTES
+
 
 [CLUE 1]
 
 style sign
-char 0 note
+char 1 sign
 pan 0.5 132 -81
-- 20/01/17\nTesting has succeeded in animal trials. If this luck continues, all of humankind may rejoice.
+- 20/01/16\nTesting of C-25DX has succeeded in animal trials. If my luck continues, earth will be free of this virus in a matter of weeks.
 
 
 [CLUE 2]
 
 style sign
-char 0 note
-- "Keep up the good work," he said...\nI was right to turn around when I did.
+char 1 sign
+- "Keep up the good work," he said...\n"If we can't have it, no-one can..."
+
+
+[CLUE 3]
+
+style sign
+char 1 sign
+- 20/01/17\nWe've received extremely generous offers from companies seeking to purchase our solution. I said, "no way jose!"
+
+
+[CLUE 4]
+
+style sign
+char 1 sign
+- 20/01/25\nI truly believe I've perfected C-25DX. Analysis of test subjects are showing no sign of the virus, and importantly, no nasty side effects.
+
+
+[CLUE 5]
+
+style sign
+char 1 sign
+noskip
+- 20/01/29\nI have been personally contacted from Pharm-O-Rite LLC yet again. It is clear they only want the cure to profit off the weak and dying.
+
+
+[CLUE 6]
+
+style sign
+char 1 sign
+noskip
+- 20/01/30\nAfter producing a sufficient quantity, C-25DX will be released to the public, free of charge. In the meantime, I have placed the lab under strict surveillence to protect such valuable knowledge.
+
+
+[CLUE 7]
+
+style sign
+char 1 sign
+noskip
+- 20/01/31\nPharm-O-Rite is behaving awfully strange. I told them no amount of money would be worth selling my formula. They didn't reply.

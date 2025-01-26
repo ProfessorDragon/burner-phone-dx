@@ -60,6 +60,7 @@ class PlayerProgression:
 class PlayerInteraction:
     scene_name: str | None
     requires_input: bool
+    direction: Direction = None
 
 
 class PlayerCaughtStyle(IntEnum):
@@ -211,7 +212,8 @@ def player_update(
         if t.is_pressed(action_buffer, t.Action.A):
             # interact
             if player.interaction.scene_name is not None and player.interaction.requires_input:
-                player.direction = Direction.N  # face towards sign
+                if player.interaction.direction is not None:
+                    player.direction = player.interaction.direction
                 is_moving = False
                 player.motion.position.x = int(player.motion.position.x)  # reduces jitter
                 player.motion.position.y = int(player.motion.position.y)

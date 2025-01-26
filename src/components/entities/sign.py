@@ -1,5 +1,6 @@
 import pygame
 
+from components.motion import Direction
 import core.assets as a
 import core.constants as c
 from components.camera import Camera, camera_to_screen_shake
@@ -13,13 +14,22 @@ class SignEntity(Entity):
         super().__init__()
         self.scene_name = "DEFAULT SIGN"
         self.color = 0
+        self.floor = False
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x - 2, self.motion.position.y + 16, 20, 20)
+        if self.floor:
+            return pygame.Rect(self.motion.position.x - 2, self.motion.position.y - 2, 20, 20)
+        else:
+            return pygame.Rect(self.motion.position.x - 2, self.motion.position.y + 16, 20, 20)
 
     def to_json(self):
-        return {"pos": (*self.motion.position,), "scene_name": self.scene_name, "color": self.color}
+        return {
+            "pos": (*self.motion.position,),
+            "scene_name": self.scene_name,
+            "color": self.color,
+            "floor": self.floor,
+        }
 
     @staticmethod
     def from_json(js):
@@ -27,6 +37,7 @@ class SignEntity(Entity):
         entity.motion.position = pygame.Vector2(js["pos"])
         entity.scene_name = js.get("scene_name", "DEFAULT SIGN")
         entity.color = js.get("color", 0)
+        entity.floor = js.get("floor", False)
         return entity
 
     def reset(self) -> None:
@@ -42,16 +53,16 @@ class SignEntity(Entity):
     ) -> None:
         if player.z_position == 0 and player_rect(player.motion).colliderect(self.get_hitbox()):
             self.show_arrow = True
-            player.interaction = PlayerInteraction(self.scene_name, True)
+            player.interaction = PlayerInteraction(
+                self.scene_name, True, None if self.floor else Direction.N
+            )
         else:
             self.show_arrow = False
             if player.interaction.scene_name == self.scene_name:
                 player.interaction.scene_name = None
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if (self.color < 2 and layer in PLAYER_LAYER) or (
-            self.color >= 2 and layer in PLAYER_OR_BG
-        ):
+        if (not self.floor and layer in PLAYER_LAYER) or (self.floor and layer in PLAYER_OR_BG):
             surface.blit(
                 a.TERRAIN,
                 camera_to_screen_shake(camera, *self.motion.position),
@@ -60,7 +71,7 @@ class SignEntity(Entity):
         if self.show_arrow and layer in PLAYER_OR_FG:
             x, y = self.motion.position
             x += c.HALF_TILE_SIZE
-            y -= 6
+            y -= 4
             points = [(x - 4, y - 13), (x + 4, y - 13), (x + 4, y - 1), (x, y + 2), (x - 4, y - 1)]
             pygame.draw.polygon(
                 surface, c.BLACK, [camera_to_screen_shake(camera, *point) for point in points]

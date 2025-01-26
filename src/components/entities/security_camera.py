@@ -45,6 +45,7 @@ class SecurityCameraEnemy(Entity):
         self.sight_data = SightData(c.TILE_SIZE * 5.5, 45, -16)
         self.swivel = 0
         self.swivel_angle = 60
+        self.should_raycast = False
         self.min_story: MainStoryProgress = None
         self.reset()
 
@@ -57,6 +58,7 @@ class SecurityCameraEnemy(Entity):
             "facing": self.facing,
             "inverse": self.inverse_direction,
             "z": self.sight_data.z_offset,
+            "raycast": self.should_raycast,
             "min_story": (None if self.min_story is None else self.min_story.name),
         }
         return js
@@ -68,6 +70,7 @@ class SecurityCameraEnemy(Entity):
         enemy.facing = js.get("facing", 0)
         enemy.inverse_direction = js.get("inverse", False)
         enemy.sight_data.z_offset = js.get("z", 0)
+        enemy.should_raycast = js.get("raycast", False)
         if js.get("min_story"):
             enemy.min_story = MainStoryProgress[js["min_story"]]
         return enemy
@@ -93,7 +96,7 @@ class SecurityCameraEnemy(Entity):
         # collision
         self.sight_data.center = self.motion.position + pygame.Vector2(8, 8)
         self.sight_data.facing = self.facing + self.swivel
-        compile_sight(self.sight_data, grid_collision)
+        compile_sight(self.sight_data, grid_collision if self.should_raycast else None)
         if collide_sight(player, self.sight_data):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
