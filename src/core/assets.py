@@ -33,8 +33,9 @@ BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 
 # decor
 DECOR = [
-    pygame.image.load(IMG + "decor/shipping_container.png"),  # 0
-    *slice_sheet(IMG + "decor/trees.png", 64, 64),  # 1-8
+    *slice_sheet(IMG + "decor/trees.png", 64, 64),  # 0-7
+    pygame.image.load(IMG + "decor/shipping_container.png"),  # 8
+    pygame.image.load(IMG + "decor/shack.png"),  # 9
 ]
 DECOR_TRANSPARENT = []
 for surf in DECOR:

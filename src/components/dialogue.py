@@ -90,8 +90,7 @@ def dialogue_initialise(dialogue: DialogueSystem) -> None:
     dialogue.queue = deque()
     dialogue.char_index = 0
     dialogue.font = a.DEBUG_FONT
-    dialogue.rect = pygame.Rect(
-        20, c.WINDOW_HEIGHT - 100, c.WINDOW_WIDTH - 40, 80)
+    dialogue.rect = pygame.Rect(20, c.WINDOW_HEIGHT - 100, c.WINDOW_WIDTH - 40, 80)
     dialogue.text = ""
     dialogue.show_timer = Timer()
     dialogue.character_timer = Timer()
@@ -166,8 +165,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
 
         match cmd:
             case "-":
-                dialogue_packet.message = dialogue_wrap_message(
-                    content.replace("\\n", "\n"))
+                dialogue_packet.message = dialogue_wrap_message(content.replace("\\n", "\n"))
                 dialogue_add_packet(dialogue, dialogue_packet)
                 new_packet = DialogueMessagePacket()
                 new_packet.style = dialogue_packet.style
@@ -193,8 +191,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
             case "char":
                 args = content.split(" ", 1)
                 if len(args) > 1 and args[1] in a.DIALOGUE_CHARACTERS:
-                    character = a.DIALOGUE_CHARACTERS.get(
-                        args[1], a.DIALOGUE_CHARACTERS["default"])
+                    character = a.DIALOGUE_CHARACTERS.get(args[1], a.DIALOGUE_CHARACTERS["default"])
                     last_character_id = args[1]
                 else:
                     character = a.DIALOGUE_CHARACTERS.get(
@@ -211,8 +208,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
             case "goto":
                 dialogue_packet.buttons = [
                     DialogueButton(
-                        "", partial(dialogue_execute_script_scene,
-                                    dialogue, content), True
+                        "", partial(dialogue_execute_script_scene, dialogue, content), True
                     )
                 ]
 
@@ -222,8 +218,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                     text, target_scene = opt.rsplit("=")
                     dialogue_packet.buttons.append(
                         DialogueButton(
-                            text, partial(
-                                dialogue_execute_script_scene, dialogue, target_scene)
+                            text, partial(dialogue_execute_script_scene, dialogue, target_scene)
                         )
                     )
                 dialogue_packet.buttons[-1].selected = True
@@ -238,8 +233,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                 if len(args) > 0:
                     pan.duration = args[0]
                 if len(args) > 2:
-                    pan.target = pygame.Vector2(
-                        args[1] * c.TILE_SIZE, args[2] * c.TILE_SIZE)
+                    pan.target = pygame.Vector2(args[1] * c.TILE_SIZE, args[2] * c.TILE_SIZE)
                 dialogue_add_packet(dialogue, pan)
 
             case "music":
@@ -250,8 +244,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                     return
 
             case _:
-                print(
-                    f"ERROR: Invalid script line in scene {scene_name}:\n{ln}")
+                print(f"ERROR: Invalid script line in scene {scene_name}:\n{ln}")
                 continue
 
 
@@ -277,8 +270,7 @@ def _dialogue_update_message(
             # play_sound(AudioChannel.UI, a.UI_SELECT) # sounds bad
             # Activate selected button
             if packet.buttons is not None:
-                selected_index = [i for i, btn in enumerate(
-                    packet.buttons) if btn.selected]
+                selected_index = [i for i, btn in enumerate(packet.buttons) if btn.selected]
                 if len(selected_index) > 0:
                     dialogue_pop_packet(dialogue)
                     packet.buttons[selected_index[0]].callback()
@@ -296,12 +288,10 @@ def _dialogue_update_message(
         )
         if dx != 0:
             play_sound(AudioChannel.UI, a.UI_HOVER)
-            selected_index = [i for i, btn in enumerate(
-                packet.buttons) if btn.selected]
+            selected_index = [i for i, btn in enumerate(packet.buttons) if btn.selected]
             if len(selected_index) > 0:
                 packet.buttons[selected_index[0]].selected = False
-                packet.buttons[(selected_index[0] + dx) %
-                               len(packet.buttons)].selected = True
+                packet.buttons[(selected_index[0] + dx) % len(packet.buttons)].selected = True
             else:
                 packet.buttons[0].selected = True
             return
@@ -372,8 +362,7 @@ def _dialogue_update_camera_pan(
         dialogue_pop_packet(dialogue)
     else:
         percent = dialogue.delay_timer.elapsed / dialogue.delay_timer.duration
-        camera.motion.position = dialogue.pan_start + \
-            (camera_target - dialogue.pan_start) * percent
+        camera.motion.position = dialogue.pan_start + (camera_target - dialogue.pan_start) * percent
 
 
 # returns true if there is dialogue playing currently
@@ -395,13 +384,11 @@ def dialogue_update(
     active_packet = dialogue.queue[0]
 
     if isinstance(active_packet, DialogueMessagePacket):
-        _dialogue_update_message(
-            dialogue, active_packet, dt, action_buffer, mouse_bufffer)
+        _dialogue_update_message(dialogue, active_packet, dt, action_buffer, mouse_bufffer)
     elif isinstance(active_packet, DialogueDelayPacket):
         _dialogue_update_delay(dialogue, active_packet, dt)
     elif isinstance(active_packet, DialogueCameraPanPacket):
-        _dialogue_update_camera_pan(
-            dialogue, active_packet, dt, camera, camera_target)
+        _dialogue_update_camera_pan(dialogue, active_packet, dt, camera, camera_target)
     # can add more types if necessary
 
     return True
@@ -411,11 +398,6 @@ def _dialogue_render_message(
     dialogue: DialogueSystem, packet: DialogueMessagePacket, surface: pygame.Surface
 ) -> None:
     # styling
-    inner_rect = dialogue.rect.copy()
-    inner_rect.x += 1
-    inner_rect.w -= 2
-    inner_rect.y += 1
-    inner_rect.h -= 2
     fg_color = c.WHITE
     match packet.style:
         case DialogueStyle.DEFAULT:
@@ -432,8 +414,7 @@ def _dialogue_render_message(
             pygame.draw.rect(surface, (0, 255, 0), dialogue.rect, 2, 8)
 
     graphic = packet.graphic
-    surface.blit(graphic, (dialogue.rect.x + 3,
-                 dialogue.rect.y + 3), (0, 0, 64, 64))
+    surface.blit(graphic, (dialogue.rect.x + 3, dialogue.rect.y + 3), (0, 0, 64, 64))
     name = a.DEBUG_FONT.render(packet.name, False, fg_color)
     surface.blit(
         name,
@@ -453,8 +434,7 @@ def _dialogue_render_message(
         if packet.buttons is not None and len(packet.buttons) > 1:
             for button in packet.buttons[::-1]:
                 button_icon = dialogue.font.render(
-                    button.text, False, c.WHITE if button.selected else (
-                        200, 200, 200)
+                    button.text, False, c.WHITE if button.selected else (200, 200, 200)
                 )
                 x -= button_icon.get_width()
                 surface.blit(button_icon, (x, y - button_icon.get_height()))
@@ -470,8 +450,7 @@ def _dialogue_render_message(
                     )
                 x -= 20
         else:
-            continue_icon = a.DEBUG_FONT.render(
-                "<A> to continue", False, fg_color)
+            continue_icon = a.DEBUG_FONT.render("<A> to continue", False, fg_color)
             surface.blit(
                 continue_icon,
                 (x - continue_icon.get_width(), y - continue_icon.get_height()),

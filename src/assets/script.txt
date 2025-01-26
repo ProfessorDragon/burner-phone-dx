@@ -102,7 +102,7 @@ buttons Accept=SETUP ACCEPT|Decline=
 [SETUP ACCEPT]
 
 style phone silent
-char 2 rogan_no_comms
+char 1 rogan_no_comms
 - eheh, you actually made it... well done. the name's rogan. i'll be in contact with you throughout the mission.
 char 0
 noskip
@@ -112,7 +112,7 @@ pan 0 144 -80
 pan 1.5 144 -82
 noskip
 - ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
-char 1
+char 3
 noskip
 - simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
 pan 0
@@ -122,14 +122,14 @@ char 0
 style comms
 char 0 rogan
 - test, test.
-char 1
+char 3
 - well, the lab is west. get moving!
 
 
 [BEGIN OUTDOORS COMMS]
 
 style comms
-char 2 rogan
+char 1 rogan
 - hey hey, looks like my weapon's making progress! you've certainly exceeded my expectations.
 char 0
 - now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
@@ -138,7 +138,7 @@ char 0
 [BEFORE LAB COMMS]
 
 style comms
-char 0 rogan
+char 4 rogan
 - you're so close...\nthe lab's only steps away...
 music 3
 
@@ -153,43 +153,43 @@ music 3
 [FIRST CAUGHT SIGHT]
 
 style comms
-char 1 rogan
+char 2 rogan
 - look buddy, did you pay attention to the briefing? keeping it on the "down low" means don't get seen!
 
 
 [SECOND CAUGHT SIGHT]
 
 style comms
-char 0 rogan
+char 3 rogan
 - you know, it's in your best interest to not get caught.
 
 
 [THIRD CAUGHT SIGHT]
 style comms
-char 2 rogan
+char 0 rogan
 - oh! so close!
-char 0
+char 3
 - but not close enough.
 
 
 [FIRST CAUGHT HOLE]
 
 style comms
-char 1 rogan
+char 3 rogan
 - hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any deadly substances with the <A> button.
 
 
 [SECOND CAUGHT HOLE]
 
 style comms
-char 1 rogan
+char 2 rogan
 - what, you fell in another lake? it ain't funny! we've got lives at stake here!
 
 
 [THIRD CAUGHT HOLE]
 
 style comms
-char 1 rogan
+char 3 rogan
 - that didn't look pleasant. maybe don't touch that again.
 
 
@@ -205,7 +205,7 @@ char 0 rogan
 style comms
 char 0 rogan
 - agent, remember, you are the weapon.\nand by that, we mean you're immune to the virus...
-char 1
+char 2
 - ...immune to the virus, not zombies!\nhave ya lost your mind?
 
 
@@ -217,7 +217,7 @@ char 1
 [PROGRESS 1]
 
 style comms
-char 2 rogan
+char 1 rogan
 - so how is my weapon going? keep up the good work!
 
 
