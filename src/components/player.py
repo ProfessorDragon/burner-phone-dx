@@ -327,10 +327,10 @@ def player_render_overlays(player: Player, surface: pygame.Surface, camera: Came
         alert = None
         y_offset = 0
         if player.caught_style == PlayerCaughtStyle.SIGHT:
-            alert = a.DEBUG_FONT.render("!!", False, c.RED)
+            alert = a.CAUGHT_INDICATORS[0]
             y_offset = -8
         elif player.caught_style == PlayerCaughtStyle.ZOMBIE:
-            alert = a.DEBUG_FONT.render("!!", False, c.GREEN)
+            alert = a.CAUGHT_INDICATORS[1]
             y_offset = 12
         if alert is not None:
             surface.blit(

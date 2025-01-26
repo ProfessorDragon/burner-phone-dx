@@ -95,8 +95,8 @@ class DialogueCharacter:
     sounds: list[pygame.mixer.Sound]
 
 
-DIALOGUE_PLACEHOLDER_AVATARS = slice_sheet(IMG + "dialogue_placeholder_avatars.png", 64, 64)
-DIALOGUE_PLACEHOLDER_SOUNDS = [
+DIALOGUE_AVATARS = slice_sheet(IMG + "avatars.png", 64, 64)
+DIALOGUE_SOUNDS = [
     pygame.mixer.Sound(SFX + "dialogue_high_1.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_high_2.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_low_1.ogg"),
@@ -114,37 +114,37 @@ DIALOGUE_CHARACTERS = {
     "default": DialogueCharacter(
         "???",
         [DEBUG_IMAGE_64],
-        DIALOGUE_PLACEHOLDER_SOUNDS[0:2],
+        DIALOGUE_SOUNDS[0:2],
     ),
     "sign": DialogueCharacter(
         "Sign",
-        [DEBUG_IMAGE_64],
-        DIALOGUE_PLACEHOLDER_SOUNDS[6:8],
+        [DIALOGUE_AVATARS[7]],
+        DIALOGUE_SOUNDS[6:8],
     ),
     "note": DialogueCharacter(
         "Note",
-        [DEBUG_IMAGE_64],
-        DIALOGUE_PLACEHOLDER_SOUNDS[6:8],
+        [DIALOGUE_AVATARS[9]],
+        DIALOGUE_SOUNDS[6:8],
     ),
     "phone": DialogueCharacter(
         "Phone",
-        [DEBUG_IMAGE_64],
-        DIALOGUE_PLACEHOLDER_SOUNDS[0:2],
+        [DIALOGUE_AVATARS[8]],
+        DIALOGUE_SOUNDS[0:2],
     ),
     "luke": DialogueCharacter(
-        "Luke",
-        DIALOGUE_PLACEHOLDER_AVATARS,
-        DIALOGUE_PLACEHOLDER_SOUNDS[0:2],
+        "Louisa",
+        DIALOGUE_AVATARS[5:7],
+        DIALOGUE_SOUNDS[0:2],
     ),
     "rogan_no_comms": DialogueCharacter(
         "Rogan",
-        DIALOGUE_PLACEHOLDER_AVATARS,
-        DIALOGUE_PLACEHOLDER_SOUNDS[2:4],
+        DIALOGUE_AVATARS[0:5],
+        DIALOGUE_SOUNDS[2:4],
     ),
     "rogan": DialogueCharacter(
         "Rogan",
-        DIALOGUE_PLACEHOLDER_AVATARS,
-        DIALOGUE_PLACEHOLDER_SOUNDS[4:6],
+        DIALOGUE_AVATARS[0:5],
+        DIALOGUE_SOUNDS[4:6],
     ),
 }
 
