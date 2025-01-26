@@ -16,7 +16,7 @@ class SpotlightEnemy(Entity):
         self.path: list[pygame.Vector2] = path
         self.active_point = 0
         self.light_radius = c.TILE_SIZE * 3
-        self.my_special_perspective_scale = 0.6
+        self.my_special_perspective_scale = 0.66
         self.reset()
 
     def get_path(self) -> list[pygame.Vector2]:

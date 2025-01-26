@@ -110,7 +110,7 @@ noskip
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
 pan 0 144 -79
-pan 1 144 -80
+pan 1.5 144 -81
 noskip
 - ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
 char 1
@@ -131,7 +131,7 @@ char 1 rogan
 
 style comms
 char 2 rogan
-- hey hey, looks like the weapon's making progress! you've certainly exceeded my expectations.
+- hey hey, looks like my weapon's making progress! you've certainly exceeded my expectations.
 char 0
 - now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
 
@@ -272,3 +272,11 @@ char 0 sign
 style sign
 char 0 sign
 - Next gas station: 498 miles
+
+
+[CLUE 1]
+
+style sign
+char 0 note
+pan 0.5 132 -80
+- 20/01/17\nTesting has succeeded in animal trials. If this luck continues, all of humankind may rejoice.

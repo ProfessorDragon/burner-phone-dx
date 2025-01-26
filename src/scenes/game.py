@@ -106,9 +106,12 @@ def _post_death_comms(
 ) -> None:
     if story < MainStoryProgress.COMMS:
         return
-    state_name = "FIRST"
-    if story >= MainStoryProgress.HALFWAY:
+    if story >= MainStoryProgress.LAB:
+        state_name = "THIRD"
+    elif story >= MainStoryProgress.HALFWAY:
         state_name = "SECOND"
+    else:
+        state_name = "FIRST"
     scene_name = f"{state_name} CAUGHT {caught_style.name}"
     if not dialogue_has_executed_scene(dialogue, scene_name):
         dialogue_execute_script_scene(dialogue, scene_name)

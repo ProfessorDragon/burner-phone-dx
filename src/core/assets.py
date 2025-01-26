@@ -121,6 +121,11 @@ DIALOGUE_CHARACTERS = {
         [DEBUG_IMAGE_64],
         DIALOGUE_PLACEHOLDER_SOUNDS[6:8],
     ),
+    "note": DialogueCharacter(
+        "Note",
+        [DEBUG_IMAGE_64],
+        DIALOGUE_PLACEHOLDER_SOUNDS[6:8],
+    ),
     "phone": DialogueCharacter(
         "Phone",
         [DEBUG_IMAGE_64],

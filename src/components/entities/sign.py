@@ -5,7 +5,7 @@ import core.constants as c
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.player import Player, PlayerInteraction, player_rect
-from scenes.scene import PLAYER_LAYER, PLAYER_OR_FG, RenderLayer
+from scenes.scene import PLAYER_LAYER, PLAYER_OR_BG, PLAYER_OR_FG, RenderLayer
 
 
 class SignEntity(Entity):
@@ -16,7 +16,7 @@ class SignEntity(Entity):
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x, self.motion.position.y + 16, 16, 16)
+        return pygame.Rect(self.motion.position.x - 2, self.motion.position.y + 16, 20, 20)
 
     def to_json(self):
         return {"pos": (*self.motion.position,), "scene_name": self.scene_name, "color": self.color}
@@ -49,7 +49,9 @@ class SignEntity(Entity):
                 player.interaction.scene_name = None
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer in PLAYER_LAYER:
+        if (self.color < 2 and layer in PLAYER_LAYER) or (
+            self.color >= 2 and layer in PLAYER_OR_BG
+        ):
             surface.blit(
                 a.TERRAIN,
                 camera_to_screen_shake(camera, *self.motion.position),
