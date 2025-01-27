@@ -130,10 +130,11 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player(_tile_size_vec(10.5, -9))
+        self.player = Player(_tile_size_vec(10.5, 9))
 
         self.camera = Camera.empty()
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+        self.camera.motion.position = _camera_target(self.player)
 
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)

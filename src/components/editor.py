@@ -213,6 +213,19 @@ class Editor:
         if t.is_pressed(self.mouse_buffer, t.MouseButton.LEFT):
             if self.a_held:
                 self.drag_start = _camera_from_mouse(self.scene.camera)
+            elif self.b_held:
+                pos = _camera_from_mouse(self.scene.camera)
+                screen = pos.x // c.WINDOW_WIDTH, pos.y // c.WINDOW_HEIGHT
+                rect = pygame.Rect(
+                    screen[0] * c.WINDOW_WIDTH,
+                    screen[1] * c.WINDOW_HEIGHT,
+                    c.WINDOW_WIDTH,
+                    c.WINDOW_HEIGHT,
+                )
+                if self.move_region is None:
+                    self.move_region = rect
+                else:
+                    self.move_region.union_ip(rect)
             else:
                 x, y = _floor_point(_camera_from_mouse(self.scene.camera), False)
                 if self.measure_tile == (x, y):
@@ -235,16 +248,17 @@ class Editor:
             self.measure_tile = None
             self.move_region = None
 
-        if self.a_held:
-            if self.move_region is not None:
-                if t.is_pressed(self.action_buffer, t.Action.LEFT):
-                    _nudge_region(self.scene, self.move_region, -1, 0)
-                if t.is_pressed(self.action_buffer, t.Action.RIGHT):
-                    _nudge_region(self.scene, self.move_region, 1, 0)
-                if t.is_pressed(self.action_buffer, t.Action.UP):
-                    _nudge_region(self.scene, self.move_region, 0, -1)
-                if t.is_pressed(self.action_buffer, t.Action.DOWN):
-                    _nudge_region(self.scene, self.move_region, 0, 1)
+        if (self.a_held or self.b_held) and self.move_region is not None:
+            tdx = 1 if self.a_held else (c.WINDOW_WIDTH // c.TILE_SIZE)
+            tdy = 1 if self.a_held else (c.WINDOW_HEIGHT // c.TILE_SIZE)
+            if t.is_pressed(self.action_buffer, t.Action.LEFT):
+                _nudge_region(self.scene, self.move_region, -tdx, 0)
+            if t.is_pressed(self.action_buffer, t.Action.RIGHT):
+                _nudge_region(self.scene, self.move_region, tdx, 0)
+            if t.is_pressed(self.action_buffer, t.Action.UP):
+                _nudge_region(self.scene, self.move_region, 0, -tdy)
+            if t.is_pressed(self.action_buffer, t.Action.DOWN):
+                _nudge_region(self.scene, self.move_region, 0, tdy)
 
         else:
             vec = pygame.Vector2(
@@ -253,7 +267,7 @@ class Editor:
                 t.is_held(self.action_buffer, t.Action.DOWN)
                 - t.is_held(self.action_buffer, t.Action.UP),
             )
-            if self.b_held:
+            if self.a_held or self.move_region is not None:
                 vec *= 2000
             else:
                 vec *= self.scene.player.walk_speed * 2
