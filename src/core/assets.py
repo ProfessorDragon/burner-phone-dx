@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 import pygame
 
-import core.constants as c
-from utilities.sprite import get_sprite_from_sheet, slice_sheet
+from utilities.sprite import slice_sheet
 
 
-## IMAGES (png, webp or jpg for web compatibility)
+# IMAGES (png, webp or jpg for web compatibility)
 IMG = "assets/img/"
 
 # icon
@@ -27,7 +26,8 @@ TERRAIN = pygame.image.load(IMG + "terrain.png")
 # entities
 PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
 ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
-SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
+SECURITY_CAMERA_FRAMES = slice_sheet(
+    IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
@@ -44,8 +44,17 @@ for surf in DECOR:
     transparent.set_alpha(64)
     DECOR_TRANSPARENT.append(transparent)
 
+# menu
+MENU_BACK = pygame.image.load("assets/menu/menu_back.png")
+MENU_BLUR = pygame.image.load("assets/menu/menu_blur.png")
+MENU_SCANS = [
+    pygame.image.load("assets/menu/scan1.png"),
+    pygame.image.load("assets/menu/scan2.png"),
+    pygame.image.load("assets/menu/scan3.png")
+]
 
-## AUDIO (ogg for web compatibility)
+
+# AUDIO (ogg for web compatibility)
 SFX = "assets/sfx/"
 
 # music
@@ -84,7 +93,7 @@ ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 
 
-## DIALOGUE
+# DIALOGUE
 
 with open("assets/script.txt") as script:
     GAME_SCRIPT = script.read()

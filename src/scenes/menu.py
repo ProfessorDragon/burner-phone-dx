@@ -9,6 +9,9 @@ from components.camera import (
     camera_update,
     camera_reset,
 )
+from components.animation import (
+    Animator, Animation, animator_initialise, animator_update, animator_get_frame
+)
 from components.settings import Settings, settings_render, settings_update
 
 from scenes.scene import Scene
@@ -24,6 +27,11 @@ class Menu(Scene):
 
         self.settings = Settings()
         self.in_settings = False
+
+        self.scan_lines = Animator()
+        animator_initialise(
+            self.scan_lines, {0: Animation(a.MENU_SCANS, 0.1)}, 0
+        )
 
     def enter(self) -> None:
         camera_reset(self.camera)
@@ -46,9 +54,16 @@ class Menu(Scene):
 
         # UPDATE
         camera_update(self.camera, dt)
+        animator_update(self.scan_lines, dt)
 
         # RENDER
-        surface.fill(c.WHITE)
+        # surface.fill(c.BLACK)
+        surface.blit(a.MENU_BACK, (0, 0))
+
+        # Render button UI here under scan lines
+
+        surface.blit(animator_get_frame(self.scan_lines), (0, 0))
+        surface.blit(a.MENU_BLUR, (0, 0))
 
         if self.in_settings:
             settings_render(self.settings, surface)
