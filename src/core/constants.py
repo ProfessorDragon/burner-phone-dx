@@ -20,7 +20,7 @@ WINDOW_SETUP = {
 }
 
 IS_WEB = sys.platform == "emscripten"
-CAPTION = "Pirate Software - Game Jam 16"
+CAPTION = "BURNER PHONE DX"
 FPS = 0  # 0 = Uncapped -> let VSYNC decide best tick speed if enabled
 MAX_DT = 1 / 60
 TIME_DILATION = 1.0
@@ -39,6 +39,6 @@ MAGENTA = pygame.Color(255, 0, 255)
 # Debug
 DEBUG_FPS = False
 DEBUG_HITBOXES = False
-DEBUG_NO_STORY = True
+DEBUG_NO_STORY = False
 
 print("Loaded constants")

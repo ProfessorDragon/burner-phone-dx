@@ -18,7 +18,7 @@ def run() -> None:
     pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
     statemachine_initialise(
-        scene_manager, scene.SCENE_MAPPING, scene.SceneState.GAME)
+        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -91,7 +91,8 @@ def input_event_queue(action_buffer: t.InputBuffer) -> bool:
         # HACK: For quick development
         # NOTE: It overrides exiting fullscreen when in browser
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            return False
+            if not c.IS_WEB:
+                return False
 
     return True
 
