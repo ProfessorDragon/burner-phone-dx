@@ -27,6 +27,7 @@ class SpikeTrapEnemy(Entity):
         }
         animator_initialise(self.animator, animation_mapping)
         self.initial_activated = False
+        self.activated = False
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -40,6 +41,8 @@ class SpikeTrapEnemy(Entity):
         ent = SpikeTrapEnemy()
         ent.motion.position = pygame.Vector2(js["pos"])
         ent.initial_activated = js.get("activated", False)
+        ent.activated = ent.initial_activated
+        animator_switch_animation(ent.animator, "activated" if ent.activated else "idle")
         return ent
 
     def reset(self) -> None:

@@ -15,7 +15,7 @@ class Decor:
 
 
 def decor_rect(dec: Decor) -> pygame.Rect:
-    return a.DECOR[dec.sprite_index].get_rect().move(dec.position)
+    return a.DECOR[dec.sprite_index][0].get_rect().move(dec.position)
 
 
 def decor_to_json(dec: Decor) -> dict[str, Any]:
@@ -26,12 +26,15 @@ def decor_from_json(js: dict[str, Any]) -> Decor:
     return Decor(pygame.Vector2(js["pos"]), js.get("sprite", 0))
 
 
-def decor_render(dec: Decor, surface: pygame.Surface, camera: Camera, layer: RenderLayer):
+def decor_render(
+    dec: Decor, surface: pygame.Surface, camera: Camera, layer: RenderLayer, time: float
+):
+    frames = a.DECOR[dec.sprite_index]
+    frame = frames[int(time // 0.1) % len(frames)]
     if layer in PLAYER_OR_FG:
-        surf = a.DECOR_TRANSPARENT[dec.sprite_index]
-    else:
-        surf = a.DECOR[dec.sprite_index]
-    surface.blit(surf, camera_to_screen_shake(camera, *dec.position))
+        frame = frame.copy()
+        frame.set_alpha(96)
+    surface.blit(frame, camera_to_screen_shake(camera, *dec.position))
     if c.DEBUG_HITBOXES:
         pygame.draw.rect(
             surface,

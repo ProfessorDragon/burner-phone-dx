@@ -47,9 +47,13 @@ class ButtonEntity(Entity):
             prect = player_rect(player.motion)
             prev_stepped = self.stepped_on
             self.stepped_on = prect.colliderect(self.get_hitbox())
-            if self.stepped_on and not prev_stepped:
+            if (
+                self.stepped_on
+                and not prev_stepped
+                and self.id not in player.progression.activated_buttons
+            ):
                 player.progression.activated_buttons.add(self.id)
-                play_sound(AudioChannel.ENTITY, a.ZOMBIE_CHASE)  # todo
+                play_sound(AudioChannel.ENTITY, a.GATE_OPEN)
         else:
             self.stepped_on = False
 

@@ -79,8 +79,7 @@ def _story_progression_logic(player: Player, dialogue: DialogueSystem, phone_tim
             timer_reset(
                 phone_timer,
                 5,
-                lambda: dialogue_execute_script_scene(
-                    dialogue, "OPENING CALL 2"),
+                lambda: dialogue_execute_script_scene(dialogue, "OPENING CALL 2"),
             )
 
         # this is REQUIRED to make the shadowless tree dialogue go smoothly.
@@ -134,8 +133,7 @@ class Game(Scene):
         self.player = Player(_tile_size_vec(10.5, -9))
 
         self.camera = Camera.empty()
-        self.camera.offset = pygame.Vector2(
-            c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+        self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
 
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
@@ -169,8 +167,7 @@ class Game(Scene):
                 timer_reset(
                     self.phone_timer,
                     1,
-                    lambda: dialogue_execute_script_scene(
-                        self.dialogue, "OPENING CALL 1"),
+                    lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
                 )
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
@@ -200,12 +197,10 @@ class Game(Scene):
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
         if not in_dialogue and not c.DEBUG_NO_STORY:
-            _story_progression_logic(
-                self.player, self.dialogue, self.phone_timer)
+            _story_progression_logic(self.player, self.dialogue, self.phone_timer)
 
         # update and render entities within this area
-        entity_bounds = camera_rect(self.camera).inflate(
-            c.TILE_SIZE * 12, c.TILE_SIZE * 12)
+        entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
@@ -216,8 +211,7 @@ class Game(Scene):
                 # change music after dialogue finished
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
-                    play_sound(AudioChannel.MUSIC,
-                               a.THEME_MUSIC[self.music_index], -1)
+                    play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
                     self.dialogue.desired_music_index = None
 
                 # reset scene after player is caught
@@ -267,8 +261,7 @@ class Game(Scene):
                 for entity in self.entities:
                     path = entity.get_path()
                     if path:
-                        bound_rects = [pygame.Rect(point, (1, 1))
-                                       for point in path]
+                        bound_rects = [pygame.Rect(point, (1, 1)) for point in path]
                     else:
                         bound_rects = [entity.get_hitbox()]
                     if entity_bounds.collidelist(bound_rects) >= 0:
@@ -303,11 +296,9 @@ class Game(Scene):
 
         # render tiles within this area
         tile_bounds = pygame.Rect(
-            (self.camera.motion.position.x -
-             self.camera.offset.x - self.camera.shake_offset.x)
+            (self.camera.motion.position.x - self.camera.offset.x - self.camera.shake_offset.x)
             // c.TILE_SIZE,
-            (self.camera.motion.position.y -
-             self.camera.offset.y - self.camera.shake_offset.y)
+            (self.camera.motion.position.y - self.camera.offset.y - self.camera.shake_offset.y)
             // c.TILE_SIZE,
             surface.get_width() // c.TILE_SIZE,
             surface.get_height() // c.TILE_SIZE,
@@ -352,8 +343,13 @@ class Game(Scene):
                 ):
                     cutoff_decor.append(dec)
                 else:
-                    decor_render(dec, surface, self.camera,
-                                 RenderLayer.PLAYER_BG)
+                    decor_render(
+                        dec,
+                        surface,
+                        self.camera,
+                        RenderLayer.PLAYER_BG,
+                        self.global_stopwatch.elapsed,
+                    )
 
         # player
         player_render(self.player, surface, self.camera)
@@ -361,7 +357,13 @@ class Game(Scene):
         # in front of player
         while cutoff_decor:
             dec = cutoff_decor.popleft()
-            decor_render(dec, surface, self.camera, RenderLayer.PLAYER_FG)
+            decor_render(
+                dec,
+                surface,
+                self.camera,
+                RenderLayer.PLAYER_FG,
+                self.global_stopwatch.elapsed,
+            )
         while cutoff_fg_tiles:
             x, y, tile = cutoff_fg_tiles.popleft()
             tile_render(surface, self.camera, x, y, tile)

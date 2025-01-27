@@ -26,31 +26,26 @@ TERRAIN = pygame.image.load(IMG + "terrain.png")
 # entities
 PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
 ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
-SECURITY_CAMERA_FRAMES = slice_sheet(
-    IMG + "entities/security_camera.png", 16, 16)
+SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
 
 # decor
-DECOR = [
-    *slice_sheet(IMG + "decor/trees.png", 64, 64),  # 0-7
-    pygame.image.load(IMG + "decor/shipping_container.png"),  # 8
-    pygame.image.load(IMG + "decor/shack.png"),  # 9
+DECOR = [[tree] for tree in slice_sheet(IMG + "decor/trees.png", 64, 64)] + [  # 0-7
+    [pygame.image.load(IMG + "decor/shipping_container.png")],  # 8
+    [pygame.image.load(IMG + "decor/shack.png")],  # 9
+    slice_sheet(IMG + "decor/tube.png", 64, 64),  # 10
 ]
-DECOR_TRANSPARENT = []
-for surf in DECOR:
-    transparent = surf.convert_alpha()
-    transparent.set_alpha(64)
-    DECOR_TRANSPARENT.append(transparent)
 
 # menu
-MENU_BACK = pygame.image.load("assets/menu/menu_back.png")
-MENU_BLUR = pygame.image.load("assets/menu/menu_blur.png")
+MENU = "assets/menu/"
+MENU_BACK = pygame.image.load(MENU + "menu_back.png")
+MENU_BLUR = pygame.image.load(MENU + "menu_blur.png")
 MENU_SCANS = [
-    pygame.image.load("assets/menu/scan1.png"),
-    pygame.image.load("assets/menu/scan2.png"),
-    pygame.image.load("assets/menu/scan3.png")
+    pygame.image.load(MENU + "scan1.png"),
+    pygame.image.load(MENU + "scan2.png"),
+    pygame.image.load(MENU + "scan3.png"),
 ]
 
 
@@ -86,6 +81,7 @@ UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
 CAMERA_HUM = pygame.mixer.Sound(SFX + "camera_hum.ogg")
 ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
 ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
+GATE_OPEN = pygame.mixer.Sound(SFX + "gate_open.ogg")
 
 
 # FONTS (ttf for web compatibility)
