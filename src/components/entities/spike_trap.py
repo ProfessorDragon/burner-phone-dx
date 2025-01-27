@@ -13,7 +13,7 @@ from components.animation import (
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
-from scenes.scene import PLAYER_OR_BG, RenderLayer
+from scenes.scene import RenderLayer
 
 
 class SpikeTrapEnemy(Entity):
@@ -56,7 +56,6 @@ class SpikeTrapEnemy(Entity):
         camera: Camera,
         grid_collision: set[tuple[int, int]],
     ) -> None:
-        # collision
         prect = player_rect(player.motion)
         prev_stepped = self.stepped_on
         self.stepped_on = prect.colliderect(self.get_hitbox()) and player.z_position == 0

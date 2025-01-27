@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-import random
 import pygame
 
 from components.audio import AudioChannel, play_sound
@@ -54,6 +53,8 @@ class MainStoryProgress(IntEnum):
 class PlayerProgression:
     checkpoint: pygame.Vector2 = None
     main_story: MainStoryProgress = MainStoryProgress.INTRO
+    activated_buttons: set[str] = None
+    checkpoint_buttons: set[str] = None
 
 
 @dataclass
@@ -101,6 +102,8 @@ class Player:
 
         self.progression = PlayerProgression()
         self.progression.checkpoint = self.motion.position.copy()
+        self.progression.activated_buttons = set()
+        self.progression.checkpoint_buttons = set()
 
         self.direction = Direction.S
         self.caught_timer = Timer()  # resets scene and player when completed
@@ -286,11 +289,17 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
         play_sound(AudioChannel.PLAYER, a.CAUGHT_SIGHT)
 
 
+def player_set_checkpoint(player: Player, pos: pygame.Vector2) -> None:
+    player.progression.checkpoint = pos - pygame.Vector2(16, 32)
+    player.progression.checkpoint_buttons = player.progression.activated_buttons.copy()
+
+
 def player_reset(player: Player) -> None:
     player.motion.position = player.progression.checkpoint.copy()
     player.motion.velocity = pygame.Vector2()
     player.motion.acceleration = pygame.Vector2()
     player.caught_style = PlayerCaughtStyle.NONE
+    player.progression.activated_buttons = player.progression.checkpoint_buttons.copy()
 
 
 def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> None:

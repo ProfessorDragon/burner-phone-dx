@@ -290,9 +290,9 @@ class Game(Scene):
         # background
         surface.fill(c.GRAY)  # can remove once map is made
 
-        decor_cutoff = round(self.player.motion.position.y + 32)
+        entity_cutoff = round(self.player.motion.position.y + 32)
         # for some reason, subtracting the z position looks good
-        terrain_cutoff = decor_cutoff - self.player.z_position
+        terrain_cutoff = entity_cutoff - self.player.z_position
 
         # render tiles within this area
         tile_bounds = pygame.Rect(
@@ -331,14 +331,14 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_BG
-                        if entity.get_terrain_cutoff() < terrain_cutoff
+                        if entity.get_terrain_cutoff() < entity_cutoff
                         else RenderLayer.BACKGROUND
                     ),
                 )
         for dec in self.decor:
             rect = decor_rect(dec)
             if entity_bounds.collidepoint(rect.center):
-                if rect.bottom >= decor_cutoff and player_rect(self.player.motion).colliderect(
+                if rect.bottom >= entity_cutoff and player_rect(self.player.motion).colliderect(
                     rect
                 ):
                     cutoff_decor.append(dec)
@@ -363,7 +363,7 @@ class Game(Scene):
                     self.camera,
                     (
                         RenderLayer.PLAYER_FG
-                        if entity.get_terrain_cutoff() >= terrain_cutoff
+                        if entity.get_terrain_cutoff() >= entity_cutoff
                         else RenderLayer.FOREGROUND
                     ),
                 )

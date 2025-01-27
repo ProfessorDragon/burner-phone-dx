@@ -127,8 +127,9 @@ class PatrolEnemy(Entity):
         if layer == RenderLayer.RAYS:
             render_sight(surface, camera, self.sight_data)
         if layer in PLAYER_LAYER:
-            render_shadow(surface, camera, self.motion, self.direction)
+            # i present to you, illogical changes, because it looks better.
+            # render_shadow(surface, camera, self.motion, self.direction)
             surface.blit(
                 frame,
-                camera_to_screen_shake(camera, *self.motion.position),
+                camera_to_screen_shake(camera, self.motion.position.x, self.motion.position.y - 1),
             )

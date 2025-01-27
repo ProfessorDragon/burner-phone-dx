@@ -1,34 +1,37 @@
 import pygame
 
+from components.audio import AudioChannel, play_sound
 import core.assets as a
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.player import Player, player_rect
-from scenes.scene import PLAYER_OR_BG, RenderLayer
+from scenes.scene import RenderLayer
 
 
 class ButtonEntity(Entity):
     def __init__(self):
         super().__init__()
+        self.activated = False
+        self.id = "default"
         self.color = 0
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x + 4, self.motion.position.y + 3, 8, 10)
+        return pygame.Rect(self.motion.position.x + 3, self.motion.position.y + 2, 10, 12)
 
     def to_json(self):
-        return {"pos": (*self.motion.position,), "color": self.color}
+        return {"pos": (*self.motion.position,), "id": self.id, "color": self.color}
 
     @staticmethod
     def from_json(js):
         ent = ButtonEntity()
         ent.motion.position = pygame.Vector2(js["pos"])
+        ent.id = js.get("id", "default")
         ent.color = js.get("color", 0)
         return ent
 
     def reset(self) -> None:
         self.stepped_on = False
-        self.activated = False
 
     def update(
         self,
@@ -39,13 +42,14 @@ class ButtonEntity(Entity):
         grid_collision: set[tuple[int, int]],
     ) -> None:
         # collision
+        self.activated = self.id in player.progression.activated_buttons
         if player.z_position == 0:
             prect = player_rect(player.motion)
             prev_stepped = self.stepped_on
             self.stepped_on = prect.colliderect(self.get_hitbox())
             if self.stepped_on and not prev_stepped:
-                self.activated = True
-                # todo: activate gate
+                player.progression.activated_buttons.add(self.id)
+                play_sound(AudioChannel.ENTITY, a.ZOMBIE_CHASE)  # todo
         else:
             self.stepped_on = False
 

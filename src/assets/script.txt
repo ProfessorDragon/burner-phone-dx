@@ -166,7 +166,7 @@ char 3 rogan
 
 [THIRD CAUGHT SIGHT]
 style comms
-char 0 rogan
+char 3 rogan
 - so close... yet you got caught again. try using the <B> button to speed up and avoid those nasty guards.
 
 
@@ -323,7 +323,7 @@ char 0 note
 style sign
 char 0 note
 noskip
-- 20/01/29\nI have been personally contacted from Pharm-O-Rite LLC yet again. It is clear they only want the cure to profit off the weak and dying.
+- 20/01/29\nI have been personally contacted from\nPharm-O-Rite LLC yet again. It is clear they only want the cure to profit off the weak and dying.
 
 
 [CLUE 6]
@@ -331,7 +331,7 @@ noskip
 style sign
 char 0 note
 noskip
-- 20/01/30\nAfter producing a sufficient quantity, C-25DX will be released to the public, free of charge. In the meantime, I have placed the lab under strict surveillence to protect such valuable knowledge.
+- 20/01/30\nSoon C-25DX will be released to the public, free of charge. As of now, I have placed the lab under strict surveillence to protect such valuable knowledge.
 
 
 [CLUE 7]

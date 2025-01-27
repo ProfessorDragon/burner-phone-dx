@@ -4,7 +4,13 @@ import core.assets as a
 import core.constants as c
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
-from components.player import MainStoryProgress, Player, PlayerInteraction, player_rect
+from components.player import (
+    MainStoryProgress,
+    Player,
+    PlayerInteraction,
+    player_rect,
+    player_set_checkpoint,
+)
 from scenes.scene import PLAYER_OR_FG, RenderLayer
 
 
@@ -56,7 +62,7 @@ class CheckpointEntity(Entity):
     ) -> None:
         hitbox = self.get_hitbox()
         if player_rect(player.motion).colliderect(hitbox):
-            player.progression.checkpoint = hitbox.center - pygame.Vector2(16, 32)
+            player_set_checkpoint(player, hitbox.center)
             if self.story is not None and player.progression.main_story < self.story:
                 player.progression.main_story = self.story
             if self.scene_name is not None:

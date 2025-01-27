@@ -254,7 +254,7 @@ class Editor:
                 - t.is_held(self.action_buffer, t.Action.UP),
             )
             if self.b_held:
-                vec *= 1000
+                vec *= 2000
             else:
                 vec *= self.scene.player.walk_speed * 2
             self.scene.player.motion.position += vec * self.dt
