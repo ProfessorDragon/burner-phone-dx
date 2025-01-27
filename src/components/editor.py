@@ -10,7 +10,7 @@ from components.decor import Decor, decor_from_json, decor_rect, decor_to_json
 from components.entities.all import ENTITY_CLASSES, entity_from_json
 from components.entities.entity import Entity, render_path
 from components.player import player_reset
-from components.tiles import TileData, tile_render, tile_render_hitbox
+from components.tile import TileData, tile_render, tile_render_hitbox
 import core.input as t
 import core.constants as c
 import core.assets as a
@@ -40,7 +40,7 @@ TILE_GROUPS = {
     4: [  # above floor
         list_range(3, 7) + [0] * 12,
         list_range(8, 12) + [1] * 12,
-        list_range(14, 17) + [2] * 12,
+        list_range(14, 19) + [2] * 12,
     ],
     5: [  # bottom edging
         [1, 2] * 6 + list_range(3, 7),
@@ -100,6 +100,8 @@ def _nudge_region(scene: Scene, old_region: pygame.Rect, tdx: float, tdy: float)
             old_id = (x - tdx, y - tdy)
             new_id = (x, y)
             scene.grid_tiles[new_id] = scene.grid_tiles.get(old_id, [])
+            if old_id in scene.grid_tiles:
+                scene.grid_tiles.pop(old_id)
             if old_id in scene.grid_collision:
                 scene.grid_collision.remove(old_id)
                 scene.grid_collision.add(new_id)

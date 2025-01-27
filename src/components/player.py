@@ -10,7 +10,7 @@ from components.dialogue import (
     dialogue_has_executed_scene,
 )
 from components.entities.entity_util import render_shadow
-from components.tiles import grid_collision_rect
+from components.tile import grid_collision_rect
 from components.timer import Timer, timer_reset, timer_update
 import core.input as t
 import core.assets as a

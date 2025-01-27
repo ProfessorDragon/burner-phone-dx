@@ -40,7 +40,7 @@ from components.player import (
     player_update,
     player_render,
 )
-from components.tiles import (
+from components.tile import (
     TileData,
     grid_collision_rect,
     tile_render,

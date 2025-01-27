@@ -46,6 +46,7 @@ class SpikeTrapEnemy(Entity):
         self.stepped_on = False
         self.activated = self.initial_activated
         animator_switch_animation(self.animator, "activated" if self.activated else "idle")
+        animator_reset(self.animator)
 
     def update(
         self,

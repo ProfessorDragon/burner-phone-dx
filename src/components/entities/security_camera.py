@@ -69,7 +69,7 @@ class SecurityCameraEnemy(Entity):
         enemy.motion.position = pygame.Vector2(js["pos"])
         enemy.facing = js.get("facing", 0)
         enemy.inverse_direction = js.get("inverse", False)
-        enemy.sight_data.z_offset = js.get("z", 0)
+        enemy.sight_data.z_offset = js.get("z", -16)
         enemy.should_raycast = js.get("raycast", False)
         if js.get("min_story"):
             enemy.min_story = MainStoryProgress[js["min_story"]]

@@ -30,6 +30,7 @@ ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
 SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
+GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
 
 # decor
 DECOR = [
@@ -119,7 +120,12 @@ DIALOGUE_CHARACTERS = {
     ),
     "sign": DialogueCharacter(
         "Sign",
-        [DIALOGUE_AVATARS[7], DIALOGUE_AVATARS[9]],
+        [DIALOGUE_AVATARS[7]],
+        DIALOGUE_SOUNDS[6:8],
+    ),
+    "note": DialogueCharacter(
+        "Note",
+        [DIALOGUE_AVATARS[9]],
         DIALOGUE_SOUNDS[6:8],
     ),
     "phone": DialogueCharacter(

@@ -14,7 +14,7 @@ class ButtonEntity(Entity):
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x + 5, self.motion.position.y + 3, 6, 10)
+        return pygame.Rect(self.motion.position.x + 4, self.motion.position.y + 3, 8, 10)
 
     def to_json(self):
         return {"pos": (*self.motion.position,), "color": self.color}
@@ -44,13 +44,14 @@ class ButtonEntity(Entity):
             prev_stepped = self.stepped_on
             self.stepped_on = prect.colliderect(self.get_hitbox())
             if self.stepped_on and not prev_stepped:
-                pass  # todo
+                self.activated = True
+                # todo: activate gate
         else:
             self.stepped_on = False
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer == RenderLayer.RAYS:
             surface.blit(
-                a.BUTTON_FRAMES[self.color * 2 + self.stepped_on],
+                a.BUTTON_FRAMES[self.color * 2 + (self.stepped_on or self.activated)],
                 camera_to_screen_shake(camera, *self.motion.position),
             )
