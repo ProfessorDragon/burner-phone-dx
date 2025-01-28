@@ -3,7 +3,7 @@ from functools import partial
 import random
 import pygame
 
-from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
+from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
 from components.decor import Decor, decor_rect, decor_render
 from components.entities.camera_boundary import CameraBoundaryEntity
 from components.timer import (
@@ -69,67 +69,6 @@ def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
     return pygame.Vector2(x * c.TILE_SIZE, y * c.TILE_SIZE)
 
 
-def _story_progression_logic(player: Player, dialogue: DialogueSystem, phone_timer: Timer) -> None:
-    if player.progression.main_story == MainStoryProgress.INTRO:
-        # opening call
-        if (
-            dialogue_has_executed_scene(dialogue, "OPENING CALL 1")
-            and not dialogue_has_executed_scene(dialogue, "OPENING ACCEPT MAIN")
-            and phone_timer.remaining <= 0
-        ):
-            timer_reset(
-                phone_timer,
-                5,
-                lambda: dialogue_execute_script_scene(dialogue, "OPENING CALL 2"),
-            )
-
-        # this is REQUIRED to make the shadowless tree dialogue go smoothly.
-        # and yes this took like two hours to figure out. please don't change it :'(
-        if dialogue_has_executed_scene(
-            dialogue, "REVOKE COMMS"
-        ) and not dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE"):
-            # if trying to revoke comms but it hasn't played shadowless tree yet, stop trying to revoke comms
-            dialogue_remove_executed_scene(dialogue, "REVOKE COMMS")
-
-    elif player.progression.main_story == MainStoryProgress.COMMS:
-        if (
-            dialogue_has_executed_scene(dialogue, "REVOKE COMMS")
-            and dialogue_has_executed_scene(dialogue, "SHADOWLESS TREE")
-            and not dialogue_has_executed_scene(dialogue, "SETUP ACCEPT")
-        ):
-            # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
-            player.progression.main_story = MainStoryProgress.INTRO
-            dialogue_remove_executed_scene(dialogue, "SHADOWLESS TREE")
-
-
-def _post_death_comms(
-    story: MainStoryProgress, dialogue: DialogueSystem, caught_style: PlayerCaughtStyle
-) -> None:
-    if story < MainStoryProgress.COMMS:
-        return
-    if story >= MainStoryProgress.LAB:
-        state_name = "THIRD"
-    elif story >= MainStoryProgress.HALFWAY:
-        state_name = "SECOND"
-    else:
-        state_name = "FIRST"
-    scene_name = f"{state_name} CAUGHT {caught_style.name}"
-    if not dialogue_has_executed_scene(dialogue, scene_name):
-        dialogue_execute_script_scene(dialogue, scene_name)
-
-
-def _random_comms(story: MainStoryProgress, dialogue: DialogueSystem) -> None:
-    if story < MainStoryProgress.COMMS:
-        return
-    i = 0
-    while i < 4:
-        scene_name = f"RANDOM {random.randint(1, 4)}"
-        if not dialogue_has_executed_scene(dialogue, scene_name):
-            break
-        i += 1
-    dialogue_execute_script_scene(dialogue, scene_name)
-
-
 def _camera_target(player: Player) -> pygame.Vector2:
     return pygame.Vector2(player_rect(player.motion).center)
 
@@ -142,6 +81,12 @@ class Game(Scene):
         self.pause_overlay = pygame.Surface(c.WINDOW_SIZE)
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
+
+        self.fade_timer = Timer()  # for fading the scene in and out to black
+        self.fading_in = True  # true for a fade in, false for a fade out
+        timer_reset(self.fade_timer, 1)
+        self.fade_overlay = pygame.Surface(c.WINDOW_SIZE)
+        self.fade_overlay.fill(c.BLACK)
 
         self.player = Player(_tile_size_vec(10.5, 12))
 
@@ -180,7 +125,7 @@ class Game(Scene):
             if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
                 timer_reset(
                     self.phone_timer,
-                    1,
+                    1.5,
                     lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
                 )
         stopwatch_reset(self.global_stopwatch)
@@ -204,6 +149,8 @@ class Game(Scene):
 
         # UPDATE
 
+        timer_update(self.fade_timer, dt)
+
         editor_update(self.editor, dt, action_buffer, mouse_buffer)
 
         camera_target = _camera_target(self.player)
@@ -211,7 +158,7 @@ class Game(Scene):
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
         if not in_dialogue and not c.DEBUG_NO_STORY:
-            _story_progression_logic(self.player, self.dialogue, self.phone_timer)
+            self.story_progression_logic()
 
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
@@ -225,7 +172,10 @@ class Game(Scene):
                 # change music after dialogue finished
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
-                    play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+                    if self.music_index < 0:
+                        stop_music()
+                    else:
+                        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
                     self.dialogue.desired_music_index = None
 
                 # reset scene after player is caught
@@ -235,9 +185,8 @@ class Game(Scene):
                         self.comms_timer,
                         0.5,
                         partial(
-                            _post_death_comms,
+                            self.post_death_comms,
                             self.player.progression.main_story,
-                            self.dialogue,
                             self.player.caught_style,
                         ),
                     )
@@ -409,6 +358,14 @@ class Game(Scene):
         # player again
         player_render_overlays(self.player, surface, self.camera)
 
+        # fade in/out
+        fade_percent = (
+            self.fade_timer.remaining if self.fading_in else self.fade_timer.elapsed
+        ) / self.fade_timer.duration
+        if fade_percent > 0:
+            self.fade_overlay.set_alpha(fade_percent * 255)
+            surface.blit(self.fade_overlay, (0, 0))
+
         # ui
         dialogue_render(self.dialogue, surface)
         editor_render(self.editor, surface)
@@ -417,4 +374,72 @@ class Game(Scene):
             surface.blit(self.pause_overlay, (0, 0))
 
     def exit(self) -> None:
-        stop_all_sounds()
+        stop_music()
+
+    def post_death_comms(self, story: MainStoryProgress, caught_style: PlayerCaughtStyle) -> None:
+        if story < MainStoryProgress.COMMS:
+            return
+        if story >= MainStoryProgress.LAB:
+            state_name = "THIRD"
+        elif story >= MainStoryProgress.HALFWAY:
+            state_name = "SECOND"
+        else:
+            state_name = "FIRST"
+        scene_name = f"{state_name} CAUGHT {caught_style.name}"
+        if not dialogue_has_executed_scene(self.dialogue, scene_name):
+            dialogue_execute_script_scene(self.dialogue, scene_name)
+
+    def random_comms(self) -> None:
+        if self.player.progression.main_story < MainStoryProgress.COMMS:
+            return
+        i = 0
+        while i < 4:
+            scene_name = f"RANDOM {random.randint(1, 4)}"
+            if not dialogue_has_executed_scene(self.dialogue, scene_name):
+                break
+            i += 1
+        dialogue_execute_script_scene(self.dialogue, scene_name)
+
+    def story_progression_logic(self) -> None:
+        if self.player.progression.main_story == MainStoryProgress.INTRO:
+            # opening call
+            if (
+                dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1")
+                and not dialogue_has_executed_scene(self.dialogue, "OPENING ACCEPT MAIN")
+                and self.phone_timer.remaining <= 0
+            ):
+                timer_reset(
+                    self.phone_timer,
+                    5,
+                    lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 2"),
+                )
+
+            # this is REQUIRED to make the shadowless tree dialogue go smoothly.
+            # and yes this took like two hours to figure out. please don't change it :'(
+            if dialogue_has_executed_scene(
+                self.dialogue, "REVOKE COMMS"
+            ) and not dialogue_has_executed_scene(self.dialogue, "SHADOWLESS TREE"):
+                # if trying to revoke comms but it hasn't played shadowless tree yet, stop trying to revoke comms
+                dialogue_remove_executed_scene(self.dialogue, "REVOKE COMMS")
+
+        elif self.player.progression.main_story == MainStoryProgress.COMMS:
+            if (
+                dialogue_has_executed_scene(self.dialogue, "REVOKE COMMS")
+                and dialogue_has_executed_scene(self.dialogue, "SHADOWLESS TREE")
+                and not dialogue_has_executed_scene(self.dialogue, "SETUP ACCEPT")
+            ):
+                # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
+                self.player.progression.main_story = MainStoryProgress.INTRO
+                dialogue_remove_executed_scene(self.dialogue, "SHADOWLESS TREE")
+
+        elif self.player.progression.main_story == MainStoryProgress.FINALE:
+            if dialogue_has_executed_scene(self.dialogue, "FINALE EXPLOSIONS"):
+                if not dialogue_has_executed_scene(self.dialogue, "FINALE FADE OUT"):
+                    self.fading_in = False
+                    timer_reset(self.fade_timer, 2)
+                    dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT")
+                if random.randint(1, 30) == 1:
+                    if random.randint(1, 2) == 1:
+                        play_sound(AudioChannel.ENTITY, a.EXPLOSIONS[0])
+                    else:
+                        play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])

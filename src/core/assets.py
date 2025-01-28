@@ -26,8 +26,7 @@ TERRAIN = pygame.image.load(IMG + "terrain.png")
 # entities
 PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
 ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
-SECURITY_CAMERA_FRAMES = slice_sheet(
-    IMG + "entities/security_camera.png", 16, 16)
+SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
@@ -73,6 +72,10 @@ FOOTSTEPS = [
 ]
 CAUGHT_SIGHT = pygame.mixer.Sound(SFX + "caught_sight.ogg")
 CAUGHT_HOLE = pygame.mixer.Sound(SFX + "caught_hole.ogg")
+EXPLOSIONS = [
+    pygame.mixer.Sound(SFX + "explosion_1.ogg"),
+    pygame.mixer.Sound(SFX + "explosion_2.ogg"),
+]
 
 # ui
 UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")

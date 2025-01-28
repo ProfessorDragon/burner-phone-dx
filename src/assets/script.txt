@@ -111,10 +111,10 @@ noskip
 pan 0 144 -97
 pan 1.5 144 -99
 noskip
-- ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
+- ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only sell it to the highest bidder.
 char 3
 noskip
-- simply put, we can't seem to get our hands on it. the world needs a hero to infiltrate the lab and fetch the formula to the cure.
+- simply put, we can't seem to get our hands on it. the world needs a weapon - you - to infiltrate the lab and fetch the formula to the cure.
 pan 0
 char 0
 - alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
@@ -151,7 +151,7 @@ char 4 rogan
 music 1
 
 
-[FINALE MUSIC]
+[QUIET MUSIC]
 
 music 0
 
@@ -161,6 +161,13 @@ music 0
 style comms
 char 0 rogan
 - so, you really did it...
+music -1
+
+
+[FINALE EXPLOSIONS]
+[FINALE FADE OUT]
+
+# nothing
 
 
 

@@ -29,9 +29,8 @@ def try_play_sound(channel: AudioChannel, sound: pygame.mixer.Sound, *args) -> b
     return True
 
 
-def stop_all_sounds() -> None:
-    for channel in AudioChannel:
-        pygame.mixer.Channel(channel).stop()
+def stop_music() -> None:
+    pygame.mixer.Channel(AudioChannel.MUSIC).stop()
 
 
 def set_music_volume(value: float) -> None:
