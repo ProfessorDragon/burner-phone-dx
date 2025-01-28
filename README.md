@@ -1,4 +1,4 @@
-# Untitled Game
+# BURNER PHONE DX
 
 Our submission for the [Pirate Software - Game Jam 16](https://itch.io/jam/pirate)  
 
