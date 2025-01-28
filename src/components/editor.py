@@ -99,8 +99,8 @@ def _nudge_region(scene: Scene, old_region: pygame.Rect, tdx: float, tdy: float)
         ):
             old_id = (x - tdx, y - tdy)
             new_id = (x, y)
-            scene.grid_tiles[new_id] = scene.grid_tiles.get(old_id, [])
             if old_id in scene.grid_tiles:
+                scene.grid_tiles[new_id] = scene.grid_tiles[old_id].copy()
                 scene.grid_tiles.pop(old_id)
             if old_id in scene.grid_collision:
                 scene.grid_collision.remove(old_id)
@@ -166,6 +166,7 @@ class Editor:
             "grid_tiles": {
                 f"{k[0]},{k[1]}": [(*tile,) for tile in tiles]
                 for k, tiles in self.scene.grid_tiles.items()
+                if len(tiles) > 0
             },
             "walls": [(*wall,) for wall in self.scene.walls],
             "decor": [decor_to_json(dec) for dec in self.scene.decor],

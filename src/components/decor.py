@@ -29,8 +29,10 @@ def decor_from_json(js: dict[str, Any]) -> Decor:
 def decor_render(
     dec: Decor, surface: pygame.Surface, camera: Camera, layer: RenderLayer, time: float
 ):
+    # offset the animation based on position to make it not look super repetitive
+    idx = (time + dec.position.x * 0.003 + dec.position.y * 0.002) // 0.1
     frames = a.DECOR[dec.sprite_index]
-    frame = frames[int(time // 0.1) % len(frames)]
+    frame = frames[int(idx % len(frames))]
     if layer in PLAYER_OR_FG:
         frame = frame.copy()
         frame.set_alpha(96)

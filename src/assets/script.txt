@@ -130,9 +130,9 @@ char 3
 
 style comms
 char 1 rogan
-- hey hey, looks like my weapon's making progress! you've certainly exceeded my expectations.
+- hey hey, looks like my weapon's making progress! you're approaching a dangerous area here.
 char 0
-- now, just follow the eastward trail of death, zombies, and bottomless pits. you'll know the lab when you see it.
+- don't sweat it. just follow the eastward trail of zombies, acid lakes, and cameras! you'll know the lab when you see it.
 
 
 [BEFORE LAB COMMS]
@@ -141,6 +141,14 @@ style comms
 char 4 rogan
 - you're so close...\nthe lab's only steps away...
 music 3
+
+
+[IN LAB COMMS]
+
+style comms
+char 4 rogan
+- easy does it...\none step at a time...\nwouldn't want to mess up now...
+music 1
 
 
 
@@ -254,7 +262,14 @@ char 0 sign
 
 style sign
 char 0 sign
-- -- 2 Forest Rd --\nHome sweet home
+- -- 3 Forest Rd --\nHome sweet home
+
+
+[ABANDONED MAILBOX]
+
+style sign
+char 0 sign
+- -- 2 Forest Rd --
 
 
 [LAB MAILBOX]

@@ -130,7 +130,7 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.player = Player(_tile_size_vec(10.5, 11))
+        self.player = Player(_tile_size_vec(10.5, 12))
 
         self.camera = Camera.empty()
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
