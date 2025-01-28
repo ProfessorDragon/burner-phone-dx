@@ -10,7 +10,11 @@ from components.camera import (
     camera_reset,
 )
 from components.animation import (
-    Animator, Animation, animator_initialise, animator_update, animator_get_frame
+    Animator,
+    Animation,
+    animator_initialise,
+    animator_update,
+    animator_get_frame,
 )
 from components.settings import Settings, settings_render, settings_update
 
@@ -29,13 +33,11 @@ class Menu(Scene):
         self.in_settings = False
 
         self.scan_lines = Animator()
-        animator_initialise(
-            self.scan_lines, {0: Animation(a.MENU_SCANS, 0.1)}, 0
-        )
+        animator_initialise(self.scan_lines, {0: Animation(a.MENU_SCANS, 0.1)}, 0)
 
     def enter(self) -> None:
         camera_reset(self.camera)
-        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[0], -1)
+        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
     def execute(
         self,

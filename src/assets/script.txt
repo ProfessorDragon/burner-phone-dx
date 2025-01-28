@@ -108,8 +108,8 @@ char 0
 noskip
 - as you can tell, the world ain't straight right now. this virus been spreading like wildfire, but we got reason to believe you're immune to it.
 - and being the first one to get here, you're our prime candidate to fight this thing.
-pan 0 144 -79
-pan 1.5 144 -81
+pan 0 144 -97
+pan 1.5 144 -99
 noskip
 - ya see this unmarked building? they're developing a cure to this virus, but entry's tight. they only selling it to the highest bidder.
 char 3
@@ -293,7 +293,6 @@ char 0 sign
 
 style sign
 char 0 note
-pan 0.5 132 -81
 - 20/01/16\nTesting of C-25DX has succeeded in animal trials. If my luck continues, earth will be free of this virus in a matter of weeks.
 
 

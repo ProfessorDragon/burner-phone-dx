@@ -116,8 +116,9 @@ class Player:
 
         # consts
         self.walk_speed = 150  # allows jumping a 3 tile gap
-        self.roll_speed = 250  # allows jumping a 4 tile gap
+        self.roll_speed = 230  # allows jumping a 4 tile gap
         self.jump_velocity = 130  # about a tile high
+        self.z_acceleration = 600
 
 
 def player_rect(motion: Motion) -> pygame.Rect:
@@ -239,7 +240,7 @@ def player_update(
                 player.motion.velocity = player.motion.velocity.normalize() * player.roll_speed
                 animator_reset(player.animator)
                 timer_reset(player.roll_max_timer, 0.3)
-                timer_reset(player.roll_cooldown_timer, 0.7)
+                timer_reset(player.roll_cooldown_timer, 0.65)
                 play_sound(AudioChannel.PLAYER_ALT, a.ROLL)
 
         # timers
@@ -249,7 +250,7 @@ def player_update(
     # collision
     _player_collision(player, dt, grid_collision, walls)
     motion_update(player.motion, dt)
-    player.z_velocity += 600 * dt
+    player.z_velocity += player.z_acceleration * dt
     player.z_position = min(player.z_position + player.z_velocity * dt, 0)
 
     # animation
