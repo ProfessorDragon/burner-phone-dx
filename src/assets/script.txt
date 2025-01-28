@@ -132,7 +132,7 @@ style comms
 char 1 rogan
 - hey hey, looks like my weapon's making progress! you're approaching a dangerous area here.
 char 0
-- don't sweat it. just follow the eastward trail of zombies, acid lakes, and cameras! you'll know the lab when you see it.
+- don't sweat it. just follow the deadly trail of zombies, acid lakes, and cameras! you'll know the lab when you see it.
 
 
 [BEFORE LAB COMMS]
@@ -149,6 +149,18 @@ style comms
 char 4 rogan
 - easy does it...\none step at a time...\nwouldn't want to mess up now...
 music 1
+
+
+[FINALE MUSIC]
+
+music 0
+
+
+[FINALE 1]
+
+style comms
+char 0 rogan
+- so, you really did it...
 
 
 
@@ -175,7 +187,7 @@ char 3 rogan
 [THIRD CAUGHT SIGHT]
 style comms
 char 3 rogan
-- so close... yet you got caught again. try using the <B> button to speed up and avoid those nasty guards.
+- so close... yet you got caught again. try rolling to speed up and avoid those pesky guards.
 
 
 [FIRST CAUGHT HOLE]
@@ -216,36 +228,37 @@ char 2
 
 
 
-## PROGRESS COMMUNICATIONS
-# short lines i think are funny, random ones can be played throughout the game
+## RANDOM COMMUNICATIONS
+# short lines i think are funny, can be played in any order throughout the game
 
 
-[PROGRESS 1]
+[RANDOM 1]
 
 style comms
 char 1 rogan
 - so how is my weapon going? keep up the good work!
 
 
-[PROGRESS 2]
+[RANDOM 2]
 
 style comms
 char 1 rogan
 - victory is within my grasp!\nno time to waste!
 
 
-[PROGRESS 3]
+[RANDOM 3]
 
 style comms
 char 0 rogan
 - don't forget... you are... eheh... the weapon...
 
 
-[PROGRESS 4]
+[RANDOM 4]
 
 style comms
-char 0 rogan
-- you are the weapon... our weapon. do you understand that? you are humanities last hope...
+char 4 rogan
+- you are the weapon... our weapon. do you understand that? you are humanity's last hope...
+
 
 
 ## SIGNS

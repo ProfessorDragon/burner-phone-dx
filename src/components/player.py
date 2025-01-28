@@ -291,7 +291,7 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
 
 
 def player_set_checkpoint(player: Player, pos: pygame.Vector2) -> None:
-    player.progression.checkpoint = pos - pygame.Vector2(16, 32)
+    player.progression.checkpoint = pos
     player.progression.checkpoint_buttons = player.progression.activated_buttons.copy()
 
 

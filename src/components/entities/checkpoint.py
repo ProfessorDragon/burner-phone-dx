@@ -1,3 +1,4 @@
+import random
 import pygame
 
 import core.assets as a
@@ -62,11 +63,13 @@ class CheckpointEntity(Entity):
     ) -> None:
         hitbox = self.get_hitbox()
         if player_rect(player.motion).colliderect(hitbox):
-            player_set_checkpoint(player, hitbox.center)
-            if self.story is not None and player.progression.main_story < self.story:
-                player.progression.main_story = self.story
-            if self.scene_name is not None:
-                player.interaction = PlayerInteraction(self.scene_name, False)
+            pos = hitbox.center - pygame.Vector2(16, 32)
+            if player.progression.checkpoint != pos:
+                player_set_checkpoint(player, pos)
+                if self.story is not None and player.progression.main_story < self.story:
+                    player.progression.main_story = self.story
+                if self.scene_name is not None:
+                    player.interaction = PlayerInteraction(self.scene_name, False)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:

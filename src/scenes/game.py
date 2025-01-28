@@ -1,5 +1,6 @@
 from collections import deque
 from functools import partial
+import random
 import pygame
 
 from components.audio import AudioChannel, play_sound, stop_all_sounds, try_play_sound
@@ -115,6 +116,18 @@ def _post_death_comms(
     scene_name = f"{state_name} CAUGHT {caught_style.name}"
     if not dialogue_has_executed_scene(dialogue, scene_name):
         dialogue_execute_script_scene(dialogue, scene_name)
+
+
+def _random_comms(story: MainStoryProgress, dialogue: DialogueSystem) -> None:
+    if story < MainStoryProgress.COMMS:
+        return
+    i = 0
+    while i < 4:
+        scene_name = f"RANDOM {random.randint(1, 4)}"
+        if not dialogue_has_executed_scene(dialogue, scene_name):
+            break
+        i += 1
+    dialogue_execute_script_scene(dialogue, scene_name)
 
 
 def _camera_target(player: Player) -> pygame.Vector2:
