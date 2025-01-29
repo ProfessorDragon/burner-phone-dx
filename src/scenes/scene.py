@@ -36,8 +36,3 @@ class Scene(State):
 
     @abstractmethod
     def exit(self) -> None: ...
-
-
-# for clarity
-def scene_reset(scene: Scene):
-    scene.enter()

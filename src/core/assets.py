@@ -42,6 +42,8 @@ DECOR = [[tree] for tree in slice_sheet(IMG + "decor/trees.png", 64, 64)] + [  #
 MENU = "assets/menu/"
 MENU_BACK = pygame.image.load(MENU + "menu_back.png")
 MENU_BLUR = pygame.image.load(MENU + "menu_blur.png")
+MENU_BACK_ALT = pygame.image.load(MENU + "menu_back_alt.png")
+MENU_BLUR_FULL = pygame.image.load(MENU + "menu_blur_full.png")
 MENU_SCANS = [
     pygame.image.load(MENU + "scan1.png"),
     pygame.image.load(MENU + "scan2.png"),
@@ -96,8 +98,8 @@ DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 
 # DIALOGUE
 
-with open("assets/script.txt") as script:
-    GAME_SCRIPT = script.read()
+with open("assets/script.txt") as f:
+    GAME_SCRIPT = f.read()
 
 
 @dataclass
@@ -159,5 +161,11 @@ DIALOGUE_CHARACTERS = {
         DIALOGUE_SOUNDS[4:6],
     ),
 }
+
+
+# MISC
+
+with open("assets/credits.txt") as f:
+    CREDITS = f.read()
 
 print("Loaded assets")

@@ -26,6 +26,10 @@ def fade_start(fade: ScreenFade, fading_in: bool, callback: Callable = None) -> 
     timer_reset(fade.timer, fade.duration, callback)
 
 
+def fade_active(fade: ScreenFade) -> bool:
+    return fade.timer.remaining > 0
+
+
 def fade_update(fade: ScreenFade, dt: float) -> None:
     timer_update(fade.timer, dt)
 

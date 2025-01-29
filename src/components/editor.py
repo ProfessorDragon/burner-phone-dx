@@ -20,7 +20,7 @@ from components.camera import (
     camera_to_screen_shake,
     camera_to_screen_shake_rect,
 )
-from scenes.scene import Scene, scene_reset
+from scenes.scene import Scene
 from utilities.math import list_range
 
 
@@ -583,9 +583,7 @@ def editor_update(
 
     # debug shortcuts
     if just_pressed[pygame.K_r]:
-        scene_reset(editor.scene)
-        if t.is_held(action_buffer, t.Action.SELECT):
-            player_reset(editor.scene.player)
+        editor.scene.reset()
     if just_pressed[pygame.K_f]:
         c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
     if just_pressed[pygame.K_t]:

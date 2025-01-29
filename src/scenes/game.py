@@ -7,7 +7,14 @@ import pygame
 from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
 from components.decor import Decor, decor_rect, decor_render
 from components.entities.camera_boundary import CameraBoundaryEntity
-from components.fade import ScreenFade, fade_initialise, fade_render, fade_start, fade_update
+from components.fade import (
+    ScreenFade,
+    fade_active,
+    fade_initialise,
+    fade_render,
+    fade_start,
+    fade_update,
+)
 from components.timer import (
     Stopwatch,
     Timer,
@@ -59,7 +66,7 @@ from components.camera import (
 )
 
 import scenes.scenemapping as scene
-from scenes.scene import RenderLayer, Scene, scene_reset
+from scenes.scene import RenderLayer, Scene
 from components.statemachine import StateMachine, statemachine_change_state
 
 
@@ -86,7 +93,6 @@ class Game(Scene):
 
         self.fade = ScreenFade()
         fade_initialise(self.fade, 1)
-        fade_start(self.fade, True)
 
         self.player = Player(_tile_size_vec(10.5, 12))
 
@@ -112,6 +118,13 @@ class Game(Scene):
         self.editor = Editor(self)
         self.editor.load()
 
+    # runs when game starts or is resumed
+    def enter(self) -> None:
+        fade_start(self.fade, True)
+        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+        self.timers.clear()
+        self.reset()
+
         if c.DEBUG_NO_STORY:
             self.player.progression.main_story = MainStoryProgress.COMMS
         else:
@@ -122,16 +135,13 @@ class Game(Scene):
             )
             _add_timer(self, 6, self.opening_call_2)
 
-    # everything here runs when the player dies as wel as when the game begins
-    # anything exclusive to the game beginning should go in init
-    def enter(self) -> None:
+    # runs when player dies
+    def reset(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
-        # 'try' so it does't restart when player dies
-        try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
 
     def execute(
         self,
@@ -188,7 +198,7 @@ class Game(Scene):
 
                 # reset scene after player is caught
                 if timer_update(self.player.caught_timer, dt):
-                    scene_reset(self)
+                    self.reset()
                     _add_timer(
                         self,
                         0.5,
@@ -248,13 +258,15 @@ class Game(Scene):
                         )
 
                 # pausing
-                if t.is_pressed(action_buffer, t.Action.SELECT):
+                if not fade_active(self.fade) and t.is_pressed(action_buffer, t.Action.START):
+                    statemachine_change_state(self.statemachine, scene.SceneState.MENU)
+                    return
                     self.paused = True
                     play_sound(AudioChannel.UI, a.UI_SELECT)
 
         else:
             # paused
-            if t.is_pressed(action_buffer, t.Action.SELECT):
+            if t.is_pressed(action_buffer, t.Action.START):
                 self.paused = False
                 play_sound(AudioChannel.UI, a.UI_HOVER)
 
