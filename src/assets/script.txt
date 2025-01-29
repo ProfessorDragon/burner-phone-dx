@@ -160,14 +160,38 @@ music 0
 
 style comms
 char 0 rogan
+noskip
 - so, you really did it...
 music -1
 
 
-[FINALE EXPLOSIONS]
+[FINALE 2]
+
+style comms silent
+char 1 rogan
+noskip
+- only a brave soul such as yourself could have perfectly executed my plan...
+
+
+[FINALE 3]
+
+style comms silent
+char 0 rogan
+noskip
+- we simply can't allow the cure to be given away for free...
+
+
 [FINALE FADE OUT]
 
-# nothing
+style comms silent
+char 1 rogan
+noskip
+- and after all, you are the weapon...
+
+
+[FINALE EXPLOSIONS]
+
+# called by story progression logic
 
 
 

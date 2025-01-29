@@ -1,6 +1,7 @@
 from collections import deque
 from functools import partial
 import random
+from typing import Callable
 import pygame
 
 from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
@@ -99,8 +100,7 @@ class Game(Scene):
         dialogue_load_script(self.dialogue, a.GAME_SCRIPT)
 
         self.global_stopwatch = Stopwatch()
-        self.phone_timer = Timer()
-        self.comms_timer = Timer()
+        self.timers: list[Timer] = []
 
         self.music_index = 1
 
@@ -123,11 +123,12 @@ class Game(Scene):
                 self.player.progression.main_story = MainStoryProgress.COMMS
         else:
             if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
-                timer_reset(
-                    self.phone_timer,
+                _add_timer(
+                    self,
                     1.5,
                     lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
                 )
+                _add_timer(self, 6, self.opening_call_2)
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
@@ -152,8 +153,20 @@ class Game(Scene):
         in_dialogue = dialogue_update(
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
-        if not in_dialogue and not c.DEBUG_NO_STORY:
+
+        if not in_dialogue and not self.editor.enabled:
             self.story_progression_logic()
+            # allow security cameras and other time-based objects to move
+            stopwatch_update(self.global_stopwatch, dt)
+            # but don't run other timers when the player is dead
+            if self.player.caught_timer.remaining <= 0:
+                i = 0
+                while i < len(self.timers):
+                    timer_update(self.timers[i], dt)
+                    if self.timers[i].remaining <= 0:
+                        self.timers.pop(i)
+                    else:
+                        i += 1
 
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
@@ -163,7 +176,10 @@ class Game(Scene):
                 camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
 
-            elif not in_dialogue:
+            elif (
+                not in_dialogue
+                and self.player.progression.main_story < MainStoryProgress.FINALE_NO_MOVEMENT
+            ):
                 # change music after dialogue finished
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
@@ -176,11 +192,12 @@ class Game(Scene):
                 # reset scene after player is caught
                 if timer_update(self.player.caught_timer, dt):
                     scene_reset(self)
-                    timer_reset(
-                        self.comms_timer,
+                    _add_timer(
+                        self,
                         0.5,
                         partial(
-                            self.post_death_comms,
+                            _post_death_comms,
+                            self.dialogue,
                             self.player.progression.main_story,
                             self.player.caught_style,
                         ),
@@ -200,11 +217,6 @@ class Game(Scene):
                                 self.camera,
                                 self.grid_collision,
                             )
-
-                stopwatch_update(self.global_stopwatch, dt)
-                if self.player.caught_timer.remaining <= 0:
-                    timer_update(self.phone_timer, dt)
-                    timer_update(self.comms_timer, dt)
 
                 # player
                 player_update(
@@ -371,44 +383,24 @@ class Game(Scene):
     def exit(self) -> None:
         stop_music()
 
-    def post_death_comms(self, story: MainStoryProgress, caught_style: PlayerCaughtStyle) -> None:
-        if story < MainStoryProgress.COMMS:
+    def opening_call_2(self) -> None:
+        if (
+            dialogue_has_executed_scene(self.dialogue, "OPENING ACCEPT MAIN")
+            or self.player.progression.main_story >= MainStoryProgress.COMMS
+        ):
             return
-        if story >= MainStoryProgress.LAB:
-            state_name = "THIRD"
-        elif story >= MainStoryProgress.HALFWAY:
-            state_name = "SECOND"
-        else:
-            state_name = "FIRST"
-        scene_name = f"{state_name} CAUGHT {caught_style.name}"
-        if not dialogue_has_executed_scene(self.dialogue, scene_name):
-            dialogue_execute_script_scene(self.dialogue, scene_name)
+        dialogue_execute_script_scene(self.dialogue, "OPENING CALL 2")
+        _add_timer(self, 5, self.opening_call_2)
 
-    def random_comms(self) -> None:
-        if self.player.progression.main_story < MainStoryProgress.COMMS:
-            return
-        i = 0
-        while i < 4:
-            scene_name = f"RANDOM {random.randint(1, 4)}"
-            if not dialogue_has_executed_scene(self.dialogue, scene_name):
-                break
-            i += 1
-        dialogue_execute_script_scene(self.dialogue, scene_name)
+    def finale_explosion(self) -> None:
+        if random.randint(1, 2) == 1:
+            play_sound(AudioChannel.ENTITY, a.EXPLOSIONS[0])
+        else:
+            play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])
+        _add_timer(self, random.uniform(0.1, 0.2), self.finale_explosion)
 
     def story_progression_logic(self) -> None:
         if self.player.progression.main_story == MainStoryProgress.INTRO:
-            # opening call
-            if (
-                dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1")
-                and not dialogue_has_executed_scene(self.dialogue, "OPENING ACCEPT MAIN")
-                and self.phone_timer.remaining <= 0
-            ):
-                timer_reset(
-                    self.phone_timer,
-                    5,
-                    lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 2"),
-                )
-
             # this is REQUIRED to make the shadowless tree dialogue go smoothly.
             # and yes this took like two hours to figure out. please don't change it :'(
             if dialogue_has_executed_scene(
@@ -427,14 +419,53 @@ class Game(Scene):
                 self.player.progression.main_story = MainStoryProgress.INTRO
                 dialogue_remove_executed_scene(self.dialogue, "SHADOWLESS TREE")
 
-        elif self.player.progression.main_story == MainStoryProgress.FINALE:
-            if dialogue_has_executed_scene(self.dialogue, "FINALE EXPLOSIONS"):
-                if not dialogue_has_executed_scene(self.dialogue, "FINALE FADE OUT"):
-                    self.fading_in = False
-                    timer_reset(self.fade_timer, 2)
-                    dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT")
-                if random.randint(1, 30) == 1:
-                    if random.randint(1, 2) == 1:
-                        play_sound(AudioChannel.ENTITY, a.EXPLOSIONS[0])
-                    else:
-                        play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])
+        elif self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
+            if not dialogue_has_executed_scene(self.dialogue, "FINALE EXPLOSIONS"):
+                # fade out will start NOW
+                self.fading_in = False
+                timer_reset(self.fade_timer, 2)
+                # explosions will start once dialogue is closed
+                _add_timer(self, 0.1, self.finale_explosion)
+                # switch to main menu after 4 seconds of the dialogue being closed
+                _add_timer(
+                    self,
+                    4,
+                    lambda: statemachine_change_state(self.statemachine, scene.SceneState.MENU),
+                )
+                dialogue_execute_script_scene(self.dialogue, "FINALE EXPLOSIONS")
+                dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT")
+
+
+def _add_timer(scene: Game, duration: float, callback: Callable) -> Timer:
+    timer = Timer()
+    timer_reset(timer, duration, callback)
+    scene.timers.append(timer)
+    return timer
+
+
+def _post_death_comms(
+    dialogue: DialogueSystem, story: MainStoryProgress, caught_style: PlayerCaughtStyle
+) -> None:
+    if story < MainStoryProgress.COMMS:
+        return
+    if story >= MainStoryProgress.LAB:
+        state_name = "THIRD"
+    elif story >= MainStoryProgress.HALFWAY:
+        state_name = "SECOND"
+    else:
+        state_name = "FIRST"
+    scene_name = f"{state_name} CAUGHT {caught_style.name}"
+    if not dialogue_has_executed_scene(dialogue, scene_name):
+        dialogue_execute_script_scene(dialogue, scene_name)
+
+
+def _random_comms(dialogue: DialogueSystem, player: Player) -> None:
+    if player.progression.main_story < MainStoryProgress.COMMS:
+        return
+    i = 0
+    while i < 4:
+        scene_name = f"RANDOM {random.randint(1, 4)}"
+        if not dialogue_has_executed_scene(dialogue, scene_name):
+            break
+        i += 1
+    dialogue_execute_script_scene(dialogue, scene_name)

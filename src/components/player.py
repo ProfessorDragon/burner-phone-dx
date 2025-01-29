@@ -47,6 +47,7 @@ class MainStoryProgress(IntEnum):
     HALFWAY = auto()
     LAB = auto()
     FINALE = auto()
+    FINALE_NO_MOVEMENT = auto()
 
 
 @dataclass

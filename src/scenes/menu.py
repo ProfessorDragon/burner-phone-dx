@@ -62,10 +62,11 @@ class Menu(Scene):
     ) -> None:
         # INPUT
         if t.is_pressed(action_buffer, t.Action.START):
-            if self.screen == MenuScreen.MAIN_MENU:
-                self.show_controls()
-            elif self.screen == MenuScreen.PRE_GAME:
-                self.start_game()
+            if self.fading_in or self.fade_timer.remaining <= 0:
+                if self.screen == MenuScreen.MAIN_MENU:
+                    self.show_controls()
+                elif self.screen == MenuScreen.PRE_GAME:
+                    self.start_game()
 
         if t.is_held(action_buffer, t.Action.B):
             self.camera.trauma += 0.01
