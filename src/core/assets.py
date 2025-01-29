@@ -50,13 +50,13 @@ MENU_CONTROLS = pygame.image.load(MENU + "controls.png")
 SFX = "assets/sfx/"
 
 # music
-DEBUG_THEME_MENU = pygame.mixer.Sound(SFX + "menu.ogg")
 THEME_MUSIC = [
     pygame.mixer.Sound(SFX + "theme_0.ogg"),
     pygame.mixer.Sound(SFX + "theme_1.ogg"),
     pygame.mixer.Sound(SFX + "theme_2.ogg"),
     pygame.mixer.Sound(SFX + "theme_3.ogg"),
 ]
+STATIC = pygame.mixer.Sound(SFX + "static.ogg")
 
 # player
 JUMP = pygame.mixer.Sound(SFX + "jump.ogg")

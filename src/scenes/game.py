@@ -387,8 +387,8 @@ class Game(Scene):
         player_render_overlays(self.player, surface, self.camera)
 
         # ui
-        fade_render(self.fade, surface)
         surface.blit(self.vignette, (0, 0))
+        fade_render(self.fade, surface)
         dialogue_render(self.dialogue, surface)
         if not c.IS_PRODUCTION:
             editor_render(self.editor, surface)
@@ -413,7 +413,7 @@ class Game(Scene):
         else:
             play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])
         self.camera.trauma = 0.5
-        _add_timer(self, random.uniform(0.2, 0.4), self.finale_explosion)
+        _add_timer(self, random.uniform(0.2, 0.6), self.finale_explosion)
 
     def exit_to_credits(self) -> None:
         self.statemachine.states[scene.SceneState.MENU].should_show_credits = True

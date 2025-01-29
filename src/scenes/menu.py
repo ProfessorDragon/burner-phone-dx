@@ -40,6 +40,10 @@ class MenuScreen(IntEnum):
     PRE_GAME = auto()
 
 
+def _fade_music() -> None:
+    pygame.mixer.Channel(AudioChannel.MUSIC).fadeout(250)
+
+
 def _generate_credits() -> pygame.Surface:
     line_height = a.DEBUG_FONT.size("0")[1]
     lines = a.CREDITS.split("\n")
@@ -78,10 +82,8 @@ class Menu(Scene):
         self.should_show_credits = False  # set from Game class
 
     def enter(self) -> None:
-        self.screen = MenuScreen.MAIN_MENU
-        fade_start(self.fade, True)
         camera_reset(self.camera)
-        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
+        self.fade_menu()
         if self.should_show_credits:
             self.should_show_credits = False
             self.start_credits()
@@ -99,6 +101,7 @@ class Menu(Scene):
                 if self.screen == MenuScreen.MAIN_MENU:
                     fade_start(self.fade, False, self.fade_controls)
                 elif self.screen == MenuScreen.PRE_GAME:
+                    _fade_music()
                     fade_start(
                         self.fade,
                         False,
@@ -113,6 +116,7 @@ class Menu(Scene):
 
         if self.screen == MenuScreen.CREDITS:
             if timer_update(self.credits_timer, dt):
+                _fade_music()
                 fade_start(self.fade, False, self.fade_menu)
                 return
 
@@ -167,11 +171,14 @@ class Menu(Scene):
         self.screen = MenuScreen.CREDITS
         self.credits_surf = _generate_credits()
         timer_reset(self.credits_timer, 10)
+        play_sound(AudioChannel.MUSIC, a.STATIC, -1)
 
     def fade_menu(self) -> None:
         self.screen = MenuScreen.MAIN_MENU
         fade_start(self.fade, True)
+        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
     def fade_controls(self) -> None:
         self.screen = MenuScreen.PRE_GAME
         fade_start(self.fade, True)
+        play_sound(AudioChannel.MUSIC, a.STATIC, -1)

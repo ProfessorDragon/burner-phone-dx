@@ -46,7 +46,6 @@ class SecurityCameraEnemy(Entity):
         self.swivel = 0
         self.swivel_angle = 60
         self.should_raycast = False
-        self.min_story: MainStoryProgress = None
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
@@ -59,7 +58,6 @@ class SecurityCameraEnemy(Entity):
             "inverse": self.inverse_direction,
             "z": self.sight_data.z_offset,
             "raycast": self.should_raycast,
-            "min_story": (None if self.min_story is None else self.min_story.name),
         }
         return js
 
@@ -71,8 +69,6 @@ class SecurityCameraEnemy(Entity):
         enemy.inverse_direction = js.get("inverse", False)
         enemy.sight_data.z_offset = js.get("z", -16)
         enemy.should_raycast = js.get("raycast", False)
-        if js.get("min_story"):
-            enemy.min_story = MainStoryProgress[js["min_story"]]
         return enemy
 
     def reset(self) -> None:
@@ -86,12 +82,14 @@ class SecurityCameraEnemy(Entity):
         camera: Camera,
         grid_collision: set[tuple[int, int]],
     ) -> None:
-        if self.min_story is not None and player.progression.main_story < self.min_story:
-            self.swivel = 0
-        else:
+        # don't swivel before the player has gotten comms (prevent progression)
+        # don't swivel during the finale (prevent going back)
+        if MainStoryProgress.COMMS <= player.progression.main_story <= MainStoryProgress.LAB:
             self.swivel = self.swivel_angle / 2 * sin(pi * time / 2)
             self.swivel *= -1 if self.inverse_direction else 1
             try_play_sound(AudioChannel.ENTITY_ALT, a.CAMERA_HUM)
+        else:
+            self.swivel = 0
 
         # collision
         self.sight_data.center = self.motion.position + pygame.Vector2(8, 8)

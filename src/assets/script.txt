@@ -27,6 +27,21 @@
 
 ## MAIN STORY
 
+
+[TUTORIAL 1]
+
+style sign
+char 0 sign
+- Press Enter to pause, if you need to check the controls or adjust settings.
+
+
+[TUTORIAL 2]
+
+style sign
+char 0 sign
+- Use common sense. Don't touch stuff that looks harmful!
+
+
 [OPENING CALL 1]
 
 style phone
