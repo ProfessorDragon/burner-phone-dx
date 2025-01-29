@@ -17,8 +17,7 @@ def run() -> None:
     pygame.display.set_caption(c.CAPTION)
     pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
-    statemachine_initialise(
-        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
+    statemachine_initialise(scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -29,8 +28,7 @@ async def game_loop(
 
     action_buffer: t.InputBuffer = [t.InputState.NOTHING for _ in t.Action]
 
-    last_action_mapping_pressed = [
-        t.action_mappings[action][0] for action in t.Action]
+    last_action_mapping_pressed = [t.action_mappings[action][0] for action in t.Action]
 
     print("Starting game loop")
 
@@ -51,8 +49,7 @@ async def game_loop(
 
         update_mouse_buffer(mouse_buffer)
 
-        statemachine_execute(scene_manager, surface, dt,
-                             action_buffer, mouse_buffer)
+        statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
 
         if c.DEBUG_FPS:
             debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"

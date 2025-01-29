@@ -124,18 +124,21 @@ class Game(Scene):
     # runs when game starts or is resumed
     def enter(self) -> None:
         fade_start(self.fade, True)
-        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+        if self.music_index >= 0:
+            play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
         self.timers.clear()
         self.reset()
 
-        if c.DEBUG_NO_STORY:
+        if c.DEBUG_NO_STORY and self.player.progression.main_story < MainStoryProgress.COMMS:
             self.player.progression.main_story = MainStoryProgress.COMMS
-        else:
+
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
             _add_timer(
                 self,
                 1.5,
                 lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
             )
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
             _add_timer(self, 6, self.opening_call_2)
 
     # runs when player dies
@@ -193,10 +196,10 @@ class Game(Scene):
                 # change music after dialogue finished
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
-                    if self.music_index < 0:
-                        stop_music()
-                    else:
+                    if self.music_index >= 0:
                         play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+                    else:
+                        stop_music()
                     self.dialogue.desired_music_index = None
 
                 # reset scene after player is caught
@@ -398,7 +401,7 @@ class Game(Scene):
     def opening_call_2(self) -> None:
         if (
             dialogue_has_executed_scene(self.dialogue, "OPENING ACCEPT MAIN")
-            or self.player.progression.main_story >= MainStoryProgress.COMMS
+            or self.player.progression.main_story > MainStoryProgress.COMMS
         ):
             return
         dialogue_execute_script_scene(self.dialogue, "OPENING CALL 2")
@@ -409,7 +412,12 @@ class Game(Scene):
             play_sound(AudioChannel.ENTITY, a.EXPLOSIONS[0])
         else:
             play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])
-        _add_timer(self, random.uniform(0.1, 0.2), self.finale_explosion)
+        self.camera.trauma = 0.5
+        _add_timer(self, random.uniform(0.2, 0.4), self.finale_explosion)
+
+    def exit_to_credits(self) -> None:
+        self.statemachine.states[scene.SceneState.MENU].should_show_credits = True
+        statemachine_change_state(self.statemachine, scene.SceneState.MENU)
 
     def story_progression_logic(self) -> None:
         if self.player.progression.main_story == MainStoryProgress.INTRO:
@@ -432,20 +440,15 @@ class Game(Scene):
                 dialogue_remove_executed_scene(self.dialogue, "SHADOWLESS TREE")
 
         elif self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
-            if not dialogue_has_executed_scene(self.dialogue, "FINALE EXPLOSIONS"):
-                # fade out will start NOW
-                self.fade.duration = 2
+            if not dialogue_has_executed_scene(self.dialogue, "FINALE FINAL"):
+                dialogue_execute_script_scene(self.dialogue, "FINALE FINAL")
+            elif dialogue_has_executed_scene(
+                self.dialogue, "FINALE FADE OUT"
+            ) and not dialogue_has_executed_scene(self.dialogue, "FINALE FADE OUT DONE"):
                 fade_start(self.fade, False)
-                # explosions will start once dialogue is closed
                 _add_timer(self, 0.1, self.finale_explosion)
-                # switch to main menu after 4 seconds of the dialogue being closed
-                _add_timer(
-                    self,
-                    4,
-                    lambda: statemachine_change_state(self.statemachine, scene.SceneState.MENU),
-                )
-                dialogue_execute_script_scene(self.dialogue, "FINALE EXPLOSIONS")
-                dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT")
+                _add_timer(self, 4, self.exit_to_credits)
+                dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT DONE")
 
 
 def _add_timer(scene: Game, duration: float, callback: Callable) -> Timer:

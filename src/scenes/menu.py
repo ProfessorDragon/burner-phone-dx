@@ -75,14 +75,16 @@ class Menu(Scene):
         # credits
         self.credits_timer = Timer()
         self.credits_surf: pygame.Surface = None
+        self.should_show_credits = False  # set from Game class
 
     def enter(self) -> None:
         self.screen = MenuScreen.MAIN_MENU
         fade_start(self.fade, True)
         camera_reset(self.camera)
         play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
-        #####
-        self.start_credits()
+        if self.should_show_credits:
+            self.should_show_credits = False
+            self.start_credits()
 
     def execute(
         self,
@@ -102,9 +104,6 @@ class Menu(Scene):
                         False,
                         lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
                     )
-
-        if t.is_held(action_buffer, t.Action.B):
-            self.camera.trauma += 0.01
 
         # UPDATE
 
