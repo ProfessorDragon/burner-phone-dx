@@ -47,6 +47,7 @@ MENU_SCANS = [
     pygame.image.load(MENU + "scan2.png"),
     pygame.image.load(MENU + "scan3.png"),
 ]
+MENU_CONTROLS = pygame.image.load(MENU + "controls.png")
 
 
 # AUDIO (ogg for web compatibility)

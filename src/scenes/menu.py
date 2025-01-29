@@ -38,10 +38,9 @@ class Menu(Scene):
 
         self.settings = Settings()
 
-        self.screen = MenuScreen.MAIN_MENU
-
         self.fade_timer = Timer()  # for fading the scene into the game
-        self.fading_in = False
+        self.fade_duration = 0.25  # constant to standardize fade speeds
+        self.fading_in = False  # true for a fade in, false for a fade out
         self.fade_overlay = pygame.Surface(c.WINDOW_SIZE)
         self.fade_overlay.fill(c.BLACK)
 
@@ -49,6 +48,8 @@ class Menu(Scene):
         animator_initialise(self.scan_lines, {0: Animation(a.MENU_SCANS, 0.1)})
 
     def enter(self) -> None:
+        self.screen = MenuScreen.MAIN_MENU
+        timer_reset(self.fade_timer, 0)
         camera_reset(self.camera)
         play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
@@ -77,19 +78,23 @@ class Menu(Scene):
         # RENDER
         if self.screen == MenuScreen.PRE_GAME:
             surface.fill(c.BLACK)
-            controls = a.DEBUG_FONT.render("insert controls graphic here", False, c.WHITE)
+            # a.DEBUG_FONT.render("insert controls graphic here", False, c.WHITE)
+            cx, cy = surface.get_width() // 2, surface.get_height() // 2 - 20
             surface.blit(
-                controls,
+                a.MENU_CONTROLS,
                 (
-                    surface.get_width() // 2 - controls.get_width() // 2,
-                    surface.get_height() // 2 - controls.get_height() // 2,
+                    cx - a.MENU_CONTROLS.get_width() // 2 - 20,
+                    cy - a.MENU_CONTROLS.get_height() // 2 + 1,
                 ),
             )
+            move = a.DEBUG_FONT.render("Move", False, c.WHITE)
+            jump = a.DEBUG_FONT.render("Jump", False, c.WHITE)
+            roll = a.DEBUG_FONT.render("Roll", False, c.WHITE)
+            surface.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
+            surface.blit(jump, (cx - jump.get_width() // 2 + 90, cy - jump.get_height() // 2 - 12))
+            surface.blit(roll, (cx - roll.get_width() // 2 + 90, cy - roll.get_height() // 2 + 12))
             footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(
-                footer,
-                (surface.get_width() // 2 - footer.get_width() // 2, surface.get_height() - 50),
-            )
+            surface.blit(footer, (cx - footer.get_width() // 2, cy + 75))
 
         else:
             surface.blit(a.MENU_BACK, (0, 0))
@@ -115,17 +120,17 @@ class Menu(Scene):
 
     def show_controls(self) -> None:
         self.fading_in = False
-        timer_reset(self.fade_timer, 0.5, self.show_controls_transition)
+        timer_reset(self.fade_timer, self.fade_duration, self.show_controls_transition)
 
     def show_controls_transition(self) -> None:
         self.screen = MenuScreen.PRE_GAME
         self.fading_in = True
-        timer_reset(self.fade_timer, 0.5)
+        timer_reset(self.fade_timer, self.fade_duration)
 
     def start_game(self) -> None:
         self.fading_in = False
         timer_reset(
             self.fade_timer,
-            0.5,
+            self.fade_duration,
             lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
         )

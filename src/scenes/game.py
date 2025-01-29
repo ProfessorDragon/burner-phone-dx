@@ -142,11 +142,6 @@ class Game(Scene):
         mouse_buffer: t.InputBuffer,
     ) -> None:
 
-        # INPUT
-        if t.is_pressed(action_buffer, t.Action.START):
-            statemachine_change_state(self.statemachine, scene.SceneState.MENU)
-            return
-
         # UPDATE
 
         timer_update(self.fade_timer, dt)
