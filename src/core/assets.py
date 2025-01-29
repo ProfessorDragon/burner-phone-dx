@@ -6,19 +6,13 @@ from utilities.sprite import slice_sheet
 
 # IMAGES (png, webp or jpg for web compatibility)
 IMG = "assets/img/"
-
-# icon
-ICON = pygame.image.load("assets/icon.png")
-
-# debug
-DEBUG_IMAGE_16 = pygame.image.load(IMG + "debug/image_16.png")
-DEBUG_IMAGE_64 = pygame.image.load(IMG + "debug/image_64.png")
-DEBUG_SPRITE_128 = pygame.image.load(IMG + "debug/pirate_128.png")
-DEBUG_SPRITE_64 = pygame.image.load(IMG + "debug/pirate_64.png")
+ICON = pygame.image.load(IMG + "icon.png")
+DEBUG_SPRITE_64 = pygame.image.load(IMG + "pirate.png")
 
 # player
 PLAYER_FRAMES = slice_sheet(IMG + "player.png", 32, 32)
 CAUGHT_INDICATORS = slice_sheet(IMG + "huh_sheet.png", 16, 16)
+VIGNETTE = pygame.image.load(IMG + "vignette.png")
 
 # terrain
 TERRAIN = pygame.image.load(IMG + "terrain.png")
@@ -58,10 +52,10 @@ SFX = "assets/sfx/"
 # music
 DEBUG_THEME_MENU = pygame.mixer.Sound(SFX + "menu.ogg")
 THEME_MUSIC = [
-    pygame.mixer.Sound(SFX + "theme-0.ogg"),
-    pygame.mixer.Sound(SFX + "theme-1.ogg"),
-    pygame.mixer.Sound(SFX + "theme-2.ogg"),
-    pygame.mixer.Sound(SFX + "theme-3.ogg"),
+    pygame.mixer.Sound(SFX + "theme_0.ogg"),
+    pygame.mixer.Sound(SFX + "theme_1.ogg"),
+    pygame.mixer.Sound(SFX + "theme_2.ogg"),
+    pygame.mixer.Sound(SFX + "theme_3.ogg"),
 ]
 
 # player
@@ -127,7 +121,7 @@ OPEN_COMMS = pygame.mixer.Sound(SFX + "open_comms.ogg")
 DIALOGUE_CHARACTERS = {
     "default": DialogueCharacter(
         "???",
-        [DEBUG_IMAGE_64],
+        [DEBUG_SPRITE_64],
         DIALOGUE_SOUNDS[0:2],
     ),
     "sign": DialogueCharacter(
@@ -161,9 +155,6 @@ DIALOGUE_CHARACTERS = {
         DIALOGUE_SOUNDS[4:6],
     ),
 }
-
-
-# MISC
 
 with open("assets/credits.txt") as f:
     CREDITS = f.read()

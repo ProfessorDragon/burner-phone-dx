@@ -93,6 +93,9 @@ class Game(Scene):
 
         self.fade = ScreenFade()
         fade_initialise(self.fade, 1)
+        # vignette looks goated, about as close to post processing as we're gonna get
+        self.vignette = a.VIGNETTE.copy()
+        self.vignette.set_alpha(96)
 
         self.player = Player(_tile_size_vec(10.5, 12))
 
@@ -382,10 +385,10 @@ class Game(Scene):
 
         # ui
         fade_render(self.fade, surface)
+        surface.blit(self.vignette, (0, 0))
         dialogue_render(self.dialogue, surface)
         if not c.IS_PRODUCTION:
             editor_render(self.editor, surface)
-
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))
 

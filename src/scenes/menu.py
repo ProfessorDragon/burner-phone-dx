@@ -92,7 +92,7 @@ class Menu(Scene):
         mouse_buffer: t.InputBuffer,
     ) -> None:
         # INPUT
-        if t.is_pressed(action_buffer, t.Action.START):
+        if t.is_pressed(action_buffer, t.Action.START) or t.is_pressed(action_buffer, t.Action.A):
             if not fade_active(self.fade) or self.fade.fading_in:
                 if self.screen == MenuScreen.MAIN_MENU:
                     fade_start(self.fade, False, self.fade_controls)
@@ -134,8 +134,8 @@ class Menu(Scene):
             jump = a.DEBUG_FONT.render("Jump", False, c.WHITE)
             roll = a.DEBUG_FONT.render("Roll", False, c.WHITE)
             surface.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
-            surface.blit(jump, (cx - jump.get_width() // 2 + 90, cy - jump.get_height() // 2 - 12))
-            surface.blit(roll, (cx - roll.get_width() // 2 + 90, cy - roll.get_height() // 2 + 12))
+            surface.blit(jump, (cx - jump.get_width() // 2 + 95, cy - jump.get_height() // 2 - 12))
+            surface.blit(roll, (cx - roll.get_width() // 2 + 95, cy - roll.get_height() // 2 + 12))
             footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
             surface.blit(footer, (cx - footer.get_width() // 2, cy + 75))
             surface.blit(a.MENU_BLUR_FULL, (0, 0))
