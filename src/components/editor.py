@@ -614,8 +614,7 @@ def editor_update(
 
     match editor.mode:
         case EditorMode.VIEW:
-            if not pressed[pygame.K_LCTRL]:
-                editor.view_mode()
+            editor.view_mode()
 
         case EditorMode.WALLS:
             editor.wall_mode()

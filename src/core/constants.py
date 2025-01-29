@@ -20,6 +20,7 @@ WINDOW_SETUP = {
 }
 
 IS_WEB = sys.platform == "emscripten"
+IS_PRODUCTION = True
 CAPTION = "BURNER PHONE DX"
 FPS = 0  # 0 = Uncapped -> let VSYNC decide best tick speed if enabled
 MAX_DT = 1 / 60

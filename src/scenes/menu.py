@@ -1,11 +1,10 @@
 from enum import IntEnum, auto
 import pygame
 
-from components.timer import Timer, timer_reset, timer_update
 import core.input as t
 import core.assets as a
 import core.constants as c
-import scenes.scenemapping as scene
+from components.fade import ScreenFade, fade_initialise, fade_render, fade_start, fade_update
 from components.audio import AudioChannel, play_sound, stop_music
 from components.camera import (
     Camera,
@@ -20,6 +19,8 @@ from components.animation import (
     animator_get_frame,
 )
 from components.settings import Settings, settings_render, settings_update
+
+import scenes.scenemapping as scene
 from scenes.scene import Scene
 from components.statemachine import StateMachine, statemachine_change_state
 
@@ -27,6 +28,7 @@ from components.statemachine import StateMachine, statemachine_change_state
 class MenuScreen(IntEnum):
     MAIN_MENU = 0
     SETTINGS = auto()
+    CREDITS = auto()
     PRE_GAME = auto()
 
 
@@ -38,18 +40,15 @@ class Menu(Scene):
 
         self.settings = Settings()
 
-        self.fade_timer = Timer()  # for fading the scene into the game
-        self.fade_duration = 0.25  # constant to standardize fade speeds
-        self.fading_in = False  # true for a fade in, false for a fade out
-        self.fade_overlay = pygame.Surface(c.WINDOW_SIZE)
-        self.fade_overlay.fill(c.BLACK)
+        self.fade = ScreenFade()
+        fade_initialise(self.fade, 0.25)
 
         self.scan_lines = Animator()
         animator_initialise(self.scan_lines, {0: Animation(a.MENU_SCANS, 0.1)})
 
     def enter(self) -> None:
         self.screen = MenuScreen.MAIN_MENU
-        timer_reset(self.fade_timer, 0)
+        fade_start(self.fade, True)
         camera_reset(self.camera)
         play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
@@ -62,17 +61,21 @@ class Menu(Scene):
     ) -> None:
         # INPUT
         if t.is_pressed(action_buffer, t.Action.START):
-            if self.fading_in or self.fade_timer.remaining <= 0:
+            if self.fade.fading_in or self.fade.timer.remaining <= 0:
                 if self.screen == MenuScreen.MAIN_MENU:
-                    self.show_controls()
+                    fade_start(self.fade, False, self.show_controls)
                 elif self.screen == MenuScreen.PRE_GAME:
-                    self.start_game()
+                    fade_start(
+                        self.fade,
+                        False,
+                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
+                    )
 
         if t.is_held(action_buffer, t.Action.B):
             self.camera.trauma += 0.01
 
         # UPDATE
-        timer_update(self.fade_timer, dt)
+        fade_update(self.fade, dt)
         camera_update(self.camera, dt)
         animator_update(self.scan_lines, dt)
 
@@ -108,30 +111,11 @@ class Menu(Scene):
             surface.blit(a.MENU_BLUR, (0, 0))
 
         # fade in/out
-        if self.fade_timer.duration > 0:
-            fade_percent = (
-                self.fade_timer.remaining if self.fading_in else self.fade_timer.elapsed
-            ) / self.fade_timer.duration
-            if fade_percent > 0:
-                self.fade_overlay.set_alpha(fade_percent * 255)
-                surface.blit(self.fade_overlay, (0, 0))
+        fade_render(self.fade, surface)
 
     def exit(self) -> None:
         stop_music()
 
     def show_controls(self) -> None:
-        self.fading_in = False
-        timer_reset(self.fade_timer, self.fade_duration, self.show_controls_transition)
-
-    def show_controls_transition(self) -> None:
         self.screen = MenuScreen.PRE_GAME
-        self.fading_in = True
-        timer_reset(self.fade_timer, self.fade_duration)
-
-    def start_game(self) -> None:
-        self.fading_in = False
-        timer_reset(
-            self.fade_timer,
-            self.fade_duration,
-            lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
-        )
+        fade_start(self.fade, True)

@@ -7,6 +7,7 @@ import pygame
 from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
 from components.decor import Decor, decor_rect, decor_render
 from components.entities.camera_boundary import CameraBoundaryEntity
+from components.fade import ScreenFade, fade_initialise, fade_render, fade_start, fade_update
 from components.timer import (
     Stopwatch,
     Timer,
@@ -57,8 +58,8 @@ from components.camera import (
     camera_reset,
 )
 
-from scenes.scene import RenderLayer, Scene, scene_reset
 import scenes.scenemapping as scene
+from scenes.scene import RenderLayer, Scene, scene_reset
 from components.statemachine import StateMachine, statemachine_change_state
 
 
@@ -83,11 +84,9 @@ class Game(Scene):
         self.pause_overlay.fill(c.WHITE)
         self.pause_overlay.set_alpha(128)
 
-        self.fade_timer = Timer()  # for fading the scene in and out to black
-        self.fading_in = True  # true for a fade in, false for a fade out
-        timer_reset(self.fade_timer, 1)
-        self.fade_overlay = pygame.Surface(c.WINDOW_SIZE)
-        self.fade_overlay.fill(c.BLACK)
+        self.fade = ScreenFade()
+        fade_initialise(self.fade, 1)
+        fade_start(self.fade, True)
 
         self.player = Player(_tile_size_vec(10.5, 12))
 
@@ -113,22 +112,21 @@ class Game(Scene):
         self.editor = Editor(self)
         self.editor.load()
 
+        if c.DEBUG_NO_STORY:
+            self.player.progression.main_story = MainStoryProgress.COMMS
+        else:
+            _add_timer(
+                self,
+                1.5,
+                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
+            )
+            _add_timer(self, 6, self.opening_call_2)
+
     # everything here runs when the player dies as wel as when the game begins
     # anything exclusive to the game beginning should go in init
     def enter(self) -> None:
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
-        if c.DEBUG_NO_STORY:
-            if self.player.progression.main_story == MainStoryProgress.INTRO:
-                self.player.progression.main_story = MainStoryProgress.COMMS
-        else:
-            if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
-                _add_timer(
-                    self,
-                    1.5,
-                    lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
-                )
-                _add_timer(self, 6, self.opening_call_2)
         stopwatch_reset(self.global_stopwatch)
         for entity in self.entities:
             entity_reset(entity)
@@ -145,9 +143,10 @@ class Game(Scene):
 
         # UPDATE
 
-        timer_update(self.fade_timer, dt)
+        fade_update(self.fade, dt)
 
-        editor_update(self.editor, dt, action_buffer, mouse_buffer)
+        if not c.IS_PRODUCTION:
+            editor_update(self.editor, dt, action_buffer, mouse_buffer)
 
         camera_target = _camera_target(self.player)
         in_dialogue = dialogue_update(
@@ -369,17 +368,11 @@ class Game(Scene):
         # player again
         player_render_overlays(self.player, surface, self.camera)
 
-        # fade in/out
-        fade_percent = (
-            self.fade_timer.remaining if self.fading_in else self.fade_timer.elapsed
-        ) / self.fade_timer.duration
-        if fade_percent > 0:
-            self.fade_overlay.set_alpha(fade_percent * 255)
-            surface.blit(self.fade_overlay, (0, 0))
-
         # ui
+        fade_render(self.fade, surface)
         dialogue_render(self.dialogue, surface)
-        editor_render(self.editor, surface)
+        if not c.IS_PRODUCTION:
+            editor_render(self.editor, surface)
 
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))
@@ -426,8 +419,8 @@ class Game(Scene):
         elif self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
             if not dialogue_has_executed_scene(self.dialogue, "FINALE EXPLOSIONS"):
                 # fade out will start NOW
-                self.fading_in = False
-                timer_reset(self.fade_timer, 2)
+                self.fade.duration = 2
+                fade_start(self.fade, False)
                 # explosions will start once dialogue is closed
                 _add_timer(self, 0.1, self.finale_explosion)
                 # switch to main menu after 4 seconds of the dialogue being closed
