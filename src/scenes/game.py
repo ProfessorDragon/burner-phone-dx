@@ -154,20 +154,6 @@ class Game(Scene):
             self.dialogue, dt, action_buffer, mouse_buffer, self.camera, camera_target
         )
 
-        if not in_dialogue and not self.editor.enabled:
-            self.story_progression_logic()
-            # allow security cameras and other time-based objects to move
-            stopwatch_update(self.global_stopwatch, dt)
-            # but don't run other timers when the player is dead
-            if self.player.caught_timer.remaining <= 0:
-                i = 0
-                while i < len(self.timers):
-                    timer_update(self.timers[i], dt)
-                    if self.timers[i].remaining <= 0:
-                        self.timers.pop(i)
-                    else:
-                        i += 1
-
         # update and render entities within this area
         entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
@@ -176,10 +162,22 @@ class Game(Scene):
                 camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
 
-            elif (
-                not in_dialogue
-                and self.player.progression.main_story < MainStoryProgress.FINALE_NO_MOVEMENT
-            ):
+            elif not in_dialogue:
+                # update hardcoded story elements
+                self.story_progression_logic()
+
+                # allow security cameras and other time-based objects to move
+                stopwatch_update(self.global_stopwatch, dt)
+                # but don't run other timers when the player is dead
+                if self.player.caught_timer.remaining <= 0:
+                    i = 0
+                    while i < len(self.timers):
+                        timer_update(self.timers[i], dt)
+                        if self.timers[i].remaining <= 0:
+                            self.timers.pop(i)
+                        else:
+                            i += 1
+
                 # change music after dialogue finished
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
@@ -219,9 +217,15 @@ class Game(Scene):
                             )
 
                 # player
-                player_update(
-                    self.player, dt, action_buffer, self.grid_collision, self.walls, self.dialogue
-                )
+                if self.player.progression.main_story < MainStoryProgress.FINALE_NO_MOVEMENT:
+                    player_update(
+                        self.player,
+                        dt,
+                        action_buffer,
+                        self.grid_collision,
+                        self.walls,
+                        self.dialogue,
+                    )
 
                 # camera (after player so it can follow, before entities to enact bounds)
                 camera_follow(self.camera, *camera_target)
