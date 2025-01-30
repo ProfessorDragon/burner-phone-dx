@@ -134,9 +134,6 @@ class Game(Scene):
         self.timers.clear()
         self.reset()
 
-        # if self.player.progression.main_story < MainStoryProgress.COMMS:
-        #     self.player.progression.main_story = MainStoryProgress.COMMS
-
         if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
             _add_timer(
                 self,
