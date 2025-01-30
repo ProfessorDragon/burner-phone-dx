@@ -47,7 +47,27 @@ MENU_SCANS = [
     pygame.image.load(MENU + "scan2.png"),
     pygame.image.load(MENU + "scan3.png"),
 ]
+MENU_BUTTON = pygame.image.load(MENU + "button.png")
+MENU_BUTTON_SELECTED = pygame.image.load(MENU + "button_selected.png")
+MENU_BUTTON_SELECTED.set_alpha(64)
+MENU_SLIDER = pygame.image.load(MENU + "slider.png")
 MENU_CONTROLS = pygame.image.load(MENU + "controls.png")
+# cx, cy = surface.get_width() // 2, surface.get_height() // 2 - 20
+# surface.blit(
+#     a.MENU_CONTROLS,
+#     (
+#         cx - a.MENU_CONTROLS.get_width() // 2 - 20,
+#         cy - a.MENU_CONTROLS.get_height() // 2 + 1,
+#     ),
+# )
+# move = a.DEBUG_FONT.render("Move", False, c.WHITE)
+# jump = a.DEBUG_FONT.render("Jump", False, c.WHITE)
+# roll = a.DEBUG_FONT.render("Roll", False, c.WHITE)
+# surface.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
+# surface.blit(jump, (cx - jump.get_width() // 2 +
+#                 95, cy - jump.get_height() // 2 - 12))
+# surface.blit(roll, (cx - roll.get_width() // 2 +
+#                 95, cy - roll.get_height() // 2 + 12))
 
 
 # AUDIO (ogg for web compatibility)
@@ -78,15 +98,15 @@ EXPLOSIONS = [
     pygame.mixer.Sound(SFX + "explosion_2.ogg"),
 ]
 
-# ui
-UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")
-UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
-
 # entities
 CAMERA_HUM = pygame.mixer.Sound(SFX + "camera_hum.ogg")
 ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
 ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 GATE_OPEN = pygame.mixer.Sound(SFX + "gate_open.ogg")
+
+# menu
+UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")
+UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
 
 
 # FONTS (ttf for web compatibility)

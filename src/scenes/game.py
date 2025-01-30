@@ -87,13 +87,14 @@ class Game(Scene):
         super().__init__(statemachine)
 
         self.paused = False
-        self.pause_overlay = pygame.Surface(c.WINDOW_SIZE)
-        self.pause_overlay.fill(c.WHITE)
+        self.pause_overlay = a.MENU_BACK_ALT.copy()
         self.pause_overlay.set_alpha(128)
 
         self.fade = ScreenFade()
         fade_initialise(self.fade, 1)
+
         # vignette looks goated, about as close to post processing as we're gonna get
+        # also the lighter part of the vignette was a complete accident but it works lmao
         self.vignette = a.VIGNETTE.copy()
         self.vignette.set_alpha(96)
 
@@ -265,8 +266,6 @@ class Game(Scene):
 
                 # pausing
                 if not fade_active(self.fade) and t.is_pressed(action_buffer, t.Action.START):
-                    statemachine_change_state(self.statemachine, scene.SceneState.MENU)
-                    return
                     self.paused = True
                     play_sound(AudioChannel.UI, a.UI_SELECT)
 

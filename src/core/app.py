@@ -43,7 +43,6 @@ async def game_loop(
         running = input_event_queue(action_buffer)
 
         if not running:
-            pygame.mixer.stop()
             surface.fill(c.BLACK)
             terminate()
 
