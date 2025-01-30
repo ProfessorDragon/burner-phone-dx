@@ -42,13 +42,18 @@ def load_settings() -> None:
     if not json_str:
         return
 
-    g.settings = json.loads(json_str)
-
     is_cooked = False
-    for key in g.default_settings.keys():
-        if key not in g.settings:
-            is_cooked = True
-            break
+
+    try:
+        g.settings = json.loads(json_str)
+    except json.JSONDecodeError:
+        is_cooked = True
+        
+    finally:
+        for key in g.default_settings.keys():
+            if key not in g.settings:
+                is_cooked = True
+                break
 
     if is_cooked:
         g.settings = g.default_settings.copy()
