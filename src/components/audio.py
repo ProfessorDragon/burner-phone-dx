@@ -3,12 +3,16 @@ import pygame
 
 
 class AudioChannel(IntEnum):
-    MUSIC = 0
-    UI = auto()
+    UI = 0
     PLAYER = auto()
     PLAYER_ALT = auto()
     ENTITY = auto()
     ENTITY_ALT = auto()
+
+
+def play_music(path: str, *args) -> None:
+    pygame.mixer.music.load(path)
+    pygame.mixer.music.play(*args)
 
 
 # returns true if the channel is currently playing a sound
@@ -30,14 +34,13 @@ def try_play_sound(channel: AudioChannel, sound: pygame.mixer.Sound, *args) -> b
 
 
 def stop_music() -> None:
-    pygame.mixer.Channel(AudioChannel.MUSIC).stop()
+    pygame.mixer.music.stop()
 
 
 def set_music_volume(value: float) -> None:
-    pygame.mixer.Channel(AudioChannel.MUSIC).set_volume(value)
+    pygame.mixer.music.set_volume(value)
 
 
 def set_sfx_volume(value: float) -> None:
     for channel in AudioChannel:
-        if channel != AudioChannel.MUSIC:
-            pygame.mixer.Channel(channel).set_volume(value)
+        pygame.mixer.Channel(channel).set_volume(value)

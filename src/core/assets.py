@@ -85,13 +85,16 @@ _generate_controls()
 SFX = "assets/sfx/"
 
 # music
-THEME_MUSIC = [
-    pygame.mixer.Sound(SFX + "theme_0.ogg"),
-    pygame.mixer.Sound(SFX + "theme_1.ogg"),
-    pygame.mixer.Sound(SFX + "theme_2.ogg"),
-    pygame.mixer.Sound(SFX + "theme_3.ogg"),
+THEME_MUSIC_PATH = [
+    SFX + "theme_0.ogg",
+    SFX + "theme_1.ogg",
+    SFX + "theme_2.ogg",
+    SFX + "theme_3.ogg",
 ]
-STATIC = pygame.mixer.Sound(SFX + "static.ogg")
+THEME_MUSIC = [pygame.mixer.Sound(path) for path in THEME_MUSIC_PATH]
+
+STATIC_PATH = SFX + "static.ogg"
+STATIC = pygame.mixer.Sound(STATIC_PATH)
 
 # player
 JUMP = pygame.mixer.Sound(SFX + "jump.ogg")

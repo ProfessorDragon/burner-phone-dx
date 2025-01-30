@@ -9,7 +9,7 @@ import core.constants as c
 import core.input as t
 import core.globals as g
 
-from components.audio import AudioChannel, play_sound, stop_music
+from components.audio import AudioChannel, play_sound, stop_music, play_music
 from components.decor import Decor, decor_rect, decor_render
 from components.entities.camera_boundary import CameraBoundaryEntity
 from components.fade import (
@@ -131,7 +131,7 @@ class Game(Scene):
     def enter(self) -> None:
         fade_start(self.fade, True)
         if self.music_index >= 0:
-            play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+            play_music(a.THEME_MUSIC_PATH[self.music_index], -1)
         self.timers.clear()
         self.reset()
 
@@ -210,8 +210,7 @@ class Game(Scene):
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
                     if self.music_index >= 0:
-                        play_sound(AudioChannel.MUSIC,
-                                   a.THEME_MUSIC[self.music_index], -1)
+                        play_music(a.THEME_MUSIC_PATH[self.music_index], -1)
                     else:
                         stop_music()
                     self.dialogue.desired_music_index = None
