@@ -35,7 +35,11 @@ def fade_update(fade: ScreenFade, dt: float) -> None:
 
 
 def fade_render(fade: ScreenFade, surface: pygame.Surface) -> None:
-    percent = (fade.timer.remaining if fade.fading_in else fade.timer.elapsed) / fade.timer.duration
+    if fade.timer.duration == 0:
+        percent = 0
+    else:
+        percent = (
+            fade.timer.remaining if fade.fading_in else fade.timer.elapsed) / fade.timer.duration
     if percent > 0:
         fade.surf.set_alpha(percent * 255)
         surface.blit(fade.surf, (0, 0))

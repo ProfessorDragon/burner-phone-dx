@@ -47,7 +47,8 @@ def _fade_music() -> None:
 def _generate_credits() -> pygame.Surface:
     line_height = a.DEBUG_FONT.size("0")[1]
     lines = a.CREDITS.split("\n")
-    surf = pygame.Surface((c.WINDOW_WIDTH, line_height * len(lines)), pygame.SRCALPHA)
+    surf = pygame.Surface(
+        (c.WINDOW_WIDTH, line_height * len(lines)), pygame.SRCALPHA)
     for i, ln in enumerate(lines):
         color = c.WHITE
         if ln.startswith("# "):
@@ -57,7 +58,8 @@ def _generate_credits() -> pygame.Surface:
             ln = ln[3:]
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
-        surf.blit(text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height))
+        surf.blit(text, (surf.get_width() // 2 -
+                  text.get_width() // 2, i * line_height))
     return surf
 
 
@@ -82,6 +84,9 @@ class Menu(Scene):
         self.should_show_credits = False  # set from Game class
 
     def enter(self) -> None:
+        # TODO: DOnt do this!!!
+        self.screen = MenuScreen.SETTINGS
+        return
         camera_reset(self.camera)
         self.fade_menu()
         if self.should_show_credits:
@@ -96,7 +101,7 @@ class Menu(Scene):
         mouse_buffer: t.InputBuffer,
     ) -> None:
         # INPUT
-        if t.is_pressed(action_buffer, t.Action.START) or t.is_pressed(action_buffer, t.Action.A):
+        if t.is_pressed(action_buffer, t.Action.A):
             if not fade_active(self.fade) or self.fade.fading_in:
                 if self.screen == MenuScreen.MAIN_MENU:
                     fade_start(self.fade, False, self.fade_controls)
@@ -105,11 +110,11 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(
+                            self.statemachine, scene.SceneState.GAME),
                     )
 
         # UPDATE
-
         fade_update(self.fade, dt)
         camera_update(self.camera, dt)
         animator_update(self.scan_lines, dt)
@@ -120,8 +125,10 @@ class Menu(Scene):
                 fade_start(self.fade, False, self.fade_menu)
                 return
 
-        # RENDER
+        if self.screen == MenuScreen.SETTINGS:
+            settings_update(self.settings, dt, action_buffer, mouse_buffer)
 
+        # RENDER
         if self.screen == MenuScreen.PRE_GAME:
             surface.blit(a.MENU_BACK_ALT, (0, 0))
             surface.blit(animator_get_frame(self.scan_lines), (0, 0))
@@ -137,9 +144,12 @@ class Menu(Scene):
             jump = a.DEBUG_FONT.render("Jump", False, c.WHITE)
             roll = a.DEBUG_FONT.render("Roll", False, c.WHITE)
             surface.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
-            surface.blit(jump, (cx - jump.get_width() // 2 + 95, cy - jump.get_height() // 2 - 12))
-            surface.blit(roll, (cx - roll.get_width() // 2 + 95, cy - roll.get_height() // 2 + 12))
-            footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(jump, (cx - jump.get_width() // 2 +
+                         95, cy - jump.get_height() // 2 - 12))
+            surface.blit(roll, (cx - roll.get_width() // 2 +
+                         95, cy - roll.get_height() // 2 + 12))
+            footer = a.DEBUG_FONT.render(
+                "Best played in fullscreen with sound on", False, c.WHITE)
             surface.blit(footer, (cx - footer.get_width() // 2, cy + 75))
             surface.blit(a.MENU_BLUR_FULL, (0, 0))
 
@@ -153,11 +163,13 @@ class Menu(Scene):
             surface.blit(self.credits_surf, (0, y))
             surface.blit(a.MENU_BLUR_FULL, (0, 0))
 
+        elif self.screen == MenuScreen.SETTINGS:
+            surface.blit(a.MENU_BACK_ALT, (0, 0))
+            surface.blit(animator_get_frame(self.scan_lines), (0, 0))
+            settings_render(self.settings, surface)
+
         else:
             surface.blit(a.MENU_BACK, (0, 0))
-            # button and settings go here under scan lines
-            if self.screen == MenuScreen.SETTINGS:
-                settings_render(self.settings, surface)
             surface.blit(animator_get_frame(self.scan_lines), (0, 0))
             surface.blit(a.MENU_BLUR, (0, 0))
 
