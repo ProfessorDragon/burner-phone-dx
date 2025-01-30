@@ -2,6 +2,7 @@ import pygame
 
 import core.assets as a
 import core.constants as c
+import core.globals as g
 from components.motion import Direction
 from components.camera import Camera, camera_rect, camera_to_screen_shake
 from components.entities.entity import Entity
@@ -75,7 +76,7 @@ class CameraBoundaryEntity(Entity):
                 camera.motion.position.x = target
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:
+        if layer in PLAYER_OR_FG and g.show_hitboxes:
             text = a.DEBUG_FONT.render(self.direction.name, False, c.RED)
             hitbox = self.get_hitbox()
             surface.blit(

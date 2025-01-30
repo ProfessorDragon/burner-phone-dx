@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 import pygame
 
+import core.assets as a
+import core.constants as c
+import core.input as t
+import core.globals as g
 from components.audio import AudioChannel, play_sound
 from components.dialogue import (
     DialogueSystem,
@@ -11,9 +15,6 @@ from components.dialogue import (
 from components.entities.entity_util import render_shadow
 from components.tile import grid_collision_rect
 from components.timer import Timer, timer_reset, timer_update
-import core.input as t
-import core.assets as a
-import core.constants as c
 from components.motion import (
     Direction,
     Motion,
@@ -356,7 +357,7 @@ def player_render_overlays(player: Player, surface: pygame.Surface, camera: Came
             )
 
     # hitbox
-    if c.DEBUG_HITBOXES:
+    if g.show_hitboxes:
         pygame.draw.rect(
             surface,
             c.CYAN,

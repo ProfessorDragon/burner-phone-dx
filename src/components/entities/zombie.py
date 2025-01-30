@@ -1,10 +1,11 @@
 import random
 import pygame
 
-from components.audio import AudioChannel, play_sound
-from components.entities.entity_util import render_shadow
 import core.assets as a
 import core.constants as c
+import core.globals as g
+from components.audio import AudioChannel, play_sound
+from components.entities.entity_util import render_shadow
 from components.animation import (
     Animator,
     animator_get_frame,
@@ -107,7 +108,7 @@ class ZombieEnemy(Entity):
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),
             )
-        if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:
+        if layer in PLAYER_OR_FG and g.show_hitboxes:
             pygame.draw.circle(
                 surface,
                 c.RED,

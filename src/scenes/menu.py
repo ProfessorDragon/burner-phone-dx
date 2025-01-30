@@ -69,8 +69,7 @@ def _generate_credits() -> pygame.Surface:
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
         surf.blit(
-            text, (surf.get_width() // 2 - text.get_width() //
-                   2, i * line_height + title_height)
+            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
         )
     return surf
 
@@ -123,8 +122,9 @@ class Menu(Scene):
             self.ui_start_button,
             self.ui_settings_button,
             self.ui_credits_button,
-            self.ui_quit_button,
         ]
+        if not c.IS_WEB:
+            self.ui_list.append(self.ui_quit_button)
 
         # settings
         self.settings = Settings()
@@ -193,8 +193,7 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(
-                            self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
@@ -228,10 +227,8 @@ class Menu(Scene):
                     surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
-            footer = a.DEBUG_FONT.render(
-                "Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(footer, (surface.get_width() //
-                         2 - footer.get_width() // 2, 200))
+            footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(footer, (surface.get_width() // 2 - footer.get_width() // 2, 200))
 
         elif self.screen == MenuScreen.SETTINGS:
             settings_render(self.settings, surface)

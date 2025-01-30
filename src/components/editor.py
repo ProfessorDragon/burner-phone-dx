@@ -6,14 +6,14 @@ import random
 import subprocess
 import pygame
 
+import core.assets as a
+import core.constants as c
+import core.input as t
+import core.globals as g
 from components.decor import Decor, decor_from_json, decor_rect, decor_to_json
 from components.entities.all import ENTITY_CLASSES, entity_from_json
 from components.entities.entity import Entity, render_path
-from components.player import player_reset
 from components.tile import TileData, tile_render, tile_render_hitbox
-import core.input as t
-import core.constants as c
-import core.assets as a
 from components.camera import (
     Camera,
     camera_from_screen,
@@ -320,7 +320,7 @@ class Editor:
                     self.scene.walls[-1].y -= 1
                 self.drag_start = None
 
-        if len(self.scene.walls) > 0 and self.a_held and c.DEBUG_HITBOXES:
+        if len(self.scene.walls) > 0 and self.a_held and g.show_hitboxes:
             wall = self.scene.walls[-1]
             if t.is_pressed(self.action_buffer, t.Action.LEFT):
                 wall.x -= 1
@@ -585,9 +585,9 @@ def editor_update(
     if just_pressed[pygame.K_r]:
         editor.scene.reset()
     if just_pressed[pygame.K_f]:
-        c.DEBUG_HITBOXES = not c.DEBUG_HITBOXES
+        g.show_hitboxes = not g.show_hitboxes
     if just_pressed[pygame.K_t]:
-        c.TIME_DILATION = 0.25 if c.TIME_DILATION == 1.0 else 1.0
+        g.time_dilation = 0.25 if g.time_dilation == 1.0 else 1.0
 
     # editor toggle
     if just_pressed[pygame.K_e]:
@@ -602,7 +602,7 @@ def editor_update(
         editor.set_mode(EditorMode.VIEW)
     elif just_pressed[pygame.K_2]:
         editor.set_mode(EditorMode.WALLS)
-        c.DEBUG_HITBOXES = True
+        g.show_hitboxes = True
     elif just_pressed[pygame.K_3]:
         editor.set_mode(EditorMode.TILES)
     elif just_pressed[pygame.K_4]:
@@ -628,7 +628,7 @@ def editor_update(
 
 
 def editor_render(editor: Editor, surface: pygame.Surface):
-    if c.DEBUG_HITBOXES:
+    if g.show_hitboxes:
         origin = camera_to_screen_shake(editor.scene.camera, 0, 0)
         screen = (origin[0] % surface.get_width(), origin[1] % surface.get_height())
         pygame.draw.line(surface, c.BLACK, (0, screen[1]), (surface.get_width(), screen[1]))

@@ -4,6 +4,7 @@ import pygame
 
 import core.assets as a
 import core.constants as c
+import core.globals as g
 from components.camera import Camera, camera_to_screen_shake, camera_to_screen_shake_rect
 from scenes.scene import PLAYER_OR_FG, RenderLayer
 
@@ -37,7 +38,7 @@ def decor_render(
         frame = frame.copy()
         frame.set_alpha(96)
     surface.blit(frame, camera_to_screen_shake(camera, *dec.position))
-    if c.DEBUG_HITBOXES:
+    if g.show_hitboxes:
         pygame.draw.rect(
             surface,
             c.GREEN,

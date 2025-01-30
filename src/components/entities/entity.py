@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from math import cos, radians
 from typing import Any
 import pygame
 
+import core.constants as c
+import core.globals as g
 from components.entities.entity_util import render_path
 from components.player import Player
-import core.constants as c
 from components.camera import Camera, camera_to_screen_shake_rect
 from components.motion import Motion
 from scenes.scene import PLAYER_OR_FG, RenderLayer
@@ -89,7 +89,7 @@ def entity_render(
 ) -> None:
     entity.render(surface, camera, layer)
 
-    if c.DEBUG_HITBOXES:
+    if g.show_hitboxes:
         if layer == RenderLayer.RAYS:
             path = entity.get_path()
             if path is not None:

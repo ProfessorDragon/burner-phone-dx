@@ -1,10 +1,11 @@
 import asyncio
 import pygame
 
-import core.constants as c
 import core.setup as setup
 import core.assets as a
+import core.constants as c
 import core.input as t
+import core.globals as g
 from components.statemachine import (
     StateMachine,
     statemachine_initialise,
@@ -17,8 +18,7 @@ def run() -> None:
     pygame.display.set_caption(c.CAPTION)
     pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
-    statemachine_initialise(
-        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
+    statemachine_initialise(scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -29,8 +29,7 @@ async def game_loop(
 
     action_buffer: t.InputBuffer = [t.InputState.NOTHING for _ in t.Action]
 
-    last_action_mapping_pressed = [
-        t.action_mappings[action][0] for action in t.Action]
+    last_action_mapping_pressed = [t.action_mappings[action][0] for action in t.Action]
 
     print("Starting game loop")
 
@@ -38,7 +37,7 @@ async def game_loop(
         elapsed_time = clock.tick(c.FPS)
         dt = elapsed_time / 1000.0  # Convert to seconds
         dt = min(dt, c.MAX_DT)  # Clamp delta time
-        dt *= c.TIME_DILATION
+        dt *= g.time_dilation
 
         update_action_buffer(action_buffer, last_action_mapping_pressed)
 
@@ -50,15 +49,13 @@ async def game_loop(
 
         update_mouse_buffer(mouse_buffer)
 
-        statemachine_execute(scene_manager, surface, dt,
-                             action_buffer, mouse_buffer)
+        statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
 
-        if c.DEBUG_FPS:
-            debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
-            surface.blit(
-                a.DEBUG_FONT.render(debug_str, False, c.WHITE, c.BLACK),
-                (0, 0),
-            )
+        # debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
+        # surface.blit(
+        #     a.DEBUG_FONT.render(debug_str, False, c.WHITE, c.BLACK),
+        #     (0, 0),
+        # )
 
         # Keep these calls together in this order
         pygame.display.flip()

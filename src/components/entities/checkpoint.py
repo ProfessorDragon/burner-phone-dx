@@ -1,8 +1,8 @@
-import random
 import pygame
 
 import core.assets as a
 import core.constants as c
+import core.globals as g
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.player import (
@@ -72,7 +72,7 @@ class CheckpointEntity(Entity):
                     player.interaction = PlayerInteraction(self.scene_name, False)
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
-        if layer in PLAYER_OR_FG and c.DEBUG_HITBOXES:
+        if layer in PLAYER_OR_FG and g.show_hitboxes:
             content = ""
             if self.story is not None:
                 content = self.story.name
