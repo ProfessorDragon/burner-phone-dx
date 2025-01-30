@@ -245,6 +245,7 @@ char 3 rogan
 
 
 [THIRD CAUGHT SIGHT]
+
 style comms
 char 3 rogan
 - you are the weapon... our weapon. do you understand that? you are humanity's last hope...
@@ -285,6 +286,15 @@ char 0 rogan
 - agent, remember, you are the weapon.\nand by that, we mean you're immune to the virus...
 char 2
 - ...immune to the virus, not zombies!\nhave ya lost your mind?
+
+
+[THIRD CAUGHT ZOMBIE]
+
+# this is an odd scenario where the player dies to a zombie after entering the lab.
+# there are no zombies in the lab.
+style comms
+char 2 rogan
+- did you seriously just go back to touch a zombie? i don't even know what to say...
 
 
 
