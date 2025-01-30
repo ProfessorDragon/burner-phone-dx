@@ -6,6 +6,7 @@ from components.audio import AudioChannel, play_sound, try_play_sound
 import core.assets as a
 import core.constants as c
 import core.input as t
+import core.globals as g
 from utilities.math import clamp
 
 
@@ -14,6 +15,7 @@ BUTTON_SIZE = (96, 16)
 
 @dataclass(slots=True)
 class Button:
+    key: str
     rect: pygame.Rect
     graphic: pygame.Surface
     callback: Callable
@@ -21,6 +23,7 @@ class Button:
 
 @dataclass(slots=True)
 class Checkbox:
+    key: str
     rect: pygame.Rect
     graphic_enabled: pygame.Surface
     graphic_disabled: pygame.Surface
@@ -31,6 +34,7 @@ class Checkbox:
 
 @dataclass(slots=True)
 class Slider:
+    key: str
     rect: pygame.Rect
     min_value: int
     max_value: int
@@ -47,6 +51,9 @@ def button_activate(button: Button) -> None:
 
 
 def checkbox_set_enabled(checkbox: Checkbox, enabled: bool) -> None:
+    if checkbox.key:
+        g.settings[checkbox.key] = enabled
+
     checkbox.enabled = enabled
     if callable(checkbox.callback):
         checkbox.callback(checkbox.enabled)
@@ -62,7 +69,8 @@ def slider_percent(slider: Slider) -> float:
 
 
 def slider_value_render(slider: Slider) -> None:
-    slider.value_render = a.DEBUG_FONT.render(str(int(slider.value)), False, c.WHITE)
+    slider.value_render = a.DEBUG_FONT.render(
+        str(int(slider.value)), False, c.WHITE)
 
 
 def slider_set_value(slider: Slider, value: int) -> None:
@@ -74,6 +82,8 @@ def slider_set_value(slider: Slider, value: int) -> None:
         slider.rect.h,
     )
     slider_value_render(slider)
+    if slider.key:
+        g.settings[slider.key] = slider.value
     if callable(slider.callback):
         slider.callback(slider.value)
 
@@ -110,7 +120,8 @@ def slider_render(surface: pygame.Surface, slider: Slider, selected: bool) -> No
     surface.blit(slider.name_render, (slider.rect.left - 150, slider.rect.y))
     surface.blit(a.MENU_BUTTON, slider.rect.topleft)
     surface.blit(
-        a.MENU_SLIDER, slider.rect.topleft, (0, 0, slider.filled_rect[2], slider.filled_rect[3])
+        a.MENU_SLIDER, slider.rect.topleft, (0, 0,
+                                             slider.filled_rect[2], slider.filled_rect[3])
     )
     surface.blit(slider.value_render, (slider.rect.right + 20, slider.rect.y))
     if selected:
@@ -118,7 +129,8 @@ def slider_render(surface: pygame.Surface, slider: Slider, selected: bool) -> No
 
 
 def checkbox_render(surface: pygame.Surface, checkbox: Checkbox, selected: bool) -> None:
-    surface.blit(checkbox.name_render, (checkbox.rect.x - 150, checkbox.rect.y))
+    surface.blit(checkbox.name_render,
+                 (checkbox.rect.x - 150, checkbox.rect.y))
     surface.blit(a.MENU_BUTTON, checkbox.rect.topleft)
     if checkbox.enabled:
         surface.blit(
@@ -137,10 +149,8 @@ def checkbox_render(surface: pygame.Surface, checkbox: Checkbox, selected: bool)
             ),
         )
     if selected:
-        surface.blit(a.MENU_BUTTON_SELECTED, (checkbox.rect.x, checkbox.rect.y))
-
-
-## UI LIST COMMON FUNCTIONS (SEB WHAT ARE YOU DOINGGG)
+        surface.blit(a.MENU_BUTTON_SELECTED,
+                     (checkbox.rect.x, checkbox.rect.y))
 
 
 def ui_list_update_selection(

@@ -5,6 +5,7 @@ from components.audio import AudioChannel, play_sound, set_music_volume, set_sfx
 import core.constants as c
 import core.input as t
 import core.assets as a
+import core.globals as g
 from components.ui import (
     BUTTON_SIZE,
     Slider,
@@ -30,6 +31,7 @@ class Settings:
         self.graphic_disabled = a.DEBUG_FONT.render("Disabled", False, c.RED)
 
         self.ui_music_slider = Slider(
+            "music",
             pygame.Rect(250, 50, *BUTTON_SIZE),
             0,
             100,
@@ -41,6 +43,7 @@ class Settings:
         )
 
         self.ui_sfx_slider = Slider(
+            "sfx",
             pygame.Rect(250, 75, *BUTTON_SIZE),
             0,
             100,
@@ -52,6 +55,7 @@ class Settings:
         )
 
         self.ui_fullscreen_checkbox = Checkbox(
+            "fullscreen",
             pygame.Rect(250, 100, *BUTTON_SIZE),
             self.graphic_enabled,
             self.graphic_disabled,
@@ -61,6 +65,7 @@ class Settings:
         )
 
         self.ui_vsync_checkbox = Checkbox(
+            "vsync",
             pygame.Rect(250, 125, *BUTTON_SIZE),
             self.graphic_enabled,
             self.graphic_disabled,
@@ -70,6 +75,7 @@ class Settings:
         )
 
         self.ui_screenshake_checkbox = Checkbox(
+            "screenshake",
             pygame.Rect(250, 150, *BUTTON_SIZE),
             self.graphic_enabled,
             self.graphic_disabled,
@@ -79,12 +85,14 @@ class Settings:
         )
 
         self.ui_default_button = Button(
+            "",
             pygame.Rect(250, 175, *BUTTON_SIZE),
             a.DEBUG_FONT.render("DEFAULT", False, c.WHITE),
             lambda: settings_reset(self),
         )
 
         self.ui_back_button = Button(
+            "",
             pygame.Rect(250, 200, *BUTTON_SIZE),
             a.DEBUG_FONT.render("BACK", False, c.WHITE),
             lambda: settings_exit(self),
@@ -96,10 +104,6 @@ class Settings:
         self.ui_index = 0
         self.last_mouse_position = None
 
-        settings_reset(self)
-        set_music_volume(slider_percent(self.ui_music_slider))
-        set_sfx_volume(slider_percent(self.ui_sfx_slider))
-
         self.ui_list = [
             self.ui_music_slider,
             self.ui_sfx_slider,
@@ -110,14 +114,24 @@ class Settings:
             self.ui_back_button,
         ]
 
+        settings_load(self)
+
         self.should_exit = False
 
 
+def settings_load(settings: Settings) -> None:
+    for element in settings.ui_list:
+        if element.key in g.settings:
+            value = g.settings[element.key]
+            if isinstance(element, Checkbox):
+                checkbox_set_enabled(element, value)
+            elif isinstance(element, Slider):
+                slider_set_value(element, value)
+
+
 def settings_reset(settings: Settings) -> None:
-    slider_set_value(settings.ui_music_slider, 50)
-    slider_set_value(settings.ui_sfx_slider, 30)
-    checkbox_set_enabled(settings.ui_vsync_checkbox, True)
-    checkbox_set_enabled(settings.ui_screenshake_checkbox, True)
+    g.settings = g.default_settings.copy()
+    settings_load(settings)
 
 
 def settings_exit(settings: Settings) -> None:
@@ -190,10 +204,12 @@ def settings_update(
 
 
 def settings_render(settings: Settings, surface: pygame.Surface) -> None:
-    surface.blit(settings.title, (surface.get_width() // 2 - settings.title.get_width() // 2, 15))
+    surface.blit(settings.title, (surface.get_width() //
+                 2 - settings.title.get_width() // 2, 15))
 
     surface.blit(
-        a.MENU_CONTROLS, (surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2, 225)
+        a.MENU_CONTROLS, (surface.get_width() // 2 -
+                          a.MENU_CONTROLS.get_width() // 2, 225)
     )
 
     ui_list_render(surface, settings.ui_list, settings.ui_index)

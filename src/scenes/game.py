@@ -64,6 +64,12 @@ from components.camera import (
     camera_update,
     camera_reset,
 )
+from components.settings import (
+    Settings,
+    settings_update,
+    settings_render,
+    settings_load
+)
 
 import scenes.scenemapping as scene
 from scenes.scene import RenderLayer, Scene
@@ -101,7 +107,8 @@ class Game(Scene):
         self.player = Player(_tile_size_vec(10.5, 12))
 
         self.camera = Camera.empty()
-        self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
+        self.camera.offset = pygame.Vector2(
+            c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
         self.camera.motion.position = _camera_target(self.player)
 
         self.dialogue = DialogueSystem()
@@ -122,6 +129,8 @@ class Game(Scene):
         self.editor = Editor(self)
         self.editor.load()
 
+        self.settings = Settings()
+
     # runs when game starts or is resumed
     def enter(self) -> None:
         fade_start(self.fade, True)
@@ -137,10 +146,13 @@ class Game(Scene):
             _add_timer(
                 self,
                 1.5,
-                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
+                lambda: dialogue_execute_script_scene(
+                    self.dialogue, "OPENING CALL 1"),
             )
         if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
             _add_timer(self, 6, self.opening_call_2)
+
+        settings_load(self.settings)
 
     # runs when player dies
     def reset(self) -> None:
@@ -172,7 +184,8 @@ class Game(Scene):
 
         # update and render entities within this area
         decor_bounds = camera_rect(self.camera)
-        entity_bounds = decor_bounds.inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
+        entity_bounds = decor_bounds.inflate(
+            c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
@@ -199,7 +212,8 @@ class Game(Scene):
                 if self.dialogue.desired_music_index is not None:
                     self.music_index = self.dialogue.desired_music_index
                     if self.music_index >= 0:
-                        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[self.music_index], -1)
+                        play_sound(AudioChannel.MUSIC,
+                                   a.THEME_MUSIC[self.music_index], -1)
                     else:
                         stop_music()
                     self.dialogue.desired_music_index = None
@@ -252,7 +266,8 @@ class Game(Scene):
                 for entity in self.entities:
                     path = entity.get_path()
                     if path:
-                        bound_rects = [pygame.Rect(point, (1, 1)) for point in path]
+                        bound_rects = [pygame.Rect(point, (1, 1))
+                                       for point in path]
                     else:
                         bound_rects = [entity.get_hitbox()]
                     if entity_bounds.collidelist(bound_rects) >= 0:
@@ -272,8 +287,10 @@ class Game(Scene):
 
         else:
             # paused
-            if t.is_pressed(action_buffer, t.Action.START):
+            settings_update(self.settings, dt, action_buffer, mouse_buffer)
+            if t.is_pressed(action_buffer, t.Action.START) or self.settings.should_exit:
                 self.paused = False
+                self.settings.should_exit = False
                 play_sound(AudioChannel.UI, a.UI_HOVER)
 
         # RENDER
@@ -287,9 +304,11 @@ class Game(Scene):
 
         # render tiles within this area
         tile_bounds = pygame.Rect(
-            (self.camera.motion.position.x - self.camera.offset.x - self.camera.shake_offset.x)
+            (self.camera.motion.position.x -
+             self.camera.offset.x - self.camera.shake_offset.x)
             // c.TILE_SIZE,
-            (self.camera.motion.position.y - self.camera.offset.y - self.camera.shake_offset.y)
+            (self.camera.motion.position.y -
+             self.camera.offset.y - self.camera.shake_offset.y)
             // c.TILE_SIZE,
             surface.get_width() // c.TILE_SIZE,
             surface.get_height() // c.TILE_SIZE,
@@ -394,6 +413,7 @@ class Game(Scene):
             editor_render(self.editor, surface)
         if self.paused:
             surface.blit(self.pause_overlay, (0, 0))
+            settings_render(self.settings, surface)
 
     def exit(self) -> None:
         stop_music()
@@ -437,7 +457,8 @@ class Game(Scene):
             ):
                 # if trying to revoke comms, played shadowless tree, and declined the call, reset to intro
                 self.player.progression.main_story = MainStoryProgress.INTRO
-                dialogue_remove_executed_scene(self.dialogue, "SHADOWLESS TREE")
+                dialogue_remove_executed_scene(
+                    self.dialogue, "SHADOWLESS TREE")
 
         elif self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
             if not dialogue_has_executed_scene(self.dialogue, "FINALE FINAL"):
@@ -448,7 +469,8 @@ class Game(Scene):
                 fade_start(self.fade, False)
                 _add_timer(self, 0.1, self.finale_explosion)
                 _add_timer(self, 4, self.exit_to_credits)
-                dialogue_execute_script_scene(self.dialogue, "FINALE FADE OUT DONE")
+                dialogue_execute_script_scene(
+                    self.dialogue, "FINALE FADE OUT DONE")
 
 
 def _add_timer(scene: Game, duration: float, callback: Callable) -> Timer:

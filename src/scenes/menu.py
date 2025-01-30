@@ -11,6 +11,7 @@ from components.ui import (
 )
 import core.input as t
 import core.assets as a
+import core.globals as g
 import core.constants as c
 from components.fade import (
     ScreenFade,
@@ -33,7 +34,7 @@ from components.animation import (
     animator_update,
     animator_get_frame,
 )
-from components.settings import Settings, settings_render, settings_update
+from components.settings import Settings, settings_render, settings_update, settings_load
 
 import scenes.scenemapping as scene
 from scenes.scene import Scene
@@ -70,7 +71,8 @@ def _generate_credits() -> pygame.Surface:
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
         surf.blit(
-            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
+            text, (surf.get_width() // 2 - text.get_width() //
+                   2, i * line_height + title_height)
         )
     return surf
 
@@ -89,24 +91,28 @@ class Menu(Scene):
 
         # buttons
         self.ui_start_button = Button(
+            "",
             pygame.Rect(208, 190, *BUTTON_SIZE),
             a.DEBUG_FONT.render("START", False, c.WHITE),
             self.start_controls,
         )
 
         self.ui_settings_button = Button(
+            "",
             pygame.Rect(208, 210, *BUTTON_SIZE),
             a.DEBUG_FONT.render("SETTINGS", False, c.WHITE),
             self.start_settings,
         )
 
         self.ui_credits_button = Button(
+            "",
             pygame.Rect(208, 230, *BUTTON_SIZE),
             a.DEBUG_FONT.render("CREDITS", False, c.WHITE),
             self.start_credits,
         )
 
         self.ui_quit_button = Button(
+            "",
             pygame.Rect(208, 250, *BUTTON_SIZE),
             a.DEBUG_FONT.render("QUIT", False, c.WHITE),
             terminate,
@@ -131,6 +137,7 @@ class Menu(Scene):
         self.should_show_credits = False  # set from Game class
 
     def enter(self) -> None:
+        settings_load(self.settings)
         camera_reset(self.camera)
         self.fade_main_menu()
         if self.should_show_credits:
@@ -188,7 +195,8 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(
+                            self.statemachine, scene.SceneState.GAME),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
@@ -222,8 +230,10 @@ class Menu(Scene):
                     surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
-            footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(footer, (surface.get_width() // 2 - footer.get_width() // 2, 200))
+            footer = a.DEBUG_FONT.render(
+                "Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(footer, (surface.get_width() //
+                         2 - footer.get_width() // 2, 200))
 
         elif self.screen == MenuScreen.SETTINGS:
             settings_render(self.settings, surface)
@@ -276,5 +286,6 @@ class Menu(Scene):
 
 def terminate() -> None:
     print("Terminated application")
+    print(g.settings)
     pygame.quit()
     raise SystemExit
