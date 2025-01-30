@@ -36,9 +36,24 @@ print("Setup complete")
 def load_settings() -> None:
     if not c.IS_WEB:
         return
+
     json_str = platform.window.localStorage.getItem("settings")
-    if json_str:
-        g.settings = json.loads(json_str)
+
+    if not json_str:
+        return
+
+    g.settings = json.loads(json_str)
+
+    is_cooked = False
+    for key in g.default_settings.keys():
+        if key not in g.settings:
+            is_cooked = True
+            break
+
+    if is_cooked:
+        g.settings = g.default_settings.copy()
+        print("Cooked settings :(")
+        write_settings()
 
 
 def write_settings() -> None:
