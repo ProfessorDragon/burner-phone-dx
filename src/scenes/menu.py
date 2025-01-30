@@ -14,7 +14,7 @@ from components.camera import (
     camera_update,
     camera_reset,
 )
-from components.audio import AudioChannel, play_sound, stop_music, try_play_sound, play_music
+from components.audio import AudioChannel, play_sound, stop_music, play_music
 from components.fade import (
     ScreenFade,
     fade_active,
@@ -69,8 +69,7 @@ def _generate_credits() -> pygame.Surface:
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
         surf.blit(
-            text, (surf.get_width() // 2 - text.get_width() //
-                   2, i * line_height + title_height)
+            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
         )
     return surf
 
@@ -143,6 +142,8 @@ class Menu(Scene):
             self.should_show_credits = False
             play_music(a.STATIC_PATH, -1)
             self.start_credits()
+        else:
+            play_music(a.THEME_MUSIC_PATH[2], -1)
 
     def execute(
         self,
@@ -159,29 +160,30 @@ class Menu(Scene):
         if self.screen == MenuScreen.MAIN_MENU:
             mouse_position = pygame.mouse.get_pos()
 
-            self.ui_index = ui_list_update_selection(
-                action_buffer,
-                (
-                    mouse_position
-                    if mouse_position != self.last_mouse_position
-                    and self.last_mouse_position is not None
-                    else None
-                ),
-                self.ui_list,
-                self.ui_index,
-            )
+            if not fade_active(self.fade):
+                self.ui_index = ui_list_update_selection(
+                    action_buffer,
+                    (
+                        mouse_position
+                        if mouse_position != self.last_mouse_position
+                        and self.last_mouse_position is not None
+                        else None
+                    ),
+                    self.ui_list,
+                    self.ui_index,
+                )
 
-            if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
-                for element in self.ui_list:
-                    if element.rect.collidepoint(mouse_position):
+                if mouse_buffer[t.MouseButton.LEFT] == t.InputState.PRESSED:
+                    for element in self.ui_list:
+                        if element.rect.collidepoint(mouse_position):
+                            button_activate(element)
+                            play_sound(AudioChannel.UI, a.UI_SELECT)
+
+                if self.ui_index is not None:
+                    element = self.ui_list[self.ui_index]
+                    if t.is_pressed(action_buffer, t.Action.A):
                         button_activate(element)
                         play_sound(AudioChannel.UI, a.UI_SELECT)
-
-            if self.ui_index is not None:
-                element = self.ui_list[self.ui_index]
-                if t.is_pressed(action_buffer, t.Action.A):
-                    button_activate(element)
-                    play_sound(AudioChannel.UI, a.UI_SELECT)
 
             self.last_mouse_position = mouse_position
 
@@ -194,8 +196,7 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(
-                            self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
@@ -229,10 +230,8 @@ class Menu(Scene):
                     surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
-            footer = a.DEBUG_FONT.render(
-                "Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(footer, (surface.get_width() //
-                         2 - footer.get_width() // 2, 200))
+            footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(footer, (surface.get_width() // 2 - footer.get_width() // 2, 200))
 
         elif self.screen == MenuScreen.SETTINGS:
             settings_render(self.settings, surface)
@@ -256,12 +255,10 @@ class Menu(Scene):
 
     def start_main_menu(self) -> None:
         self.change_screen(MenuScreen.MAIN_MENU)
-        play_music(a.THEME_MUSIC_PATH[2], -1)
 
     def start_controls(self) -> None:
-        if not fade_active(self.fade):
-            _fade_music()
-            fade_start(self.fade, False, self.fade_controls)
+        _fade_music()
+        fade_start(self.fade, False, self.fade_controls)
 
     def start_settings(self) -> None:
         self.settings.ui_index = 0
