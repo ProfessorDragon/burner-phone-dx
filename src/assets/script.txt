@@ -132,12 +132,12 @@ noskip
 - simply put, we can't seem to get our hands on it. the world needs a weapon - you - to infiltrate the lab and fetch the formula to the cure.
 pan 0
 char 0
-- alright, you got what it takes?\npick up that small green brick by the tree. that's your communicator.
-- it's like a phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
+- alright, you got what it takes?\npick up that small green object by the tree. that's your communicator.
+- it's basically a burner phone that shows me your location.\nnow, you won't be needing your mobile anymore. make sure to dispose of it.
 style comms
-char 0 rogan
+char 0 burner
 - test, test.
-char 3
+char 3 rogan
 pan 1.5 16 -32
 - well, the lab is northwest. get moving!
 
@@ -192,7 +192,7 @@ noskip
 [FINALE 3]
 
 style comms silent
-char 1 rogan
+char 0 burner
 noskip
 - the burner phone you're carrying at this very moment not only gave me your precise location, but also contained a remote explosive device...
 
@@ -247,7 +247,7 @@ char 3 rogan
 [THIRD CAUGHT SIGHT]
 style comms
 char 3 rogan
-- so close... yet you got caught again. try rolling to speed up and avoid those pesky guards.
+- you are the weapon... our weapon. do you understand that? you are humanity's last hope...
 
 
 [FIRST CAUGHT HOLE]
@@ -288,7 +288,7 @@ char 2
 
 
 
-## RANDOM COMMUNICATIONS
+## RANDOM COMMUNICATIONS (unused)
 # short lines i think are funny, can be played in any order throughout the game
 
 

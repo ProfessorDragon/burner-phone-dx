@@ -84,7 +84,7 @@ class SecurityCameraEnemy(Entity):
     ) -> None:
         # don't swivel before the player has gotten comms (prevent progression)
         # don't swivel during the finale (prevent going back)
-        if MainStoryProgress.COMMS <= player.progression.main_story <= MainStoryProgress.LAB:
+        if MainStoryProgress.COMMS <= player.progression.main_story < MainStoryProgress.FINALE:
             self.swivel = self.swivel_angle / 2 * sin(pi * time / 2)
             self.swivel *= -1 if self.inverse_direction else 1
             try_play_sound(AudioChannel.ENTITY_ALT, a.CAMERA_HUM)

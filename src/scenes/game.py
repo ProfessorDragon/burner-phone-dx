@@ -134,6 +134,7 @@ class Game(Scene):
         self.timers.clear()
         self.reset()
 
+        # opening call
         if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
             _add_timer(
                 self,
@@ -142,6 +143,10 @@ class Game(Scene):
             )
         if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
             _add_timer(self, 6, self.opening_call_2)
+
+        # unfreeze player movement if they start the game again after finishing it
+        if self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
+            self.player.progression.main_story = MainStoryProgress.FINALE
 
         settings_load(self.settings)
 
@@ -482,15 +487,3 @@ def _post_death_comms(
     scene_name = f"{state_name} CAUGHT {caught_style.name}"
     if not dialogue_has_executed_scene(dialogue, scene_name):
         dialogue_execute_script_scene(dialogue, scene_name)
-
-
-def _random_comms(dialogue: DialogueSystem, player: Player) -> None:
-    if player.progression.main_story < MainStoryProgress.COMMS:
-        return
-    i = 0
-    while i < 4:
-        scene_name = f"RANDOM {random.randint(1, 4)}"
-        if not dialogue_has_executed_scene(dialogue, scene_name):
-            break
-        i += 1
-    dialogue_execute_script_scene(dialogue, scene_name)

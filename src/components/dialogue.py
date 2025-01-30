@@ -57,9 +57,9 @@ DIALOGUE_CHARACTERS = {
         a.DIALOGUE_SOUNDS[0:2],
     ),
     "burner": DialogueCharacter(
-        "Phone",
+        "Burner",
         [a.DIALOGUE_AVATARS[8]],
-        a.DIALOGUE_SOUNDS[0:2],
+        a.DIALOGUE_SOUNDS[4:6],
     ),
     "luke": DialogueCharacter(
         "Louisa",

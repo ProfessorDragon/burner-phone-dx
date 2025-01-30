@@ -256,6 +256,7 @@ class Menu(Scene):
 
     def start_controls(self) -> None:
         if not fade_active(self.fade):
+            _fade_music()
             fade_start(self.fade, False, self.fade_controls)
 
     def start_settings(self) -> None:
