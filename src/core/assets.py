@@ -24,7 +24,8 @@ TERRAIN = pygame.image.load(IMG + "terrain.png")
 # entities
 PATROL_FRAMES = slice_sheet(IMG + "entities/patrol.png", 32, 32)
 ZOMBIE_FRAMES = slice_sheet(IMG + "entities/zombie.png", 32, 32)
-SECURITY_CAMERA_FRAMES = slice_sheet(IMG + "entities/security_camera.png", 16, 16)
+SECURITY_CAMERA_FRAMES = slice_sheet(
+    IMG + "entities/security_camera.png", 16, 16)
 SPIKE_TRAP_FRAMES = slice_sheet(IMG + "entities/spike_trap.png", 16, 16)
 BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
@@ -38,7 +39,8 @@ DECOR = (
         slice_sheet(IMG + "decor/tube.png", 64, 64),  # 10
         slice_sheet(IMG + "decor/tube_skinny.png", 64, 64),  # 11
     ]
-    + [[surf] for surf in slice_sheet(IMG + "decor/bushes.png", 32, 32)]  # 12-13
+    + [[surf]
+        for surf in slice_sheet(IMG + "decor/bushes.png", 32, 32)]  # 12-13
     + [
         [pygame.image.load(IMG + "decor/lab_door.png")],  # 14
     ]
@@ -69,8 +71,10 @@ def _generate_controls():
     jump = DEBUG_FONT.render("Jump", False, (255, 255, 255))
     roll = DEBUG_FONT.render("Roll", False, (255, 255, 255))
     MENU_CONTROLS.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
-    MENU_CONTROLS.blit(jump, (cx - jump.get_width() // 2 + 95, cy - jump.get_height() // 2 - 12))
-    MENU_CONTROLS.blit(roll, (cx - roll.get_width() // 2 + 95, cy - roll.get_height() // 2 + 12))
+    MENU_CONTROLS.blit(jump, (cx - jump.get_width() // 2 +
+                       95, cy - jump.get_height() // 2 - 12))
+    MENU_CONTROLS.blit(roll, (cx - roll.get_width() // 2 +
+                       95, cy - roll.get_height() // 2 + 12))
 
 
 MENU_CONTROLS = pygame.Surface((256, 64), pygame.SRCALPHA)
