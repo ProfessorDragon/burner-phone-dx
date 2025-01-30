@@ -26,11 +26,15 @@ BUTTON_FRAMES = slice_sheet(IMG + "entities/button.png", 16, 16)
 GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
 
 # decor
-DECOR = [[tree] for tree in slice_sheet(IMG + "decor/trees.png", 64, 64)] + [  # 0-7
-    [pygame.image.load(IMG + "decor/shipping_container.png")],  # 8
-    [pygame.image.load(IMG + "decor/shack.png")],  # 9
-    slice_sheet(IMG + "decor/tube.png", 64, 64),  # 10
-]
+DECOR = (
+    [[surf] for surf in slice_sheet(IMG + "decor/trees.png", 64, 64)]
+    + [  # 0-7
+        [pygame.image.load(IMG + "decor/shipping_container.png")],  # 8
+        [pygame.image.load(IMG + "decor/shack.png")],  # 9
+        slice_sheet(IMG + "decor/tube.png", 64, 64),  # 10
+    ]
+    + [[surf] for surf in slice_sheet(IMG + "decor/bushes.png", 32, 32)]
+)  # 11-12
 
 # menu
 MENU = "assets/menu/"
@@ -95,14 +99,6 @@ DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 with open("assets/script.txt") as f:
     GAME_SCRIPT = f.read()
 
-
-@dataclass
-class DialogueCharacter:
-    name: str
-    sprites: list[pygame.Surface]
-    sounds: list[pygame.mixer.Sound]
-
-
 DIALOGUE_AVATARS = slice_sheet(IMG + "avatars.png", 64, 64)
 DIALOGUE_SOUNDS = [
     pygame.mixer.Sound(SFX + "dialogue_high_1.ogg"),
@@ -113,48 +109,12 @@ DIALOGUE_SOUNDS = [
     pygame.mixer.Sound(SFX + "dialogue_comms_2.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_sign_1.ogg"),
     pygame.mixer.Sound(SFX + "dialogue_sign_2.ogg"),
+    pygame.mixer.Sound(SFX + "dialogue_evil_1.ogg"),
+    pygame.mixer.Sound(SFX + "dialogue_evil_2.ogg"),
 ]
 
 OPEN_PHONE = pygame.mixer.Sound(SFX + "open_phone.ogg")
 OPEN_COMMS = pygame.mixer.Sound(SFX + "open_comms.ogg")
-
-DIALOGUE_CHARACTERS = {
-    "default": DialogueCharacter(
-        "???",
-        [DEBUG_SPRITE_64],
-        DIALOGUE_SOUNDS[0:2],
-    ),
-    "sign": DialogueCharacter(
-        "Sign",
-        [DIALOGUE_AVATARS[7]],
-        DIALOGUE_SOUNDS[6:8],
-    ),
-    "note": DialogueCharacter(
-        "Note",
-        [DIALOGUE_AVATARS[9]],
-        DIALOGUE_SOUNDS[6:8],
-    ),
-    "phone": DialogueCharacter(
-        "Phone",
-        [DIALOGUE_AVATARS[8]],
-        DIALOGUE_SOUNDS[0:2],
-    ),
-    "luke": DialogueCharacter(
-        "Louisa",
-        DIALOGUE_AVATARS[5:7],
-        DIALOGUE_SOUNDS[0:2],
-    ),
-    "rogan_no_comms": DialogueCharacter(
-        "Rogan",
-        DIALOGUE_AVATARS[0:5],
-        DIALOGUE_SOUNDS[2:4],
-    ),
-    "rogan": DialogueCharacter(
-        "Rogan",
-        DIALOGUE_AVATARS[0:5],
-        DIALOGUE_SOUNDS[4:6],
-    ),
-}
 
 with open("assets/credits.txt") as f:
     CREDITS = f.read()

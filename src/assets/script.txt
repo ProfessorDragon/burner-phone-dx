@@ -210,8 +210,11 @@ noskip
 style comms silent
 char 4 rogan
 noskip
-goto FINALE FADE OUT
 - after all, you are the weapon...
+char 0 luke_evil
+noskip
+goto FINALE FADE OUT
+- thanks... for making the rich, richer...
 
 
 [FINALE FADE OUT]

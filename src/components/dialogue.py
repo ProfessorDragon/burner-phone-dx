@@ -15,12 +15,68 @@ import core.input as t
 from components.timer import Timer, timer_reset, timer_update
 
 
-# These constants should go elsewhere
+# dialogue constants
+
+
 LETTER_SPEED = 0.01
 SPACE_SPEED = 0.02
 END_SENTENCE_SPEED = 0.12
 COMPLETED_DELAY = END_SENTENCE_SPEED
 DIALOGUE_LINE_LENGTH = 44
+
+
+# characters
+
+
+@dataclass
+class DialogueCharacter:
+    name: str
+    sprites: list[pygame.Surface]
+    sounds: list[pygame.mixer.Sound]
+
+
+DIALOGUE_CHARACTERS = {
+    "default": DialogueCharacter(
+        "???",
+        [a.DEBUG_SPRITE_64],
+        a.DIALOGUE_SOUNDS[0:2],
+    ),
+    "sign": DialogueCharacter(
+        "Sign",
+        [a.DIALOGUE_AVATARS[7]],
+        a.DIALOGUE_SOUNDS[6:8],
+    ),
+    "note": DialogueCharacter(
+        "Note",
+        [a.DIALOGUE_AVATARS[9]],
+        a.DIALOGUE_SOUNDS[6:8],
+    ),
+    "phone": DialogueCharacter(
+        "Phone",
+        [a.DIALOGUE_AVATARS[8]],
+        a.DIALOGUE_SOUNDS[0:2],
+    ),
+    "luke": DialogueCharacter(
+        "Louisa",
+        a.DIALOGUE_AVATARS[5:7],
+        a.DIALOGUE_SOUNDS[0:2],
+    ),
+    "luke_evil": DialogueCharacter(
+        "Louisa",
+        [a.DIALOGUE_AVATARS[11]],
+        a.DIALOGUE_SOUNDS[8:10],
+    ),
+    "rogan_no_comms": DialogueCharacter(
+        "Rogan",
+        a.DIALOGUE_AVATARS[0:5],
+        a.DIALOGUE_SOUNDS[2:4],
+    ),
+    "rogan": DialogueCharacter(
+        "Rogan",
+        a.DIALOGUE_AVATARS[0:5],
+        a.DIALOGUE_SOUNDS[4:6],
+    ),
+}
 
 
 class DialogueStyle(Enum):
@@ -190,12 +246,12 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
 
             case "char":
                 args = content.split(" ", 1)
-                if len(args) > 1 and args[1] in a.DIALOGUE_CHARACTERS:
-                    character = a.DIALOGUE_CHARACTERS.get(args[1], a.DIALOGUE_CHARACTERS["default"])
+                if len(args) > 1 and args[1] in DIALOGUE_CHARACTERS:
+                    character = DIALOGUE_CHARACTERS.get(args[1], DIALOGUE_CHARACTERS["default"])
                     last_character_id = args[1]
                 else:
-                    character = a.DIALOGUE_CHARACTERS.get(
-                        last_character_id, a.DIALOGUE_CHARACTERS["default"]
+                    character = DIALOGUE_CHARACTERS.get(
+                        last_character_id, DIALOGUE_CHARACTERS["default"]
                     )
                 if int(args[0]) < len(character.sprites):
                     dialogue_packet.graphic = character.sprites[int(args[0])]
