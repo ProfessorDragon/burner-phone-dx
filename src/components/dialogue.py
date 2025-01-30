@@ -134,6 +134,7 @@ class DialogueSystem:
     text: str = None
     script_scenes: dict[str, list[str]] = None
     executed_scenes: set[str] = None
+    last_mouse_position: tuple[int, int] = None
     show_timer: Timer = None  # delay before dialogue is shown or updated
     complete_timer: Timer = None  # delay before dialogue can be dismissed
     character_timer: Timer = None  # delay between characters in a message
@@ -207,6 +208,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
     print(f"Executing script scene {scene_name.upper()}")
     dialogue_reset_queue(dialogue)
     dialogue.executed_scenes.add(scene_name)
+    dialogue.last_mouse_position = pygame.mouse.get_pos()
 
     dialogue_packet = DialogueMessagePacket()
     dialogue_packet.graphic = a.DEBUG_SPRITE_64
@@ -279,7 +281,8 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
                     text, target_scene = opt.rsplit("=")
                     dialogue_packet.buttons.append(
                         DialogueButton(
-                            text, partial(dialogue_execute_script_scene, dialogue, target_scene)
+                            text,
+                            partial(dialogue_execute_script_scene, dialogue, target_scene),
                         )
                     )
                 dialogue_packet.buttons[-1].selected = True
@@ -318,44 +321,74 @@ def _dialogue_update_message(
 ) -> None:
     is_complete = dialogue.char_index >= len(packet.message)
 
+    # navigate between buttons
+    if (
+        is_complete
+        and dialogue.complete_timer.remaining <= 0
+        and packet.buttons is not None
+        and len(packet.buttons) > 1
+    ):
+        selected_index = [i for i, button in enumerate(packet.buttons) if button.selected]
+        mouse_position = pygame.mouse.get_pos()
+
+        # mouse
+        if mouse_position != dialogue.last_mouse_position:
+            collision_index = None
+            x = dialogue.rect.right - 10
+            y = dialogue.rect.bottom - 2
+            for i, button in enumerate(packet.buttons[::-1]):
+                button.selected = False
+                size = dialogue.font.size(button.text)
+                x -= size[0]
+                rect = pygame.Rect(x, y - size[1], size[0], size[1]).inflate(8, 8)
+                if rect.collidepoint(mouse_position):
+                    collision_index = len(packet.buttons) - 1 - i
+                x -= 20
+
+            dialogue.last_mouse_position = mouse_position
+
+            if collision_index is not None:
+                packet.buttons[collision_index].selected = True
+                if len(selected_index) == 0 or selected_index[0] != collision_index:
+                    play_sound(AudioChannel.UI, a.UI_HOVER)
+                return
+
+        # keyboard
+        else:
+            dx = t.is_pressed(action_buffer, t.Action.RIGHT) - t.is_pressed(
+                action_buffer, t.Action.LEFT
+            )
+            if dx != 0:
+                if len(selected_index) > 0:
+                    packet.buttons[selected_index[0]].selected = False
+                    packet.buttons[(selected_index[0] + dx) % len(packet.buttons)].selected = True
+                else:
+                    packet.buttons[-1].selected = True
+                play_sound(AudioChannel.UI, a.UI_HOVER)
+                return
+
     # confirm
-    if t.is_pressed(action_buffer, t.Action.A):
+    if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(mouse_bufffer, t.MouseButton.LEFT):
+        # try to skip writing
         if not is_complete:
             if packet.skippable:
-                # Skip writing
                 dialogue.char_index = len(packet.message)
                 dialogue.text = packet.message
                 timer_reset(dialogue.complete_timer, COMPLETED_DELAY)
 
+        # activate selected button
         elif dialogue.complete_timer.remaining <= 0:
-            # play_sound(AudioChannel.UI, a.UI_SELECT) # sounds bad
-            # Activate selected button
             if packet.buttons is not None:
                 selected_index = [i for i, btn in enumerate(packet.buttons) if btn.selected]
                 if len(selected_index) > 0:
                     dialogue_pop_packet(dialogue)
                     packet.buttons[selected_index[0]].callback()
-                    return
-            # Go to next packet
+            # no buttons, go to next packet
             else:
                 dialogue_pop_packet(dialogue)
-                dialogue_try_reset(dialogue)
-
+                if dialogue.queue:
+                    dialogue_reset_packet(dialogue)
         return
-
-    if packet.buttons is not None and len(packet.buttons) > 1:
-        dx = t.is_pressed(action_buffer, t.Action.RIGHT) - t.is_pressed(
-            action_buffer, t.Action.LEFT
-        )
-        if dx != 0:
-            play_sound(AudioChannel.UI, a.UI_HOVER)
-            selected_index = [i for i, btn in enumerate(packet.buttons) if btn.selected]
-            if len(selected_index) > 0:
-                packet.buttons[selected_index[0]].selected = False
-                packet.buttons[(selected_index[0] + dx) % len(packet.buttons)].selected = True
-            else:
-                packet.buttons[0].selected = True
-            return
 
     if is_complete:
         if timer_update(dialogue.complete_timer, dt):
@@ -539,8 +572,3 @@ def dialogue_reset_packet(dialogue: DialogueSystem) -> None:
 def dialogue_reset_queue(dialogue: DialogueSystem) -> None:
     dialogue_reset_packet(dialogue)
     dialogue.queue.clear()
-
-
-def dialogue_try_reset(dialogue: DialogueSystem) -> None:
-    if dialogue.queue:
-        dialogue_reset_packet(dialogue)
