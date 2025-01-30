@@ -84,9 +84,9 @@ class Menu(Scene):
         self.should_show_credits = False  # set from Game class
 
     def enter(self) -> None:
-        # TODO: DOnt do this!!!
-        self.screen = MenuScreen.SETTINGS
-        return
+        # # TODO: DOnt do this!!!
+        # self.screen = MenuScreen.SETTINGS
+        # return
         camera_reset(self.camera)
         self.fade_menu()
         if self.should_show_credits:
@@ -129,6 +129,7 @@ class Menu(Scene):
             settings_update(self.settings, dt, action_buffer, mouse_buffer)
 
         # RENDER
+        surface.fill(c.BLACK)
         if self.screen == MenuScreen.PRE_GAME:
             surface.blit(a.MENU_BACK_ALT, (0, 0))
             surface.blit(animator_get_frame(self.scan_lines), (0, 0))
