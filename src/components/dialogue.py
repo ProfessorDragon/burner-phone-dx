@@ -208,7 +208,6 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
     print(f"Executing script scene {scene_name.upper()}")
     dialogue_reset_queue(dialogue)
     dialogue.executed_scenes.add(scene_name)
-    dialogue.last_mouse_position = pygame.mouse.get_pos()
 
     dialogue_packet = DialogueMessagePacket()
     dialogue_packet.graphic = a.DEBUG_SPRITE_64
@@ -392,6 +391,7 @@ def _dialogue_update_message(
 
     if is_complete:
         if timer_update(dialogue.complete_timer, dt):
+            dialogue.last_mouse_position = pygame.mouse.get_pos()
             play_sound(AudioChannel.UI, a.UI_HOVER)
         return
 
