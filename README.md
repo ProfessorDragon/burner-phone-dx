@@ -1,4 +1,4 @@
-![banner](https://github.com/user-attachments/assets/ab129b49-414b-426f-8b7e-96c8f293799a)
+![banner](https://github.com/user-attachments/assets/60378b38-7776-4bed-a78b-9c3d6e0fd507)
 ## Made for the Pirate Software - Game Jam 16  
   
 ### Play [BURNER PHONE DX](https://codefizz.itch.io/burner-phone-dx) in your browser!  
