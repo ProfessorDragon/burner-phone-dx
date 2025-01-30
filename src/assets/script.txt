@@ -39,7 +39,7 @@ char 0 sign
 
 style sign
 char 0 sign
-- Use common sense. Don't touch stuff that looks harmful!
+- Use your jump and roll to dodge obstacles!
 
 
 [OPENING CALL 1]
