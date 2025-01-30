@@ -6,7 +6,7 @@ import core.assets as a
 from utilities.math import clamp
 
 
-SELECTED = pygame.Surface((200, 20), pygame.SRCALPHA)
+SELECTED = pygame.Surface((100, 20), pygame.SRCALPHA)
 SELECTED.set_alpha(50)
 SELECTED.fill((255, 255, 255))
 

@@ -26,13 +26,13 @@ class Settings:
         self.graphic_disabled = a.DEBUG_FONT.render("N", False, c.RED)
 
         self.ui_music_slider = Slider(
-            pygame.Rect(250, 100, 100, 10), 0, 100, 0, None,
+            pygame.Rect(250, 100, 100, 20), 0, 100, 0, None,
             a.DEBUG_FONT.render("MUSIC VOLUME", False, c.WHITE)
         )
         slider_set_value(self.ui_music_slider, 50)
 
         self.ui_sfx_slider = Slider(
-            pygame.Rect(250, 130, 100, 10), 0, 100, 0, None,
+            pygame.Rect(250, 130, 100, 20), 0, 100, 0, None,
             a.DEBUG_FONT.render("SFX VOLUME", False, c.WHITE)
         )
         slider_set_value(self.ui_sfx_slider, 30)
