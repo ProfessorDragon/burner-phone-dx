@@ -20,7 +20,7 @@ from components.fade import (
     fade_start,
     fade_update,
 )
-from components.audio import AudioChannel, play_sound, stop_music
+from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
 from components.camera import (
     Camera,
     camera_update,
@@ -52,9 +52,14 @@ def _fade_music() -> None:
 
 
 def _generate_credits() -> pygame.Surface:
+    title_height = c.WINDOW_HEIGHT
     line_height = a.DEBUG_FONT.size("0")[1]
     lines = a.CREDITS.split("\n")
-    surf = pygame.Surface((c.WINDOW_WIDTH, line_height * len(lines)), pygame.SRCALPHA)
+    surf = pygame.Surface(
+        (c.WINDOW_WIDTH, line_height * len(lines) + title_height), pygame.SRCALPHA
+    )
+    surf.blit(a.MENU_BACK, (0, 0))
+    surf.blit(a.MENU_BLUR, (0, 0))
     for i, ln in enumerate(lines):
         color = c.WHITE
         if ln.startswith("# "):
@@ -64,7 +69,9 @@ def _generate_credits() -> pygame.Surface:
             ln = ln[3:]
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
-        surf.blit(text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height))
+        surf.blit(
+            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
+        )
     return surf
 
 
@@ -84,13 +91,13 @@ class Menu(Scene):
         self.ui_start_button = Button(
             pygame.Rect(208, 190, *BUTTON_SIZE),
             a.DEBUG_FONT.render("START", False, c.WHITE),
-            lambda: fade_start(self.fade, False, self.fade_controls),
+            self.start_controls,
         )
 
         self.ui_settings_button = Button(
             pygame.Rect(208, 210, *BUTTON_SIZE),
             a.DEBUG_FONT.render("SETTINGS", False, c.WHITE),
-            lambda: self.change_screen(MenuScreen.SETTINGS),
+            self.start_settings,
         )
 
         self.ui_credits_button = Button(
@@ -125,9 +132,10 @@ class Menu(Scene):
 
     def enter(self) -> None:
         camera_reset(self.camera)
-        self.fade_menu()
+        self.fade_main_menu()
         if self.should_show_credits:
             self.should_show_credits = False
+            play_sound(AudioChannel.MUSIC, a.STATIC, -1)
             self.start_credits()
 
     def execute(
@@ -147,7 +155,12 @@ class Menu(Scene):
 
             self.ui_index = ui_list_update_selection(
                 action_buffer,
-                (mouse_position if mouse_position != self.last_mouse_position else None),
+                (
+                    mouse_position
+                    if mouse_position != self.last_mouse_position
+                    and self.last_mouse_position is not None
+                    else None
+                ),
                 self.ui_list,
                 self.ui_index,
             )
@@ -158,10 +171,13 @@ class Menu(Scene):
                         button_activate(element)
                         play_sound(AudioChannel.UI, a.UI_SELECT)
 
-            element = self.ui_list[self.ui_index]
-            if t.is_pressed(action_buffer, t.Action.A):
-                button_activate(element)
-                play_sound(AudioChannel.UI, a.UI_SELECT)
+            if self.ui_index is not None:
+                element = self.ui_list[self.ui_index]
+                if t.is_pressed(action_buffer, t.Action.A):
+                    button_activate(element)
+                    play_sound(AudioChannel.UI, a.UI_SELECT)
+
+            self.last_mouse_position = mouse_position
 
         elif self.screen == MenuScreen.PRE_GAME:
             if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(
@@ -178,19 +194,19 @@ class Menu(Scene):
         elif self.screen == MenuScreen.SETTINGS:
             settings_update(self.settings, dt, action_buffer, mouse_buffer)
             if self.settings.should_exit:
-                self.change_screen(MenuScreen.MAIN_MENU)
+                self.start_main_menu()
                 return
 
         elif self.screen == MenuScreen.CREDITS:
             if timer_update(self.credits_timer, dt):
-                _fade_music()
-                fade_start(self.fade, False, self.fade_menu)
+                fade_start(self.fade, False, self.fade_main_menu)
                 return
 
         # RENDER
         if self.screen == MenuScreen.MAIN_MENU:
-            surface.blit(a.MENU_BACK, (0, 0))
+            surface.fill((27, 27, 27))
             surface.blit(animator_get_frame(self.scan_lines), (0, 0))
+            surface.blit(a.MENU_BACK, (0, 0))
             ui_list_render(surface, self.ui_list, self.ui_index)
             surface.blit(a.MENU_BLUR, (0, 0))
 
@@ -203,7 +219,7 @@ class Menu(Scene):
                 a.MENU_CONTROLS,
                 (
                     surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2,
-                    surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2,
+                    surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
             footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
@@ -214,9 +230,7 @@ class Menu(Scene):
 
         elif self.screen == MenuScreen.CREDITS:
             percent = self.credits_timer.elapsed / self.credits_timer.duration
-            y = surface.get_height() - percent * (
-                self.credits_surf.get_height() + surface.get_height()
-            )
+            y = -percent * self.credits_surf.get_height()
             surface.blit(self.credits_surf, (0, y))
 
         if self.screen != MenuScreen.MAIN_MENU:
@@ -231,16 +245,28 @@ class Menu(Scene):
     def change_screen(self, screen: MenuScreen) -> None:
         self.screen = screen
 
+    def start_main_menu(self) -> None:
+        self.change_screen(MenuScreen.MAIN_MENU)
+        try_play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
+
+    def start_controls(self) -> None:
+        if not fade_active(self.fade):
+            fade_start(self.fade, False, self.fade_controls)
+
+    def start_settings(self) -> None:
+        self.settings.ui_index = 0
+        self.settings.last_mouse_position = pygame.mouse.get_pos()
+        self.settings.should_exit = False
+        self.change_screen(MenuScreen.SETTINGS)
+
     def start_credits(self) -> None:
         self.change_screen(MenuScreen.CREDITS)
         self.credits_surf = _generate_credits()
         timer_reset(self.credits_timer, 10)
-        play_sound(AudioChannel.MUSIC, a.STATIC, -1)
 
-    def fade_menu(self) -> None:
-        self.change_screen(MenuScreen.MAIN_MENU)
+    def fade_main_menu(self) -> None:
+        self.start_main_menu()
         fade_start(self.fade, True)
-        play_sound(AudioChannel.MUSIC, a.THEME_MUSIC[2], -1)
 
     def fade_controls(self) -> None:
         self.change_screen(MenuScreen.PRE_GAME)

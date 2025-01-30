@@ -1,7 +1,11 @@
-from dataclasses import dataclass
 import pygame
 
 from utilities.sprite import slice_sheet
+
+
+# FONTS (ttf for web compatibility)
+
+DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 
 
 # IMAGES (png, webp or jpg for web compatibility)
@@ -27,14 +31,18 @@ GATE_FRAMES = slice_sheet(IMG + "entities/gate.png", 32, 32)
 
 # decor
 DECOR = (
-    [[surf] for surf in slice_sheet(IMG + "decor/trees.png", 64, 64)]
-    + [  # 0-7
+    [[surf] for surf in slice_sheet(IMG + "decor/trees.png", 64, 64)]  # 0-7
+    + [
         [pygame.image.load(IMG + "decor/shipping_container.png")],  # 8
         [pygame.image.load(IMG + "decor/shack.png")],  # 9
         slice_sheet(IMG + "decor/tube.png", 64, 64),  # 10
+        slice_sheet(IMG + "decor/tube_skinny.png", 64, 64),  # 11
     ]
-    + [[surf] for surf in slice_sheet(IMG + "decor/bushes.png", 32, 32)]
-)  # 11-12
+    + [[surf] for surf in slice_sheet(IMG + "decor/bushes.png", 32, 32)]  # 12-13
+    + [
+        [pygame.image.load(IMG + "decor/lab_door.png")],  # 14
+    ]
+)
 
 # menu
 MENU = "assets/menu/"
@@ -49,25 +57,27 @@ MENU_SCANS = [
 ]
 MENU_BUTTON = pygame.image.load(MENU + "button.png")
 MENU_BUTTON_SELECTED = pygame.image.load(MENU + "button_selected.png")
-MENU_BUTTON_SELECTED.set_alpha(64)
+MENU_BUTTON_SELECTED.set_alpha(32)
 MENU_SLIDER = pygame.image.load(MENU + "slider.png")
-MENU_CONTROLS = pygame.image.load(MENU + "controls.png")
-# cx, cy = surface.get_width() // 2, surface.get_height() // 2 - 20
-# surface.blit(
-#     a.MENU_CONTROLS,
-#     (
-#         cx - a.MENU_CONTROLS.get_width() // 2 - 20,
-#         cy - a.MENU_CONTROLS.get_height() // 2 + 1,
-#     ),
-# )
-# move = a.DEBUG_FONT.render("Move", False, c.WHITE)
-# jump = a.DEBUG_FONT.render("Jump", False, c.WHITE)
-# roll = a.DEBUG_FONT.render("Roll", False, c.WHITE)
-# surface.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
-# surface.blit(jump, (cx - jump.get_width() // 2 +
-#                 95, cy - jump.get_height() // 2 - 12))
-# surface.blit(roll, (cx - roll.get_width() // 2 +
-#                 95, cy - roll.get_height() // 2 + 12))
+
+
+def _generate_controls():
+    diagram = pygame.image.load(MENU + "controls.png")
+    cx, cy = MENU_CONTROLS.get_width() // 2, MENU_CONTROLS.get_height() // 2
+    MENU_CONTROLS.blit(
+        diagram,
+        (cx - diagram.get_width() // 2 - 20, cy - diagram.get_height() // 2 + 1),
+    )
+    move = DEBUG_FONT.render("Move", False, (255, 255, 255))
+    jump = DEBUG_FONT.render("Jump", False, (255, 255, 255))
+    roll = DEBUG_FONT.render("Roll", False, (255, 255, 255))
+    MENU_CONTROLS.blit(move, (cx - move.get_width() // 2 - 57, cy - 26))
+    MENU_CONTROLS.blit(jump, (cx - jump.get_width() // 2 + 95, cy - jump.get_height() // 2 - 12))
+    MENU_CONTROLS.blit(roll, (cx - roll.get_width() // 2 + 95, cy - roll.get_height() // 2 + 12))
+
+
+MENU_CONTROLS = pygame.Surface((256, 64), pygame.SRCALPHA)
+_generate_controls()
 
 
 # AUDIO (ogg for web compatibility)
@@ -107,11 +117,6 @@ GATE_OPEN = pygame.mixer.Sound(SFX + "gate_open.ogg")
 # menu
 UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")
 UI_HOVER = pygame.mixer.Sound(SFX + "hover.ogg")
-
-
-# FONTS (ttf for web compatibility)
-
-DEBUG_FONT = pygame.font.Font("assets/joystix.ttf", 10)
 
 
 # DIALOGUE

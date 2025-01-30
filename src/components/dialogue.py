@@ -53,6 +53,11 @@ DIALOGUE_CHARACTERS = {
     ),
     "phone": DialogueCharacter(
         "Phone",
+        [a.DIALOGUE_AVATARS[10]],
+        a.DIALOGUE_SOUNDS[0:2],
+    ),
+    "burner": DialogueCharacter(
+        "Phone",
         [a.DIALOGUE_AVATARS[8]],
         a.DIALOGUE_SOUNDS[0:2],
     ),

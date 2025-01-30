@@ -171,7 +171,8 @@ class Game(Scene):
         )
 
         # update and render entities within this area
-        entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
+        decor_bounds = camera_rect(self.camera)
+        entity_bounds = decor_bounds.inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
@@ -327,7 +328,7 @@ class Game(Scene):
                 )
         for dec in self.decor:
             rect = decor_rect(dec)
-            if entity_bounds.collidepoint(rect.center):
+            if decor_bounds.colliderect(rect):
                 if rect.bottom >= entity_cutoff and player_rect(self.player.motion).colliderect(
                     rect
                 ):

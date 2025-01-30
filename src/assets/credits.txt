@@ -1,46 +1,41 @@
 
 
-# BURNER PHONE DX
-
-
-
-
-## PROGRAMMING
+# PROGRAMMING
 
 PROFDRAGON
 
 
 
-## ART
+# ART
 
 SEBZANARDO
 
 
 
-## MUSIC
+# MUSIC
 
 PROFDRAGON
 
 
 
-## SFX
+# SFX
 
 PROFDRAGON
 
 
 
-## STORY
+# STORY
 
 PROFDRAGON
 SEBZANARDO
 
 
 
-## FONT
+# FONT
 
 JOYSTIX
 
 
 
-# Made for the Pirate Software Gam Jam 16
+## Made for the Pirate Software Gam Jam 16
 

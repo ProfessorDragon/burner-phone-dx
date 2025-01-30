@@ -1,13 +1,7 @@
 from dataclasses import dataclass
 import pygame
 
-from components.audio import (
-    AudioChannel,
-    play_sound,
-    set_music_volume,
-    set_sfx_volume,
-    try_play_sound,
-)
+from components.audio import AudioChannel, play_sound, set_music_volume, set_sfx_volume
 import core.constants as c
 import core.input as t
 import core.assets as a
@@ -17,12 +11,9 @@ from components.ui import (
     Checkbox,
     Button,
     button_activate,
-    button_render,
     checkbox_set_enabled,
-    slider_render,
     slider_set_value,
     slider_set_value_mouse,
-    checkbox_render,
     checkbox_toggle,
     slider_percent,
     ui_list_render,
@@ -46,7 +37,7 @@ class Settings:
             None,
             a.DEBUG_FONT.render("MUSIC VOLUME", False, c.WHITE),
             None,
-            lambda value: print(value),
+            lambda value: set_music_volume(value / 100.0),
         )
 
         self.ui_sfx_slider = Slider(
@@ -57,14 +48,14 @@ class Settings:
             None,
             a.DEBUG_FONT.render("SFX VOLUME", False, c.WHITE),
             None,
-            lambda value: print(value),
+            lambda value: set_sfx_volume(value / 100.0),
         )
 
         self.ui_fullscreen_checkbox = Checkbox(
             pygame.Rect(250, 100, *BUTTON_SIZE),
             self.graphic_enabled,
             self.graphic_disabled,
-            True,
+            False,
             a.DEBUG_FONT.render("FULLSCREEN?", False, c.WHITE),
             lambda enabled: print(enabled),
         )
@@ -174,7 +165,7 @@ def settings_update(
                         settings.selected_slider = element
 
         # KEYBOARD INPUT
-        if settings.selected_slider is None:
+        if settings.selected_slider is None and settings.ui_index is not None:
             element = settings.ui_list[settings.ui_index]
             if t.is_pressed(action_buffer, t.Action.A):
                 if isinstance(element, Button):

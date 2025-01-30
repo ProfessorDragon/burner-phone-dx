@@ -148,15 +148,7 @@ def ui_list_update_selection(
     mouse_position: pygame.Vector2 | None,
     ui_list: list,
     ui_index: int,
-) -> int:
-    # Check if direction pressed and move index
-    if t.is_pressed(action_buffer, t.Action.UP):
-        play_sound(AudioChannel.UI, a.UI_HOVER)
-        return (ui_index - 1) % len(ui_list)
-
-    if t.is_pressed(action_buffer, t.Action.DOWN):
-        play_sound(AudioChannel.UI, a.UI_HOVER)
-        return (ui_index + 1) % len(ui_list)
+) -> int | None:
 
     # Check if mouse moved and is over rect
     if mouse_position is not None:
@@ -166,7 +158,23 @@ def ui_list_update_selection(
                     try_play_sound(AudioChannel.UI, a.UI_HOVER)
                 return i
 
-    return ui_index
+        return None
+
+    else:
+        # Check if direction pressed and move index
+        if t.is_pressed(action_buffer, t.Action.UP):
+            play_sound(AudioChannel.UI, a.UI_HOVER)
+            if ui_index is None:
+                return 0
+            return (ui_index - 1) % len(ui_list)
+
+        if t.is_pressed(action_buffer, t.Action.DOWN):
+            play_sound(AudioChannel.UI, a.UI_HOVER)
+            if ui_index is None:
+                return 0
+            return (ui_index + 1) % len(ui_list)
+
+        return ui_index
 
 
 def ui_list_render(surface: pygame.Surface, ui_list: list, ui_index: int) -> None:
