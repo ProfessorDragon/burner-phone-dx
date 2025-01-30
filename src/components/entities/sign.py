@@ -72,15 +72,23 @@ class SignEntity(Entity):
             x, y = self.motion.position
             x += c.HALF_TILE_SIZE
             y -= 4
-            points = [(x - 4, y - 13), (x + 4, y - 13), (x + 4, y - 1), (x, y + 2), (x - 4, y - 1)]
+            points = [
+                (x - 18, y - 14),
+                (x + 17, y - 14),
+                (x + 17, y - 4),
+                (x + 6, y - 4),
+                (x, y + 2),
+                (x - 6, y - 4),
+                (x - 18, y - 4),
+            ]
             pygame.draw.polygon(
                 surface, c.BLACK, [camera_to_screen_shake(camera, *point) for point in points]
             )
-            points = (x - 3, y - 3), (x, y), (x + 3, y - 3)
+            points = [(x - 3, y - 3), (x, y), (x + 3, y - 3)]
             pygame.draw.polygon(
                 surface, c.WHITE, [camera_to_screen_shake(camera, *point) for point in points]
             )
-            text = a.DEBUG_FONT.render("A", False, c.WHITE)
+            text = a.DEBUG_FONT.render("JUMP", False, c.WHITE)
             surface.blit(
                 text,
                 camera_to_screen_shake(

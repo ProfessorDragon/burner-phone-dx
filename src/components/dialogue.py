@@ -511,7 +511,7 @@ def _dialogue_render_message(
                     )
                 x -= 20
         else:
-            continue_icon = a.DEBUG_FONT.render("<A> to continue", False, fg_color)
+            continue_icon = a.DEBUG_FONT.render("<JUMP> to continue", False, fg_color)
             surface.blit(
                 continue_icon,
                 (x - continue_icon.get_width(), y - continue_icon.get_height()),

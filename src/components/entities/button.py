@@ -17,7 +17,7 @@ class ButtonEntity(Entity):
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x + 3, self.motion.position.y + 2, 10, 12)
+        return pygame.Rect(self.motion.position.x + 3, self.motion.position.y + 1, 10, 14)
 
     def to_json(self):
         return {"pos": (*self.motion.position,), "id": self.id, "color": self.color}

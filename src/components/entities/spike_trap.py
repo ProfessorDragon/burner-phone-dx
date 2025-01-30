@@ -31,7 +31,7 @@ class SpikeTrapEnemy(Entity):
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
-        return pygame.Rect(self.motion.position.x + 4, self.motion.position.y + 2, 8, 12)
+        return pygame.Rect(self.motion.position.x + 4, self.motion.position.y + 1, 8, 14)
 
     def to_json(self):
         return {"pos": (*self.motion.position,), "activated": self.initial_activated}

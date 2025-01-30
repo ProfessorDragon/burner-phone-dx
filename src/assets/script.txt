@@ -255,7 +255,7 @@ char 3 rogan
 
 style comms
 char 3 rogan
-- hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any deadly substances with the <A> button.
+- hey dummy, what was your plan there? now ya gotta start all over again. next time, try jumping over any deadly substances with the JUMP button!
 
 
 [SECOND CAUGHT HOLE]
@@ -381,6 +381,20 @@ char 0 sign
 style sign
 char 0 sign
 - Operation "great desert highway"\nConstruction halted due to environmental conditions.\nEstimated date of completion: Unknown\nProject cost: $8 billion
+
+
+[ROLL REMINDER SIGN]
+
+style sign
+char 0 sign
+- Caution! Area infested with zombies.\nFor best chance of survival, pedestrians should roll to evade.
+
+
+[APPROACHING CURE SIGN]
+
+style sign
+char 0 sign
+- Approaching C-25DX storage facility. Increased security ahead.
 
 
 
