@@ -1,6 +1,9 @@
-# BURNER PHONE DX
+![banner](https://github.com/user-attachments/assets/ab129b49-414b-426f-8b7e-96c8f293799a)
+## Made for the Pirate Software - Game Jam 16  
+  
+### Play [BURNER PHONE DX](https://codefizz.itch.io/burner-phone-dx) in your browser!  
+#### Our required [Game Design Document](https://docs.google.com/document/d/1SHjlmuTUBG7k_oTGKtTy5QzmAeL_i38akRReEu16uHc/edit?usp=sharing) for submission  
 
-Our submission for the [Pirate Software - Game Jam 16](https://itch.io/jam/pirate)  
 
 ## Before running the project
 Setting up a virtual environment is a good idea (helpful resource below)  
