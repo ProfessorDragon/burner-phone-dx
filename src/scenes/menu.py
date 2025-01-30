@@ -47,7 +47,7 @@ class MenuScreen(IntEnum):
 
 
 def _fade_music() -> None:
-    pygame.mixer.Channel(AudioChannel.MUSIC).fadeout(250)
+    pygame.mixer.music.fadeout(250)
 
 
 def _generate_credits() -> pygame.Surface:
