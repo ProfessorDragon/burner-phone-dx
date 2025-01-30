@@ -31,11 +31,6 @@ SEBZANARDO
 
 
 
-# FONT
 
-JOYSTIX
-
-
-
-## Made for the Pirate Software Gam Jam 16
+## Made for the Pirate Software Game Jam 16
 
