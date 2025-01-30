@@ -155,5 +155,6 @@ def update_mouse_buffer(mouse_buffer: t.InputBuffer) -> None:
 
 def terminate() -> None:
     print("Terminated application")
+    setup.write_settings()
     pygame.quit()
     raise SystemExit

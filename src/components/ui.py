@@ -7,6 +7,7 @@ import core.assets as a
 import core.constants as c
 import core.input as t
 import core.globals as g
+import core.setup as s
 from utilities.math import clamp
 
 
@@ -48,6 +49,7 @@ class Slider:
 def button_activate(button: Button) -> None:
     if callable(button.callback):
         button.callback()
+    s.write_settings()
 
 
 def checkbox_set_enabled(checkbox: Checkbox, enabled: bool) -> None:
@@ -57,6 +59,7 @@ def checkbox_set_enabled(checkbox: Checkbox, enabled: bool) -> None:
     checkbox.enabled = enabled
     if callable(checkbox.callback):
         checkbox.callback(checkbox.enabled)
+    s.write_settings()
 
 
 def checkbox_toggle(checkbox: Checkbox) -> None:
@@ -86,6 +89,7 @@ def slider_set_value(slider: Slider, value: int) -> None:
         g.settings[slider.key] = slider.value
     if callable(slider.callback):
         slider.callback(slider.value)
+    s.write_settings()
 
 
 def slider_set_value_mouse(slider: Slider, x: int) -> None:

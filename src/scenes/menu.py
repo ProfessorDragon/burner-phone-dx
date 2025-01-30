@@ -1,3 +1,28 @@
+from components.statemachine import StateMachine, statemachine_change_state
+from scenes.scene import Scene
+import scenes.scenemapping as scene
+from components.settings import Settings, settings_render, settings_update, settings_load
+from components.animation import (
+    Animator,
+    Animation,
+    animator_initialise,
+    animator_update,
+    animator_get_frame,
+)
+from components.camera import (
+    Camera,
+    camera_update,
+    camera_reset,
+)
+from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
+from components.fade import (
+    ScreenFade,
+    fade_active,
+    fade_initialise,
+    fade_render,
+    fade_start,
+    fade_update,
+)
 from enum import IntEnum, auto
 import pygame
 
@@ -11,34 +36,7 @@ from components.ui import (
 )
 import core.input as t
 import core.assets as a
-import core.globals as g
 import core.constants as c
-from components.fade import (
-    ScreenFade,
-    fade_active,
-    fade_initialise,
-    fade_render,
-    fade_start,
-    fade_update,
-)
-from components.audio import AudioChannel, play_sound, stop_music, try_play_sound
-from components.camera import (
-    Camera,
-    camera_update,
-    camera_reset,
-)
-from components.animation import (
-    Animator,
-    Animation,
-    animator_initialise,
-    animator_update,
-    animator_get_frame,
-)
-from components.settings import Settings, settings_render, settings_update, settings_load
-
-import scenes.scenemapping as scene
-from scenes.scene import Scene
-from components.statemachine import StateMachine, statemachine_change_state
 
 
 class MenuScreen(IntEnum):
@@ -286,6 +284,5 @@ class Menu(Scene):
 
 def terminate() -> None:
     print("Terminated application")
-    print(g.settings)
     pygame.quit()
     raise SystemExit
