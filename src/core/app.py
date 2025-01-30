@@ -76,15 +76,13 @@ def input_event_queue(action_buffer: t.InputBuffer) -> bool:
         if event.type == pygame.QUIT:
             return False
 
-        if (c.IS_WEB and not pygame.mouse.get_focused() or
-                event.type == pygame.WINDOWFOCUSLOST):
-            for channel_id in list(AudioChannel):
-                pygame.mixer.Channel(channel_id).pause()
+        if (c.IS_WEB and not pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSLOST:
+            # for channel in AudioChannel:
+            #     pygame.mixer.Channel(channel).pause()
             print("LOST FOCUS!")
-        elif (c.IS_WEB and pygame.mouse.get_focused() or
-                event.type == pygame.WINDOWFOCUSGAINED):
-            for channel_id in list(AudioChannel):
-                pygame.mixer.Channel(channel_id).unpause()
+        elif (c.IS_WEB and pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSGAINED:
+            # for channel in AudioChannel:
+            #     pygame.mixer.Channel(channel).unpause()
             print("GAINED FOCUS!")
         elif event.type == pygame.VIDEORESIZE:
             pass
