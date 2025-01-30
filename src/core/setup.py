@@ -8,12 +8,24 @@ import core.globals as g
 
 pygame.init()
 
-if c.IS_WEB:
-    platform.window.canvas.style.imageRendering = "pixelated"
-    window = pygame.display.set_mode(c.WINDOW_SETUP["size"])
-else:
-    window = pygame.display.set_mode(**c.WINDOW_SETUP)
 
+# i can't seem to get this function to work at runtime, it just freezes the display
+def setup_window() -> pygame.Surface:
+    if c.IS_WEB:
+        platform.window.canvas.style.imageRendering = "pixelated"
+        return pygame.display.set_mode(
+            c.WINDOW_SIZE,
+        )
+    else:
+        return pygame.display.set_mode(
+            size=c.WINDOW_SIZE,
+            flags=pygame.SCALED
+            | (pygame.FULLSCREEN if g.settings["fullscreen"] else pygame.RESIZABLE),
+            vsync=1 if g.settings["vsync"] else 0,
+        )
+
+
+window = setup_window()
 
 clock = pygame.time.Clock()
 

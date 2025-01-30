@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 import pygame
 
-from components.audio import AudioChannel, play_sound, set_music_volume, set_sfx_volume
 import core.constants as c
 import core.input as t
 import core.assets as a
 import core.globals as g
+from components.audio import AudioChannel, play_sound, set_music_volume, set_sfx_volume
 from components.ui import (
     BUTTON_SIZE,
     Slider,
@@ -16,7 +16,6 @@ from components.ui import (
     slider_set_value,
     slider_set_value_mouse,
     checkbox_toggle,
-    slider_percent,
     ui_list_render,
     ui_list_update_selection,
 )
@@ -32,7 +31,7 @@ class Settings:
 
         self.ui_music_slider = Slider(
             "music",
-            pygame.Rect(250, 50, *BUTTON_SIZE),
+            pygame.Rect(250, 75, *BUTTON_SIZE),
             0,
             100,
             0,
@@ -44,7 +43,7 @@ class Settings:
 
         self.ui_sfx_slider = Slider(
             "sfx",
-            pygame.Rect(250, 75, *BUTTON_SIZE),
+            pygame.Rect(250, 100, *BUTTON_SIZE),
             0,
             100,
             0,
@@ -61,7 +60,7 @@ class Settings:
             self.graphic_disabled,
             False,
             a.DEBUG_FONT.render("FULLSCREEN?", False, c.WHITE),
-            lambda enabled: print(enabled),
+            None,
         )
 
         self.ui_vsync_checkbox = Checkbox(
@@ -71,29 +70,29 @@ class Settings:
             self.graphic_disabled,
             True,
             a.DEBUG_FONT.render("VSYNC?", False, c.WHITE),
-            lambda enabled: print(enabled),
+            None,
         )
 
         self.ui_screenshake_checkbox = Checkbox(
             "screenshake",
-            pygame.Rect(250, 150, *BUTTON_SIZE),
+            pygame.Rect(250, 125, *BUTTON_SIZE),
             self.graphic_enabled,
             self.graphic_disabled,
             True,
             a.DEBUG_FONT.render("SCREENSHAKE?", False, c.WHITE),
-            lambda enabled: print(enabled),
+            None,
         )
 
         self.ui_default_button = Button(
             "",
-            pygame.Rect(250, 175, *BUTTON_SIZE),
+            pygame.Rect(250, 150, *BUTTON_SIZE),
             a.DEBUG_FONT.render("DEFAULT", False, c.WHITE),
             lambda: settings_reset(self),
         )
 
         self.ui_back_button = Button(
             "",
-            pygame.Rect(250, 200, *BUTTON_SIZE),
+            pygame.Rect(250, 175, *BUTTON_SIZE),
             a.DEBUG_FONT.render("BACK", False, c.WHITE),
             lambda: settings_exit(self),
         )
@@ -107,14 +106,12 @@ class Settings:
         self.ui_list = [
             self.ui_music_slider,
             self.ui_sfx_slider,
-            self.ui_fullscreen_checkbox,
-            self.ui_vsync_checkbox,
+            # self.ui_fullscreen_checkbox,
+            # self.ui_vsync_checkbox,
             self.ui_screenshake_checkbox,
             self.ui_default_button,
             self.ui_back_button,
         ]
-
-        settings_load(self)
 
         self.should_exit = False
 
@@ -204,12 +201,10 @@ def settings_update(
 
 
 def settings_render(settings: Settings, surface: pygame.Surface) -> None:
-    surface.blit(settings.title, (surface.get_width() //
-                 2 - settings.title.get_width() // 2, 15))
+    surface.blit(settings.title, (surface.get_width() // 2 - settings.title.get_width() // 2, 40))
 
     surface.blit(
-        a.MENU_CONTROLS, (surface.get_width() // 2 -
-                          a.MENU_CONTROLS.get_width() // 2, 225)
+        a.MENU_CONTROLS, (surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2, 200)
     )
 
     ui_list_render(surface, settings.ui_list, settings.ui_index)

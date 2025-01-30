@@ -274,6 +274,7 @@ class Game(Scene):
                 # pausing
                 if not fade_active(self.fade) and t.is_pressed(action_buffer, t.Action.START):
                     self.settings.ui_index = 0
+                    self.settings.last_mouse_position = pygame.mouse.get_pos()
                     self.settings.should_exit = False
                     self.paused = True
                     play_sound(AudioChannel.UI, a.UI_SELECT)
@@ -288,7 +289,8 @@ class Game(Scene):
         # RENDER
 
         # background
-        surface.fill(c.GRAY)  # can remove once map is made
+        if self.editor.enabled:
+            surface.fill(c.GRAY)
 
         entity_cutoff = round(self.player.motion.position.y + 32)
         # for some reason, subtracting the z position looks good
@@ -423,7 +425,7 @@ class Game(Scene):
             play_sound(AudioChannel.ENTITY, a.EXPLOSIONS[0])
         else:
             play_sound(AudioChannel.ENTITY_ALT, a.EXPLOSIONS[1])
-        self.camera.trauma = 0.5
+        self.camera.trauma = 0.6
         _add_timer(self, random.uniform(0.2, 0.6), self.finale_explosion)
 
     def exit_to_credits(self) -> None:

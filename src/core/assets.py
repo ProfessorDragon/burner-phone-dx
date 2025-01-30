@@ -55,10 +55,7 @@ MENU_SCANS = [
     pygame.image.load(MENU + "scan2.png"),
     pygame.image.load(MENU + "scan3.png"),
 ]
-MENU_BUTTON = pygame.image.load(MENU + "button.png")
-MENU_BUTTON_SELECTED = pygame.image.load(MENU + "button_selected.png")
-MENU_BUTTON_SELECTED.set_alpha(32)
-MENU_SLIDER = pygame.image.load(MENU + "slider.png")
+MENU_BUTTONS = slice_sheet(MENU + "buttons.png", 96, 16)
 
 
 def _generate_controls():

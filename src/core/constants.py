@@ -11,14 +11,6 @@ WINDOW_HEIGHT = 18 * TILE_SIZE
 WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
 WINDOW_CENTRE = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
 
-WINDOW_SETUP = {
-    "size": WINDOW_SIZE,
-    "flags": pygame.SCALED | pygame.RESIZABLE,
-    "depth": 0,
-    "display": 0,
-    "vsync": 1,
-}
-
 IS_WEB = sys.platform == "emscripten"
 IS_PRODUCTION = IS_WEB
 CAPTION = "BURNER PHONE DX"

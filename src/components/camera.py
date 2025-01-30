@@ -3,6 +3,7 @@ import random
 import pygame
 
 import core.constants as c
+import core.globals as g
 from components.motion import Motion, motion_update
 from utilities.math import clamp
 
@@ -46,7 +47,7 @@ def camera_update(camera: Camera, dt: float) -> None:
     # Update shake
     camera.trauma -= dt / camera.max_shake_duration
 
-    if camera.trauma > 0:
+    if camera.trauma > 0 and g.settings["screenshake"]:
         shake = camera.trauma**3  # Can square trauma too
         camera.shake_offset.x = camera.max_shake_offset.x * shake * random.uniform(-1, 1)
         camera.shake_offset.y = camera.max_shake_offset.y * shake * random.uniform(-1, 1)

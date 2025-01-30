@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from typing import Callable
 import pygame
 
-from components.audio import AudioChannel, play_sound, try_play_sound
+import core.setup as setup
 import core.assets as a
 import core.constants as c
 import core.input as t
 import core.globals as g
-import core.setup as s
+from components.audio import AudioChannel, play_sound, try_play_sound
 from utilities.math import clamp
 
 
@@ -49,7 +49,7 @@ class Slider:
 def button_activate(button: Button) -> None:
     if callable(button.callback):
         button.callback()
-    s.write_settings()
+    setup.write_settings()
 
 
 def checkbox_set_enabled(checkbox: Checkbox, enabled: bool) -> None:
@@ -59,7 +59,7 @@ def checkbox_set_enabled(checkbox: Checkbox, enabled: bool) -> None:
     checkbox.enabled = enabled
     if callable(checkbox.callback):
         checkbox.callback(checkbox.enabled)
-    s.write_settings()
+    setup.write_settings()
 
 
 def checkbox_toggle(checkbox: Checkbox) -> None:
@@ -72,8 +72,7 @@ def slider_percent(slider: Slider) -> float:
 
 
 def slider_value_render(slider: Slider) -> None:
-    slider.value_render = a.DEBUG_FONT.render(
-        str(int(slider.value)), False, c.WHITE)
+    slider.value_render = a.DEBUG_FONT.render(str(int(slider.value)), False, c.WHITE)
 
 
 def slider_set_value(slider: Slider, value: int) -> None:
@@ -89,7 +88,7 @@ def slider_set_value(slider: Slider, value: int) -> None:
         g.settings[slider.key] = slider.value
     if callable(slider.callback):
         slider.callback(slider.value)
-    s.write_settings()
+    setup.write_settings()
 
 
 def slider_set_value_mouse(slider: Slider, x: int) -> None:
@@ -108,7 +107,7 @@ def slider_set_value_mouse(slider: Slider, x: int) -> None:
 
 
 def button_render(surface: pygame.Surface, button: Button, selected: bool) -> None:
-    surface.blit(a.MENU_BUTTON, button.rect.topleft)
+    surface.blit(a.MENU_BUTTONS[1 if selected else 0], button.rect.topleft)
     surface.blit(
         button.graphic,
         (
@@ -117,25 +116,25 @@ def button_render(surface: pygame.Surface, button: Button, selected: bool) -> No
         ),
     )
     if selected:
-        surface.blit(a.MENU_BUTTON_SELECTED, button.rect.topleft)
+        surface.blit(a.MENU_BUTTONS[2], button.rect.topleft, special_flags=pygame.BLEND_RGB_ADD)
 
 
 def slider_render(surface: pygame.Surface, slider: Slider, selected: bool) -> None:
     surface.blit(slider.name_render, (slider.rect.left - 150, slider.rect.y))
-    surface.blit(a.MENU_BUTTON, slider.rect.topleft)
+    surface.blit(a.MENU_BUTTONS[1 if selected else 0], slider.rect.topleft)
     surface.blit(
-        a.MENU_SLIDER, slider.rect.topleft, (0, 0,
-                                             slider.filled_rect[2], slider.filled_rect[3])
+        a.MENU_BUTTONS[3], slider.rect.topleft, (0, 0, slider.filled_rect[2], slider.filled_rect[3])
     )
     surface.blit(slider.value_render, (slider.rect.right + 20, slider.rect.y))
     if selected:
-        surface.blit(a.MENU_BUTTON_SELECTED, (slider.rect.x, slider.rect.y))
+        surface.blit(
+            a.MENU_BUTTONS[2], (slider.rect.x, slider.rect.y), special_flags=pygame.BLEND_RGB_ADD
+        )
 
 
 def checkbox_render(surface: pygame.Surface, checkbox: Checkbox, selected: bool) -> None:
-    surface.blit(checkbox.name_render,
-                 (checkbox.rect.x - 150, checkbox.rect.y))
-    surface.blit(a.MENU_BUTTON, checkbox.rect.topleft)
+    surface.blit(checkbox.name_render, (checkbox.rect.x - 150, checkbox.rect.y))
+    surface.blit(a.MENU_BUTTONS[1 if selected else 0], checkbox.rect.topleft)
     if checkbox.enabled:
         surface.blit(
             checkbox.graphic_enabled,
@@ -153,8 +152,11 @@ def checkbox_render(surface: pygame.Surface, checkbox: Checkbox, selected: bool)
             ),
         )
     if selected:
-        surface.blit(a.MENU_BUTTON_SELECTED,
-                     (checkbox.rect.x, checkbox.rect.y))
+        surface.blit(
+            a.MENU_BUTTONS[2],
+            (checkbox.rect.x, checkbox.rect.y),
+            special_flags=pygame.BLEND_RGB_ADD,
+        )
 
 
 def ui_list_update_selection(
