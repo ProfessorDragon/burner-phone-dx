@@ -76,22 +76,21 @@ def input_event_queue(action_buffer: t.InputBuffer) -> bool:
         if event.type == pygame.QUIT:
             return False
 
-        if (c.IS_WEB and not pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSLOST:
-            # for channel in AudioChannel:
-            #     pygame.mixer.Channel(channel).pause()
-            print("LOST FOCUS!")
-        elif (c.IS_WEB and pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSGAINED:
-            # for channel in AudioChannel:
-            #     pygame.mixer.Channel(channel).unpause()
-            print("GAINED FOCUS!")
-        elif event.type == pygame.VIDEORESIZE:
-            pass
-        elif event.type == pygame.MOUSEWHEEL:
-            # accessibility
+        if event.type == pygame.MOUSEWHEEL and not c.IS_WEB:
             if event.y < 0:
                 action_buffer[t.Action.RIGHT] = t.InputState.PRESSED
             elif event.y > 0:
                 action_buffer[t.Action.LEFT] = t.InputState.PRESSED
+        # if (c.IS_WEB and not pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSLOST:
+        #     for channel in AudioChannel:
+        #         pygame.mixer.Channel(channel).pause()
+        #     print("LOST FOCUS!")
+        # elif (c.IS_WEB and pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSGAINED:
+        #     for channel in AudioChannel:
+        #         pygame.mixer.Channel(channel).unpause()
+        #     print("GAINED FOCUS!")
+        # elif event.type == pygame.VIDEORESIZE:
+        #     pass
 
         # HACK: For quick development
         # NOTE: It overrides exiting fullscreen when in browser
