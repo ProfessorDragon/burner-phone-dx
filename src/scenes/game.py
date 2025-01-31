@@ -20,6 +20,7 @@ from components.fade import (
     fade_start,
     fade_update,
 )
+from components.motion import Direction
 from components.timer import (
     Stopwatch,
     Timer,
@@ -100,11 +101,10 @@ class Game(Scene):
         self.vignette = a.VIGNETTE.copy()
         self.vignette.set_alpha(96)
 
-        self.player = Player(_tile_size_vec(10.5, 12))
+        self.player = Player()
 
         self.camera = Camera.empty()
         self.camera.offset = pygame.Vector2(c.WINDOW_WIDTH / 2, c.WINDOW_HEIGHT / 2)
-        self.camera.motion.position = _camera_target(self.player)
 
         self.dialogue = DialogueSystem()
         dialogue_initialise(self.dialogue)
@@ -112,8 +112,6 @@ class Game(Scene):
 
         self.global_stopwatch = Stopwatch()
         self.timers: list[Timer] = []
-
-        self.music_index = 1
 
         self.grid_collision: set[tuple[int, int]] = set()
         self.grid_tiles: dict[tuple[int, int], list[TileData]] = {}
@@ -126,8 +124,20 @@ class Game(Scene):
 
         self.settings = Settings()
 
-    # runs when game starts or is resumed
+    # runs when game starts (or is resumed but thats not a thing)
     def enter(self) -> None:
+        # reset progress
+        self.player.motion.position = _tile_size_vec(10.5, 12)
+        self.player.direction = Direction.S
+        self.player.progression.main_story = MainStoryProgress.INTRO
+        self.player.progression.checkpoint = self.player.motion.position.copy()
+        self.player.progression.activated_buttons = set()
+        self.player.progression.checkpoint_buttons = set()
+        self.camera.motion.position = _camera_target(self.player)
+        self.dialogue.executed_scenes.clear()
+        self.timers.clear()
+        self.music_index = 1
+
         fade_start(self.fade, True)
         if self.music_index >= 0:
             play_music(a.THEME_MUSIC_PATH[self.music_index], -1)
@@ -143,10 +153,6 @@ class Game(Scene):
             )
         if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
             _add_timer(self, 6, self.opening_call_2)
-
-        # unfreeze player movement if they start the game again after finishing it
-        if self.player.progression.main_story == MainStoryProgress.FINALE_NO_MOVEMENT:
-            self.player.progression.main_story = MainStoryProgress.FINALE
 
         settings_load(self.settings)
 

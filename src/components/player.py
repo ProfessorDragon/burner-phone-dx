@@ -74,9 +74,8 @@ class PlayerCaughtStyle(IntEnum):
 
 
 class Player:
-    def __init__(self, spawn_position: pygame.Vector2):
+    def __init__(self):
         self.motion = Motion.empty()
-        self.motion.position = spawn_position
         self.directional_input = pygame.Vector2()
         self.z_position = 0
         self.z_velocity = 0
@@ -103,9 +102,6 @@ class Player:
         animator_initialise(self.animator, animation_mapping)
 
         self.progression = PlayerProgression()
-        self.progression.checkpoint = self.motion.position.copy()
-        self.progression.activated_buttons = set()
-        self.progression.checkpoint_buttons = set()
 
         self.direction = Direction.S
         self.caught_timer = Timer()  # resets scene and player when completed
