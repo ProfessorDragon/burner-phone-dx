@@ -99,6 +99,22 @@ noskip
 music 2
 
 
+[PASSED SHADOWLESS TREE]
+
+style phone
+char 0 phone
+buttons Accept=PASSED SHADOWLESS TREE ACCEPT|Decline=
+- Incoming call: 0200-666-391
+
+
+[PASSED SHADOWLESS TREE ACCEPT]
+
+style phone silent
+char 0 luke
+- louisa here. just contacting you to ask if you're still interested in the position at pharm-o-rite?
+- if so, enter the forest, and stand under the tree with no shadow. talk to you soon.\n**sksrkck**
+
+
 [SHADOWLESS TREE]
 
 require OPENING ACCEPT MAIN
