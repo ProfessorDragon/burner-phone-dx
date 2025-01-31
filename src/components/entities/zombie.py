@@ -21,19 +21,27 @@ from components.player import Player, PlayerCaughtStyle, player_caught, player_r
 from scenes.scene import PLAYER_LAYER, PLAYER_OR_FG, RenderLayer
 
 
+RADIUS = 96
+RANGE_CIRCLE = pygame.Surface((RADIUS * 2, RADIUS * 2), pygame.SRCALPHA)
+pygame.draw.circle(RANGE_CIRCLE, c.BLACK, (RADIUS, RADIUS), RADIUS, 2)
+RANGE_CIRCLE.set_alpha(20)
+
+
 class ZombieEnemy(Entity):
     def __init__(self, movement_center: pygame.Vector2):
         super().__init__()
         self.animator = Animator()
-        animator_initialise(self.animator, walking_animation_mapping(a.ZOMBIE_FRAMES, 0.09))
+        animator_initialise(
+            self.animator, walking_animation_mapping(a.ZOMBIE_FRAMES, 0.09))
         self.direction = Direction.N
         self.movement_center = movement_center
-        self.movement_radius = 96
+        self.movement_radius = RADIUS
         self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(
-            round(self.motion.position.x) + 12, round(self.motion.position.y) + 28, 8, 4
+            round(self.motion.position.x) +
+            12, round(self.motion.position.y) + 28, 8, 4
         )
 
     def get_terrain_cutoff(self) -> float:
@@ -67,8 +75,10 @@ class ZombieEnemy(Entity):
         self.motion.velocity = pygame.Vector2()
         prect = player_rect(player.motion)
         hitbox = self.get_hitbox()
-        player_dist = pygame.Vector2(prect.center) - pygame.Vector2(hitbox.center)
-        center_dist = self.movement_center + pygame.Vector2(16, 30) - pygame.Vector2(hitbox.center)
+        player_dist = pygame.Vector2(
+            prect.center) - pygame.Vector2(hitbox.center)
+        center_dist = self.movement_center + \
+            pygame.Vector2(16, 30) - pygame.Vector2(hitbox.center)
         if self.chasing:
             if center_dist.magnitude() < self.movement_radius:
                 entity_follow(self, player_dist, self.walk_speed)
@@ -103,16 +113,23 @@ class ZombieEnemy(Entity):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer in PLAYER_LAYER:
+            screen_pos = camera_to_screen_shake(camera, *self.movement_center)
+            screen_pos = (screen_pos[0] - RADIUS + 16,
+                          screen_pos[1] - RADIUS + 30)
+            surface.blit(RANGE_CIRCLE, screen_pos)
+
             render_shadow(surface, camera, self.motion, self.direction)
             surface.blit(
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),
             )
+
         if layer in PLAYER_OR_FG and g.show_hitboxes:
             pygame.draw.circle(
                 surface,
                 c.RED,
-                camera_to_screen_shake(camera, *(self.movement_center + pygame.Vector2(16, 30))),
+                camera_to_screen_shake(
+                    camera, *(self.movement_center + pygame.Vector2(16, 30))),
                 self.movement_radius,
                 1,
             )
