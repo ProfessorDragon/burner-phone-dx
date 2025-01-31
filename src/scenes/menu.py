@@ -69,7 +69,8 @@ def _generate_credits() -> pygame.Surface:
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
         surf.blit(
-            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
+            text, (surf.get_width() // 2 - text.get_width() //
+                   2, i * line_height + title_height)
         )
     return surf
 
@@ -181,7 +182,7 @@ class Menu(Scene):
 
                 if self.ui_index is not None:
                     element = self.ui_list[self.ui_index]
-                    if t.is_pressed(action_buffer, t.Action.A):
+                    if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(action_buffer, t.Action.SELECT) or t.is_pressed(action_buffer, t.Action.START):
                         button_activate(element)
                         play_sound(AudioChannel.UI, a.UI_SELECT)
 
@@ -196,7 +197,8 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(
+                            self.statemachine, scene.SceneState.GAME),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
@@ -230,8 +232,10 @@ class Menu(Scene):
                     surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
-            footer = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(footer, (surface.get_width() // 2 - footer.get_width() // 2, 200))
+            footer = a.DEBUG_FONT.render(
+                "Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(footer, (surface.get_width() //
+                         2 - footer.get_width() // 2, 200))
 
         elif self.screen == MenuScreen.SETTINGS:
             settings_render(self.settings, surface)
