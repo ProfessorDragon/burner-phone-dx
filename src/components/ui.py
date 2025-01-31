@@ -72,7 +72,8 @@ def slider_percent(slider: Slider) -> float:
 
 
 def slider_value_render(slider: Slider) -> None:
-    slider.value_render = a.DEBUG_FONT.render(str(int(slider.value)), False, c.WHITE)
+    slider.value_render = a.DEBUG_FONT.render(
+        str(int(slider.value)), False, c.WHITE)
 
 
 def slider_set_value(slider: Slider, value: int) -> None:
@@ -116,24 +117,28 @@ def button_render(surface: pygame.Surface, button: Button, selected: bool) -> No
         ),
     )
     if selected:
-        surface.blit(a.MENU_BUTTONS[2], button.rect.topleft, special_flags=pygame.BLEND_RGB_ADD)
+        surface.blit(a.MENU_BUTTONS[2], button.rect.topleft,
+                     special_flags=pygame.BLEND_RGB_ADD)
 
 
 def slider_render(surface: pygame.Surface, slider: Slider, selected: bool) -> None:
     surface.blit(slider.name_render, (slider.rect.left - 150, slider.rect.y))
     surface.blit(a.MENU_BUTTONS[1 if selected else 0], slider.rect.topleft)
     surface.blit(
-        a.MENU_BUTTONS[3], slider.rect.topleft, (0, 0, slider.filled_rect[2], slider.filled_rect[3])
+        a.MENU_BUTTONS[3], slider.rect.topleft, (
+            0, 0, slider.filled_rect[2], slider.filled_rect[3])
     )
     surface.blit(slider.value_render, (slider.rect.right + 20, slider.rect.y))
     if selected:
         surface.blit(
-            a.MENU_BUTTONS[2], (slider.rect.x, slider.rect.y), special_flags=pygame.BLEND_RGB_ADD
+            a.MENU_BUTTONS[2], (slider.rect.x,
+                                slider.rect.y), special_flags=pygame.BLEND_RGB_ADD
         )
 
 
 def checkbox_render(surface: pygame.Surface, checkbox: Checkbox, selected: bool) -> None:
-    surface.blit(checkbox.name_render, (checkbox.rect.x - 150, checkbox.rect.y))
+    surface.blit(checkbox.name_render,
+                 (checkbox.rect.x - 150, checkbox.rect.y))
     surface.blit(a.MENU_BUTTONS[1 if selected else 0], checkbox.rect.topleft)
     if checkbox.enabled:
         surface.blit(

@@ -201,10 +201,12 @@ def settings_update(
 
 
 def settings_render(settings: Settings, surface: pygame.Surface) -> None:
-    surface.blit(settings.title, (surface.get_width() // 2 - settings.title.get_width() // 2, 40))
+    surface.blit(settings.title, (surface.get_width() //
+                 2 - settings.title.get_width() // 2, 40))
 
     surface.blit(
-        a.MENU_CONTROLS, (surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2, 215)
+        a.MENU_CONTROLS, (surface.get_width() // 2 -
+                          a.MENU_CONTROLS.get_width() // 2, 215)
     )
 
     ui_list_render(surface, settings.ui_list, settings.ui_index)
