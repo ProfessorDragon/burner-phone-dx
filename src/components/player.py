@@ -118,7 +118,7 @@ class Player:
 
         # consts
         self.walk_speed = 150  # allows jumping a 3 tile gap
-        self.roll_accel = 450  # allows jumping a 4 tile gap (also barely a 5 tile lake)
+        self.roll_max_speed = 350  # allows jumping a 4 tile gap (also barely a 5 tile lake)
         self.jump_velocity = 130  # about a tile high
         self.z_acceleration = 600
 
@@ -244,7 +244,6 @@ def player_update(
                 and player.roll_max_timer.remaining <= 0  # not currently rolling
                 and player.z_position == 0  # is grounded
             ):
-                player.motion.acceleration = player.motion.velocity.normalize() * player.roll_accel
                 animator_reset(player.animator)
                 timer_reset(player.roll_max_timer, 0.3)
                 timer_reset(player.roll_cooldown_timer, 0.65)
@@ -254,9 +253,13 @@ def player_update(
         timer_update(player.roll_max_timer, dt)
         timer_update(player.roll_cooldown_timer, dt)
 
-    # reset acceleration (from rolling)
-    if player.roll_max_timer.remaining <= 0:
-        player.motion.acceleration = pygame.Vector2()
+    # apply roll velocity
+    if player.roll_max_timer.remaining > 0 and player.motion.velocity.magnitude_squared() > 0:
+        player.motion.velocity = player.motion.velocity.normalize() * (
+            (player.roll_max_speed - player.walk_speed)
+            * (player.roll_max_timer.remaining / player.roll_max_timer.duration)
+            + player.walk_speed
+        )
 
     # collision
     _player_collision(player, dt, grid_collision, walls)
