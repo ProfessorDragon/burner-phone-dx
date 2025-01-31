@@ -130,8 +130,10 @@ def player_rect(motion: Motion) -> pygame.Rect:
 
 def _player_movement(player: Player, dt: float, action_buffer: t.InputBuffer) -> None:
     player.directional_input = pygame.Vector2(
-        t.is_held(action_buffer, t.Action.RIGHT) - t.is_held(action_buffer, t.Action.LEFT),
-        t.is_held(action_buffer, t.Action.DOWN) - t.is_held(action_buffer, t.Action.UP),
+        t.is_held(action_buffer, t.Action.RIGHT) -
+        t.is_held(action_buffer, t.Action.LEFT),
+        t.is_held(action_buffer, t.Action.DOWN) -
+        t.is_held(action_buffer, t.Action.UP),
     )
     # no roll control
     if player.roll_max_timer.remaining > 0:
@@ -195,6 +197,7 @@ def player_update(
     player: Player,
     dt: float,
     action_buffer: t.InputBuffer,
+    mouse_buffer: t.InputBuffer,
     grid_collision: set[tuple[int, int]],
     walls: list[pygame.Rect],
     dialogue: DialogueSystem,
@@ -212,26 +215,29 @@ def player_update(
 
         if player.interaction.scene_name is not None and not player.interaction.requires_input:
             if not dialogue_has_executed_scene(dialogue, player.interaction.scene_name):
-                dialogue_execute_script_scene(dialogue, player.interaction.scene_name)
+                dialogue_execute_script_scene(
+                    dialogue, player.interaction.scene_name)
                 player.interaction.scene_name = None
 
-        if t.is_pressed(action_buffer, t.Action.A):
+        if t.is_pressed(action_buffer, t.Action.A) or t.is_pressed(mouse_buffer, t.MouseButton.LEFT):
             # interact
             if player.interaction.scene_name is not None and player.interaction.requires_input:
                 if player.interaction.direction is not None:
                     player.direction = player.interaction.direction
                 is_moving = False
-                player.motion.position.x = int(player.motion.position.x)  # reduces jitter
+                player.motion.position.x = int(
+                    player.motion.position.x)  # reduces jitter
                 player.motion.position.y = int(player.motion.position.y)
                 player.motion.velocity = pygame.Vector2()
-                dialogue_execute_script_scene(dialogue, player.interaction.scene_name)
+                dialogue_execute_script_scene(
+                    dialogue, player.interaction.scene_name)
             # jumping
             elif player.z_position == 0:
                 player.z_velocity = -player.jump_velocity
                 animator_reset(player.animator)
                 play_sound(AudioChannel.PLAYER, a.JUMP)
 
-        if t.is_pressed(action_buffer, t.Action.B):
+        if t.is_pressed(action_buffer, t.Action.B) or t.is_pressed(mouse_buffer, t.MouseButton.RIGHT):
             # maybe start rolling
             if (
                 is_moving
@@ -259,21 +265,26 @@ def player_update(
     if player.caught_timer.remaining <= 0:
         step_frames = ()
         if player.roll_max_timer.remaining > 0:
-            animator_switch_animation(player.animator, f"roll_{player.direction}")  # todo!
+            animator_switch_animation(
+                player.animator, f"roll_{player.direction}")  # todo!
         elif player.z_position < 0:
-            animator_switch_animation(player.animator, f"jump_{player.direction}")
+            animator_switch_animation(
+                player.animator, f"jump_{player.direction}")
         elif is_moving:
-            animator_switch_animation(player.animator, f"walk_{player.direction}")
+            animator_switch_animation(
+                player.animator, f"walk_{player.direction}")
             step_frames = (7, 3)
         else:
-            animator_switch_animation(player.animator, f"idle_{player.direction}")
+            animator_switch_animation(
+                player.animator, f"idle_{player.direction}")
 
         prev_frame = player.animator.frame_index
         animator_update(player.animator, dt)
         if prev_frame not in step_frames and player.animator.frame_index in step_frames:
             play_sound(
                 AudioChannel.PLAYER,
-                a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
+                a.FOOTSTEPS[0 if player.animator.frame_index ==
+                            step_frames[0] else 1],
             )
 
 
@@ -312,21 +323,25 @@ def player_render(player: Player, surface: pygame.Surface, camera: Camera) -> No
     if player.caught_timer.remaining > 0:
         if player.caught_style == PlayerCaughtStyle.HOLE:
             px = player.caught_timer.elapsed * 32
-            scaled_frame = pygame.transform.smoothscale(frame, (32 - px, 32 - px))
+            scaled_frame = pygame.transform.smoothscale(
+                frame, (32 - px, 32 - px))
             scaled_frame.fill(
                 tuple(128 * player.caught_timer.elapsed for _ in range(3)),
                 special_flags=pygame.BLEND_RGB_SUB,
             )
-            render_position = player.motion.position + pygame.Vector2(px / 2, px / 2)
+            render_position = player.motion.position + \
+                pygame.Vector2(px / 2, px / 2)
             render_position += pygame.Vector2(px * 0.25, 0).rotate(
                 -angle_from_direction(player.direction)
             )
             render_position.y += px * 0.5
-            surface.blit(scaled_frame, camera_to_screen_shake(camera, *render_position))
+            surface.blit(scaled_frame, camera_to_screen_shake(
+                camera, *render_position))
             return
 
     # normal rendering
-    render_shadow(surface, camera, player.motion, player.direction, player.z_position)
+    render_shadow(surface, camera, player.motion,
+                  player.direction, player.z_position)
     surface.blit(
         frame,
         camera_to_screen_shake(
