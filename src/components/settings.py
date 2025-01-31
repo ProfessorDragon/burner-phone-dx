@@ -92,8 +92,8 @@ class Settings:
 
         self.ui_back_button = Button(
             "",
-            pygame.Rect(250, 175, *BUTTON_SIZE),
-            a.DEBUG_FONT.render("BACK", False, c.WHITE),
+            pygame.Rect(250, 185, *BUTTON_SIZE),
+            a.DEBUG_FONT.render("< BACK", False, c.WHITE),
             lambda: settings_exit(self),
         )
 
@@ -204,7 +204,7 @@ def settings_render(settings: Settings, surface: pygame.Surface) -> None:
     surface.blit(settings.title, (surface.get_width() // 2 - settings.title.get_width() // 2, 40))
 
     surface.blit(
-        a.MENU_CONTROLS, (surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2, 200)
+        a.MENU_CONTROLS, (surface.get_width() // 2 - a.MENU_CONTROLS.get_width() // 2, 215)
     )
 
     ui_list_render(surface, settings.ui_list, settings.ui_index)
