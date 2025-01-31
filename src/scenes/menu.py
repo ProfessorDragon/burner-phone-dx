@@ -48,6 +48,7 @@ class MenuScreen(IntEnum):
 
 def _fade_music() -> None:
     pygame.mixer.music.fadeout(250)
+    pygame.mixer.Channel(AudioChannel.STATIC).fadeout(250)
 
 
 def _generate_credits() -> pygame.Surface:
@@ -69,8 +70,7 @@ def _generate_credits() -> pygame.Surface:
             color = c.MAGENTA
         text = a.DEBUG_FONT.render(ln, False, color)
         surf.blit(
-            text, (surf.get_width() // 2 - text.get_width() //
-                   2, i * line_height + title_height)
+            text, (surf.get_width() // 2 - text.get_width() // 2, i * line_height + title_height)
         )
     return surf
 
@@ -141,7 +141,7 @@ class Menu(Scene):
         self.fade_main_menu()
         if self.should_show_credits:
             self.should_show_credits = False
-            play_music(a.STATIC_PATH, -1)
+            play_sound(AudioChannel.STATIC, a.STATIC, -1)
             self.start_credits()
         else:
             play_music(a.THEME_MUSIC_PATH[2], -1)
@@ -201,8 +201,7 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(
-                            self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
@@ -236,14 +235,10 @@ class Menu(Scene):
                     surface.get_height() // 2 - a.MENU_CONTROLS.get_height() // 2 - 10,
                 ),
             )
-            footer1 = a.DEBUG_FONT.render(
-                "Best played in fullscreen with sound on", False, c.WHITE)
-            surface.blit(footer1, (surface.get_width() //
-                         2 - footer1.get_width() // 2, 200))
-            footer2 = a.DEBUG_FONT.render(
-                "Press jump to begin", False, c.WHITE)
-            surface.blit(footer2, (surface.get_width() //
-                         2 - footer2.get_width() // 2, 225))
+            footer1 = a.DEBUG_FONT.render("Best played in fullscreen with sound on", False, c.WHITE)
+            surface.blit(footer1, (surface.get_width() // 2 - footer1.get_width() // 2, 200))
+            footer2 = a.DEBUG_FONT.render("Press jump to begin", False, c.WHITE)
+            surface.blit(footer2, (surface.get_width() // 2 - footer2.get_width() // 2, 225))
 
         elif self.screen == MenuScreen.SETTINGS:
             settings_render(self.settings, surface)
@@ -261,6 +256,7 @@ class Menu(Scene):
 
     def exit(self) -> None:
         stop_music()
+        pygame.Channel(AudioChannel.STATIC).stop()
 
     def change_screen(self, screen: MenuScreen) -> None:
         self.screen = screen
@@ -290,7 +286,8 @@ class Menu(Scene):
     def fade_controls(self) -> None:
         self.change_screen(MenuScreen.PRE_GAME)
         fade_start(self.fade, True)
-        play_music(a.STATIC_PATH, -1)
+        pygame.mixer.music.unload()  # yes.
+        play_sound(AudioChannel.STATIC, a.STATIC, -1)
 
 
 def terminate() -> None:

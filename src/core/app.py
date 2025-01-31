@@ -20,8 +20,7 @@ def run() -> None:
     pygame.display.set_caption(c.CAPTION)
     pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
-    statemachine_initialise(
-        scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
+    statemachine_initialise(scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 
@@ -32,8 +31,7 @@ async def game_loop(
 
     action_buffer: t.InputBuffer = [t.InputState.NOTHING for _ in t.Action]
 
-    last_action_mapping_pressed = [
-        t.action_mappings[action][0] for action in t.Action]
+    last_action_mapping_pressed = [t.action_mappings[action][0] for action in t.Action]
 
     print("Starting game loop")
 
@@ -53,8 +51,7 @@ async def game_loop(
 
         update_mouse_buffer(mouse_buffer)
 
-        statemachine_execute(scene_manager, surface, dt,
-                             action_buffer, mouse_buffer)
+        statemachine_execute(scene_manager, surface, dt, action_buffer, mouse_buffer)
 
         # debug_str = f"FPS {clock.get_fps():.0f}\nDT {dt:.3f}"
         # surface.blit(
@@ -81,15 +78,14 @@ def input_event_queue(action_buffer: t.InputBuffer) -> bool:
                 action_buffer[t.Action.RIGHT] = t.InputState.PRESSED
             elif event.y > 0:
                 action_buffer[t.Action.LEFT] = t.InputState.PRESSED
+
+        elif event.type == pygame.WINDOWFOCUSGAINED:
+            pygame.mixer.music.unpause()
+
         # if (c.IS_WEB and not pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSLOST:
         #     for channel in AudioChannel:
         #         pygame.mixer.Channel(channel).pause()
-        #     print("LOST FOCUS!")
-        # elif (c.IS_WEB and pygame.mouse.get_focused()) or event.type == pygame.WINDOWFOCUSGAINED:
-        #     for channel in AudioChannel:
-        #         pygame.mixer.Channel(channel).unpause()
-        #     print("GAINED FOCUS!")
-        # elif event.type == pygame.VIDEORESIZE:
+        # if event.type == pygame.VIDEORESIZE:
         #     pass
 
         # HACK: For quick development
