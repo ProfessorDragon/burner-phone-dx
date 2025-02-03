@@ -214,6 +214,7 @@ class Game(Scene):
                     self.music_index = self.dialogue.desired_music_index
                     if self.music_index >= 0:
                         play_music(a.THEME_MUSIC_PATH[self.music_index], -1)
+                        settings_load(self.settings)
                     else:
                         stop_music()
                     self.dialogue.desired_music_index = None
