@@ -267,16 +267,18 @@ class Game(Scene):
 
                 # entities
                 entities_in_bounds = []
-                for entity in self.entities:
-                    path = entity.get_path()
+                for ent in self.entities:
+                    path = ent.get_path()
                     if path:
-                        bound_points = path
+                        ok = any(entity_bounds.collidepoint(point) for point in path)
+                    elif isinstance(ent, CameraBoundaryEntity):
+                        ok = entity_bounds.colliderect(ent.get_hitbox())
                     else:
-                        bound_points = [entity.motion.position]
-                    if any(entity_bounds.collidepoint(point) for point in bound_points):
-                        entities_in_bounds.append(entity)
+                        ok = entity_bounds.collidepoint(ent.motion.position)
+                    if ok:
+                        entities_in_bounds.append(ent)
                         entity_update(
-                            entity,
+                            ent,
                             dt,
                             self.global_stopwatch.elapsed,
                             self.player,
@@ -340,18 +342,18 @@ class Game(Scene):
                         cutoff_bg_tiles.append((x, y, tile))
                     else:
                         cutoff_fg_tiles.append((x, y, tile))
-        for entity in entities_in_bounds:
-            entity_render(entity, surface, self.camera, RenderLayer.RAYS)
+        for ent in entities_in_bounds:
+            entity_render(ent, surface, self.camera, RenderLayer.RAYS)
         for x, y, tile in cutoff_bg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for entity in entities_in_bounds:
+        for ent in entities_in_bounds:
             entity_render(
-                entity,
+                ent,
                 surface,
                 self.camera,
                 (
                     RenderLayer.PLAYER_BG
-                    if entity.get_terrain_cutoff() < entity_cutoff
+                    if ent.get_terrain_cutoff() < entity_cutoff
                     else RenderLayer.BACKGROUND
                 ),
             )
@@ -385,14 +387,14 @@ class Game(Scene):
             )
         for x, y, tile in cutoff_fg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for entity in entities_in_bounds:
+        for ent in entities_in_bounds:
             entity_render(
-                entity,
+                ent,
                 surface,
                 self.camera,
                 (
                     RenderLayer.PLAYER_FG
-                    if entity.get_terrain_cutoff() >= entity_cutoff
+                    if ent.get_terrain_cutoff() >= entity_cutoff
                     else RenderLayer.FOREGROUND
                 ),
             )
