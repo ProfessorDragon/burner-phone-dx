@@ -145,14 +145,15 @@ class Game(Scene):
         self.reset()
 
         # opening call
-        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
-            _add_timer(
-                self,
-                1.5,
-                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
-            )
-        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
-            _add_timer(self, 6, self.opening_call_2)
+        # TODO disable
+        # if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
+        #     _add_timer(
+        #         self,
+        #         1.5,
+        #         lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
+        #     )
+        # if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
+        #     _add_timer(self, 6, self.opening_call_2)
 
         settings_load(self.settings)
 
@@ -161,6 +162,7 @@ class Game(Scene):
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
         stopwatch_reset(self.global_stopwatch)
+        self.entities_in_bounds: list[Entity] = None
         for entity in self.entities:
             entity_reset(entity)
 
@@ -185,14 +187,13 @@ class Game(Scene):
         )
 
         # update and render entities within this area
-        decor_bounds = camera_rect(self.camera)
-        entity_bounds = decor_bounds.inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
-        entities_in_bounds: list[Entity] = None
+        entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
                 camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
+                self.entities_in_bounds = None
 
             elif not in_dialogue:
                 # update hardcoded story elements
@@ -266,17 +267,20 @@ class Game(Scene):
                 camera_update(self.camera, dt)
 
                 # entities
-                entities_in_bounds = []
+                self.entities_in_bounds = []
                 for ent in self.entities:
                     path = ent.get_path()
                     if path:
                         ok = any(entity_bounds.collidepoint(point) for point in path)
-                    elif isinstance(ent, CameraBoundaryEntity):
-                        ok = entity_bounds.colliderect(ent.get_hitbox())
                     else:
                         ok = entity_bounds.collidepoint(ent.motion.position)
+                        if not ok and isinstance(ent, CameraBoundaryEntity):
+                            ok = entity_bounds.collidepoint(
+                                ent.motion.position.x + c.TILE_SIZE * ent.w,
+                                ent.motion.position.y + c.TILE_SIZE * ent.h,
+                            )
                     if ok:
-                        entities_in_bounds.append(ent)
+                        self.entities_in_bounds.append(ent)
                         entity_update(
                             ent,
                             dt,
@@ -301,18 +305,16 @@ class Game(Scene):
                 self.paused = False
                 play_sound(AudioChannel.UI, a.UI_HOVER)
 
-        if entities_in_bounds is None:
+        if self.entities_in_bounds is None:
             # compile list of entities for rendering only
-            entities_in_bounds = [
-                entity
-                for entity in self.entities
-                if entity_bounds.collidepoint(entity.motion.position)
+            self.entities_in_bounds = [
+                entity for entity in self.entities if entity_bounds.colliderect(entity.get_hitbox())
             ]
 
         # RENDER
 
         # background
-        if self.editor.enabled:
+        if self.editor.enabled or True:  # TODO disable
             surface.fill(c.GRAY)
 
         entity_cutoff = round(self.player.motion.position.y + 32)
@@ -342,11 +344,11 @@ class Game(Scene):
                         cutoff_bg_tiles.append((x, y, tile))
                     else:
                         cutoff_fg_tiles.append((x, y, tile))
-        for ent in entities_in_bounds:
+        for ent in self.entities_in_bounds:
             entity_render(ent, surface, self.camera, RenderLayer.RAYS)
         for x, y, tile in cutoff_bg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for ent in entities_in_bounds:
+        for ent in self.entities_in_bounds:
             entity_render(
                 ent,
                 surface,
@@ -359,7 +361,7 @@ class Game(Scene):
             )
         for dec in self.decor:
             rect = decor_rect(dec)
-            if decor_bounds.colliderect(rect):
+            if entity_bounds.colliderect(rect):
                 if rect.bottom >= entity_cutoff and player_rect(self.player.motion).colliderect(
                     rect
                 ):
@@ -387,7 +389,7 @@ class Game(Scene):
             )
         for x, y, tile in cutoff_fg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for ent in entities_in_bounds:
+        for ent in self.entities_in_bounds:
             entity_render(
                 ent,
                 surface,

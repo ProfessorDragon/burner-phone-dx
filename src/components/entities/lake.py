@@ -17,9 +17,9 @@ class LakeEnemy(Entity):
         # small hitboxes are good! but make sure to patch any holes as a result.
         return pygame.Rect(
             self.motion.position.x + 5,
-            self.motion.position.y + 5,
+            self.motion.position.y + 3,
             c.TILE_SIZE * self.w - 10,
-            c.TILE_SIZE * self.h - 10,
+            c.TILE_SIZE * self.h - 6,
         )
 
     def to_json(self):
