@@ -46,7 +46,6 @@ class SecurityCameraEnemy(Entity):
         self.swivel = 0
         self.swivel_angle = 60
         self.should_raycast = False
-        self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(*self.motion.position, 16, 16)
@@ -70,9 +69,6 @@ class SecurityCameraEnemy(Entity):
         enemy.sight_data.z_offset = js.get("z", -16)
         enemy.should_raycast = js.get("raycast", False)
         return enemy
-
-    def reset(self) -> None:
-        pass
 
     def update(
         self,

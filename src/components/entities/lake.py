@@ -27,10 +27,10 @@ class LakeEnemy(Entity):
 
     @staticmethod
     def from_json(js):
-        entity = LakeEnemy()
-        entity.motion.position = pygame.Vector2(js["pos"])
-        entity.w, entity.h = js.get("w", 1), js.get("h", 1)
-        return entity
+        ent = LakeEnemy()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.w, ent.h = js.get("w", 1), js.get("h", 1)
+        return ent
 
     def reset(self) -> None:
         pass
