@@ -56,7 +56,7 @@ class SignEntity(Entity):
             player.interaction = PlayerInteraction(
                 self.scene_name, True, None if self.floor else Direction.N
             )
-        else:
+        elif self.show_arrow:
             self.show_arrow = False
             if player.interaction.scene_name == self.scene_name:
                 player.interaction.scene_name = None

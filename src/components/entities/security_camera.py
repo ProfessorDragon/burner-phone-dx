@@ -70,6 +70,9 @@ class SecurityCameraEnemy(Entity):
         enemy.should_raycast = js.get("raycast", False)
         return enemy
 
+    def reset(self) -> None:
+        pass
+
     def update(
         self,
         dt: float,
