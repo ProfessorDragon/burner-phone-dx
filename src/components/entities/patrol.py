@@ -16,7 +16,7 @@ from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import DIST_THRESHOLD, TURN_THRESHOLD, Entity, entity_follow
 from components.motion import Direction, direction_from_angle, motion_update
 from components.player import Player, PlayerCaughtStyle, player_caught, player_rect
-from components.ray import SightData, collide_sight, compile_sight, render_sight
+from components.ray import SightData, sight_collides, sight_compile, sight_render
 from scenes.scene import PLAYER_LAYER, RenderLayer
 
 
@@ -101,8 +101,8 @@ class PatrolEnemy(Entity):
             self.sight_data.center = self.motion.position + pygame.Vector2(16, 16)
             self.sight_data.facing = self.facing
             if len(self.path) > 1 or not self.sight_data.compiled:
-                compile_sight(self.sight_data, grid_collision)
-            if collide_sight(player, self.sight_data):
+                sight_compile(self.sight_data, grid_collision)
+            if sight_collides(self.sight_data, prect.center):
                 player_caught(player, camera, PlayerCaughtStyle.SIGHT)
         motion_update(self.motion, dt)
 
@@ -125,7 +125,7 @@ class PatrolEnemy(Entity):
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         frame = animator_get_frame(self.animator)
         if layer == RenderLayer.RAYS:
-            render_sight(surface, camera, self.sight_data)
+            sight_render(surface, camera, self.sight_data)
         if layer in PLAYER_LAYER:
             # i present to you, illogical changes, because it looks better.
             # render_shadow(surface, camera, self.motion, self.direction)

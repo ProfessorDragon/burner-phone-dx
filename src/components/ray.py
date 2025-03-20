@@ -3,10 +3,9 @@ from math import pi, radians, sin
 import pygame
 from pygame import gfxdraw
 
-from components.camera import Camera, camera_to_screen_shake
-from components.player import Player, player_rect
 import core.constants as c
 from utilities.math import point_in_circle
+from components.camera import Camera, camera_to_screen_shake
 
 
 @dataclass
@@ -24,7 +23,7 @@ class SightData:
     render_segs: list[tuple[int, int]] = None
 
 
-def grid_raycast(
+def _grid_raycast(
     vec: pygame.Vector2,
     center: pygame.Vector2,
     grid_collision: set[tuple[int, int]],
@@ -41,7 +40,7 @@ def grid_raycast(
     return 1
 
 
-def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) -> None:
+def sight_compile(data: SightData, grid_collision: set[tuple[int, int]] = None) -> None:
     assert data.center is not None
     # fwiw, this is relatively cheap. my computer can handle almost 200 steps without lag
     # so, as long as there isn't an excessive amount of raycasting entities on screen at once, it's fine
@@ -57,7 +56,7 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) 
         sight = pygame.Vector2(data.radius, 0).rotate(-data.facing + data.angle * (percent - 0.5))
         sight.y -= data.z_offset
         if grid_collision is not None:
-            depth = grid_raycast(sight, offset_center, grid_collision, steps, start_step)
+            depth = _grid_raycast(sight, offset_center, grid_collision, steps, start_step)
         else:
             depth = 1
         data.collision_depths.append(depth)
@@ -67,19 +66,18 @@ def compile_sight(data: SightData, grid_collision: set[tuple[int, int]] = None) 
     data.compiled = True
 
 
-def collide_sight(player: Player, data: SightData) -> bool:
+def sight_collides(data: SightData, point: pygame.Vector2) -> bool:
     if data.collision_depths is None:
         return
-    prect = player_rect(player.motion)
-    if not point_in_circle(*prect.center, *data.center, data.radius):
+    if not point_in_circle(*point, *data.center, data.radius):
         return False
-    player_dist = pygame.Vector2(prect.center) - data.center
+    dist = point - data.center
     nearest = None
     steps = len(data.collision_depths) - 1
     for i, depth in enumerate(data.collision_depths):
         percent = float(i) / steps
         theta = -data.facing + data.angle * (percent - 0.5)
-        delta = player_dist.angle_to(pygame.Vector2(1, 0).rotate(theta)) % 360
+        delta = dist.angle_to(pygame.Vector2(1, 0).rotate(theta)) % 360
         if delta > 180:
             delta -= 360
         # spent half an hour debugging because i forgot an abs here
@@ -88,13 +86,13 @@ def collide_sight(player: Player, data: SightData) -> bool:
     if nearest is not None:
         if (
             abs(nearest[2]) <= float(data.angle) / steps
-            and player_dist.magnitude() < data.radius * nearest[1] - 1
+            and dist.magnitude() < data.radius * nearest[1] - 1
         ):
             return True
     return False
 
 
-def render_sight(
+def sight_render(
     surface: pygame.Surface, camera: Camera, data: SightData, color: pygame.Color = (64, 64, 64)
 ) -> None:
     if data.render_segs is None:

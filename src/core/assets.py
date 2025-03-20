@@ -16,6 +16,7 @@ DEBUG_SPRITE_64 = pygame.image.load(IMG + "pirate.png")
 # player
 PLAYER_FRAMES = slice_sheet(IMG + "player.png", 32, 32)
 CAUGHT_INDICATORS = slice_sheet(IMG + "huh_sheet.png", 16, 16)
+CHECKPOINT_FRAMES = slice_sheet(IMG + "checkpoint.png", 32, 32)
 VIGNETTE = pygame.image.load(IMG + "vignette.png")
 
 # terrain

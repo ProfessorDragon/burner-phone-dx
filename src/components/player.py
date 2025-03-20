@@ -79,6 +79,8 @@ class Player:
         self.directional_input = pygame.Vector2()
         self.z_position = 0
         self.z_velocity = 0
+
+        # normal animation states
         self.animator = Animator()
         animation_mapping = walking_animation_mapping(a.PLAYER_FRAMES)
         animation_mapping.update(
@@ -100,6 +102,12 @@ class Player:
             )
         )
         animator_initialise(self.animator, animation_mapping)
+
+        # that little indicator which shows when the player gets a checkpoint
+        # (functionality is currently commented out in player_set_checkpoint)
+        self.checkpoint_animation_timer = Timer()
+        self.checkpoint_animator = Animator()
+        animator_initialise(self.checkpoint_animator, {0: Animation(a.CHECKPOINT_FRAMES, 0.08)})
 
         self.progression = PlayerProgression()
 
@@ -283,15 +291,18 @@ def player_update(
                 AudioChannel.PLAYER,
                 a.FOOTSTEPS[0 if player.animator.frame_index == step_frames[0] else 1],
             )
+    timer_update(player.checkpoint_animation_timer, dt)
+    if player.checkpoint_animation_timer.remaining > 0:
+        animator_update(player.checkpoint_animator, dt)
 
 
 def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> None:
     if player.caught_timer.remaining > 0:
         return
-    timer_reset(player.caught_timer, 0.5)
     player.caught_style = style
     player.motion.velocity = pygame.Vector2()
     player.directional_input = pygame.Vector2()
+    timer_reset(player.caught_timer, 0.5)
     timer_reset(player.roll_max_timer, 0)
     camera.trauma = 0.4
     if style == PlayerCaughtStyle.HOLE:
@@ -303,6 +314,8 @@ def player_caught(player: Player, camera: Camera, style: PlayerCaughtStyle) -> N
 def player_set_checkpoint(player: Player, pos: pygame.Vector2) -> None:
     player.progression.checkpoint = pos
     player.progression.checkpoint_buttons = player.progression.activated_buttons.copy()
+    # animator_reset(player.checkpoint_animator)
+    # timer_reset(player.checkpoint_animation_timer, 1)
 
 
 def player_reset(player: Player) -> None:
@@ -371,4 +384,12 @@ def player_render_overlays(player: Player, surface: pygame.Surface, camera: Came
             c.CYAN,
             camera_to_screen_shake_rect(camera, *player_rect(player.motion)),
             1,
+        )
+
+    # checkpoint animation
+    if player.checkpoint_animation_timer.remaining > 0:
+        surface.blit(
+            animator_get_frame(player.checkpoint_animator),
+            (surface.get_width() - 32, surface.get_height() - 36),
+            special_flags=pygame.BLEND_RGB_ADD,
         )
