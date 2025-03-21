@@ -1,7 +1,6 @@
-from collections import deque
-from functools import partial
 import random
 from typing import Callable
+from functools import partial
 import pygame
 
 import core.assets as a

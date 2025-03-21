@@ -467,3 +467,22 @@ style sign
 char 0 note
 noskip
 - 20/01/31\nPharm-O-Rite is behaving awfully strange. I told them no amount of money would be worth selling my formula. They didn't reply.
+
+
+
+## BONUS CONTENT
+
+
+[BONUS 1]
+
+# earthbound quote :D
+style sign
+char 0 sign
+- "It could only cost you your life, and you got that for free!"
+
+
+[BONUS 2]
+
+style sign
+char 0 sign
+- "This billboard greets you this evening. All is well, goodnight."
