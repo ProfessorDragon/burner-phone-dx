@@ -486,3 +486,10 @@ char 0 sign
 style sign
 char 0 sign
 - "This billboard greets you this evening. All is well, goodnight."
+
+
+[BONUS 3]
+
+style sign
+char 0 note
+- "I have no patience when people interrupt me while I'm busy doing nothing."
