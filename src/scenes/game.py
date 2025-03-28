@@ -272,12 +272,7 @@ class Game(Scene):
                     if path:
                         ok = any(entity_bounds.collidepoint(point) for point in path)
                     else:
-                        ok = entity_bounds.collidepoint(ent.motion.position)
-                        if not ok and isinstance(ent, CameraBoundaryEntity):
-                            ok = entity_bounds.collidepoint(
-                                ent.motion.position.x + c.TILE_SIZE * ent.w,
-                                ent.motion.position.y + c.TILE_SIZE * ent.h,
-                            )
+                        ok = entity_bounds.colliderect(ent.get_hitbox())
                     if ok:
                         self.entities_in_bounds.append(ent)
                         entity_update(
