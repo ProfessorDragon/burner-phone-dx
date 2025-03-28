@@ -113,6 +113,7 @@ CAMERA_HUM = pygame.mixer.Sound(SFX + "camera_hum.ogg")
 ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
 ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 GATE_OPEN = pygame.mixer.Sound(SFX + "gate_open.ogg")
+BONUS_UNLOCK = pygame.mixer.Sound(SFX + "bonus.ogg")
 
 # menu
 UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")

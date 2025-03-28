@@ -57,6 +57,7 @@ class PlayerProgression:
     main_story: MainStoryProgress = MainStoryProgress.INTRO
     activated_buttons: set[str] = None
     checkpoint_buttons: set[str] = None
+    unlocked_camera_boundaries: set[str] = None
 
 
 @dataclass
@@ -275,7 +276,7 @@ def player_update(
     if player.caught_timer.remaining <= 0:
         step_frames = ()
         if player.roll_max_timer.remaining > 0:
-            animator_switch_animation(player.animator, f"roll_{player.direction}")  # todo!
+            animator_switch_animation(player.animator, f"roll_{player.direction}")
         elif player.z_position < 0:
             animator_switch_animation(player.animator, f"jump_{player.direction}")
         elif is_moving:

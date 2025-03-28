@@ -13,7 +13,7 @@ from components.entities.spotlight import SpotlightEnemy
 from components.entities.zombie import ZombieEnemy
 
 
-ENTITY_CLASSES = [
+ENTITY_CLASSES: list[Entity] = [
     # enemies
     LakeEnemy,
     SecurityCameraEnemy,

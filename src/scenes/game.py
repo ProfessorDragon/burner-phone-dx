@@ -132,6 +132,7 @@ class Game(Scene):
         self.player.progression.checkpoint = self.player.motion.position.copy()
         self.player.progression.activated_buttons = set()
         self.player.progression.checkpoint_buttons = set()
+        self.player.progression.unlocked_camera_boundaries = set()
         self.camera.motion.position = _camera_target(self.player)
         self.dialogue.executed_scenes.clear()
         self.timers.clear()
@@ -144,15 +145,14 @@ class Game(Scene):
         self.reset()
 
         # opening call
-        # TODO disable
-        # if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
-        #     _add_timer(
-        #         self,
-        #         1.5,
-        #         lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
-        #     )
-        # if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
-        #     _add_timer(self, 6, self.opening_call_2)
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 1"):
+            _add_timer(
+                self,
+                1.5,
+                lambda: dialogue_execute_script_scene(self.dialogue, "OPENING CALL 1"),
+            )
+        if not dialogue_has_executed_scene(self.dialogue, "OPENING CALL 2"):
+            _add_timer(self, 6, self.opening_call_2)
 
         settings_load(self.settings)
 
@@ -313,7 +313,7 @@ class Game(Scene):
         # RENDER
 
         # background
-        if self.editor.enabled or True:  # TODO disable
+        if self.editor.enabled:
             surface.fill(c.GRAY)
 
         entity_cutoff = round(self.player.motion.position.y + 32)

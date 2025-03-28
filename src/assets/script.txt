@@ -473,7 +473,7 @@ noskip
 ## BONUS CONTENT
 
 
-[BONUS 1]
+[BONUS 1A]
 
 # earthbound quote :D
 style sign
@@ -481,14 +481,14 @@ char 0 sign
 - "It could only cost you your life, and you got that for free!"
 
 
-[BONUS 2]
+[BONUS 1B]
 
 style sign
 char 0 sign
 - "This billboard greets you this evening. All is well, goodnight."
 
 
-[BONUS 3]
+[BONUS 2A]
 
 style sign
 char 0 note
