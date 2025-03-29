@@ -16,8 +16,14 @@ from components.animation import (
 from components.camera import Camera, camera_to_screen_shake
 from components.entities.entity import Entity
 from components.motion import direction_from_angle
-from components.player import MainStoryProgress, Player, PlayerCaughtStyle, player_caught
-from components.ray import SightData, collide_sight, compile_sight, render_sight
+from components.player import (
+    MainStoryProgress,
+    Player,
+    PlayerCaughtStyle,
+    player_caught,
+    player_rect,
+)
+from components.ray import SightData, sight_collides, sight_compile, sight_render
 from scenes.scene import PLAYER_LAYER, RenderLayer
 
 
@@ -46,7 +52,6 @@ class SecurityCameraEnemy(Entity):
         self.swivel = 0
         self.swivel_angle = 60
         self.should_raycast = False
-        self.reset()
 
     def get_hitbox(self) -> pygame.Rect:
         return pygame.Rect(*self.motion.position, 16, 16)
@@ -92,10 +97,11 @@ class SecurityCameraEnemy(Entity):
             self.swivel = 0
 
         # collision
+        prect = player_rect(player.motion)
         self.sight_data.center = self.motion.position + pygame.Vector2(8, 8)
         self.sight_data.facing = self.facing + self.swivel
-        compile_sight(self.sight_data, grid_collision if self.should_raycast else None)
-        if collide_sight(player, self.sight_data):
+        sight_compile(self.sight_data, grid_collision if self.should_raycast else None)
+        if sight_collides(self.sight_data, prect.center):
             player_caught(player, camera, PlayerCaughtStyle.SIGHT)
 
         # animation
@@ -105,7 +111,7 @@ class SecurityCameraEnemy(Entity):
 
     def render(self, surface: pygame.Surface, camera: Camera, layer: RenderLayer) -> None:
         if layer == RenderLayer.RAYS:
-            render_sight(surface, camera, self.sight_data)
+            sight_render(surface, camera, self.sight_data)
         if layer in PLAYER_LAYER:
             surface.blit(
                 animator_get_frame(self.animator),

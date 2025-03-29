@@ -16,6 +16,7 @@ DEBUG_SPRITE_64 = pygame.image.load(IMG + "pirate.png")
 # player
 PLAYER_FRAMES = slice_sheet(IMG + "player.png", 32, 32)
 CAUGHT_INDICATORS = slice_sheet(IMG + "huh_sheet.png", 16, 16)
+CHECKPOINT_FRAMES = slice_sheet(IMG + "checkpoint.png", 32, 32)
 VIGNETTE = pygame.image.load(IMG + "vignette.png")
 
 # terrain
@@ -112,6 +113,7 @@ CAMERA_HUM = pygame.mixer.Sound(SFX + "camera_hum.ogg")
 ZOMBIE_CHASE = pygame.mixer.Sound(SFX + "zomb_chase.ogg")
 ZOMBIE_RETREAT = pygame.mixer.Sound(SFX + "zomb_retreat.ogg")
 GATE_OPEN = pygame.mixer.Sound(SFX + "gate_open.ogg")
+BONUS_UNLOCK = pygame.mixer.Sound(SFX + "bonus.ogg")
 
 # menu
 UI_SELECT = pygame.mixer.Sound(SFX + "select.ogg")

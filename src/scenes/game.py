@@ -1,7 +1,6 @@
-from collections import deque
-from functools import partial
 import random
 from typing import Callable
+from functools import partial
 import pygame
 
 import core.assets as a
@@ -133,6 +132,7 @@ class Game(Scene):
         self.player.progression.checkpoint = self.player.motion.position.copy()
         self.player.progression.activated_buttons = set()
         self.player.progression.checkpoint_buttons = set()
+        self.player.progression.unlocked_camera_boundaries = set()
         self.camera.motion.position = _camera_target(self.player)
         self.dialogue.executed_scenes.clear()
         self.timers.clear()
@@ -161,6 +161,7 @@ class Game(Scene):
         camera_reset(self.camera)
         dialogue_reset_queue(self.dialogue)
         stopwatch_reset(self.global_stopwatch)
+        self.entities_in_bounds: list[Entity] = None
         for entity in self.entities:
             entity_reset(entity)
 
@@ -185,13 +186,13 @@ class Game(Scene):
         )
 
         # update and render entities within this area
-        decor_bounds = camera_rect(self.camera)
-        entity_bounds = decor_bounds.inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
+        entity_bounds = camera_rect(self.camera).inflate(c.TILE_SIZE * 12, c.TILE_SIZE * 12)
 
         if not self.paused:
             if self.editor.enabled:
                 camera_follow(self.camera, *camera_target)
                 camera_update(self.camera, dt)
+                self.entities_in_bounds = None
 
             elif not in_dialogue:
                 # update hardcoded story elements
@@ -265,15 +266,17 @@ class Game(Scene):
                 camera_update(self.camera, dt)
 
                 # entities
-                for entity in self.entities:
-                    path = entity.get_path()
+                self.entities_in_bounds = []
+                for ent in self.entities:
+                    path = ent.get_path()
                     if path:
-                        bound_rects = [pygame.Rect(point, (1, 1)) for point in path]
+                        ok = any(entity_bounds.collidepoint(point) for point in path)
                     else:
-                        bound_rects = [entity.get_hitbox()]
-                    if entity_bounds.collidelist(bound_rects) >= 0:
+                        ok = entity_bounds.colliderect(ent.get_hitbox())
+                    if ok:
+                        self.entities_in_bounds.append(ent)
                         entity_update(
-                            entity,
+                            ent,
                             dt,
                             self.global_stopwatch.elapsed,
                             self.player,
@@ -296,6 +299,12 @@ class Game(Scene):
                 self.paused = False
                 play_sound(AudioChannel.UI, a.UI_HOVER)
 
+        if self.entities_in_bounds is None:
+            # compile list of entities for rendering only
+            self.entities_in_bounds = [
+                entity for entity in self.entities if entity_bounds.colliderect(entity.get_hitbox())
+            ]
+
         # RENDER
 
         # background
@@ -317,9 +326,9 @@ class Game(Scene):
         )
 
         # behind player
-        cutoff_bg_tiles = deque()
-        cutoff_fg_tiles = deque()
-        cutoff_decor = deque()
+        cutoff_bg_tiles = []
+        cutoff_fg_tiles = []
+        cutoff_decor = []
         for y in range(tile_bounds.top, tile_bounds.bottom + 1):
             for x in range(tile_bounds.left, tile_bounds.right + 1):
                 for tile in self.grid_tiles.get((x, y), []):
@@ -329,27 +338,24 @@ class Game(Scene):
                         cutoff_bg_tiles.append((x, y, tile))
                     else:
                         cutoff_fg_tiles.append((x, y, tile))
-        for entity in self.entities:
-            if entity_bounds.colliderect(entity.get_hitbox()):
-                entity_render(entity, surface, self.camera, RenderLayer.RAYS)
-        while cutoff_bg_tiles:
-            x, y, tile = cutoff_bg_tiles.popleft()
+        for ent in self.entities_in_bounds:
+            entity_render(ent, surface, self.camera, RenderLayer.RAYS)
+        for x, y, tile in cutoff_bg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for entity in self.entities:
-            if entity_bounds.colliderect(entity.get_hitbox()):
-                entity_render(
-                    entity,
-                    surface,
-                    self.camera,
-                    (
-                        RenderLayer.PLAYER_BG
-                        if entity.get_terrain_cutoff() < entity_cutoff
-                        else RenderLayer.BACKGROUND
-                    ),
-                )
+        for ent in self.entities_in_bounds:
+            entity_render(
+                ent,
+                surface,
+                self.camera,
+                (
+                    RenderLayer.PLAYER_BG
+                    if ent.get_terrain_cutoff() < entity_cutoff
+                    else RenderLayer.BACKGROUND
+                ),
+            )
         for dec in self.decor:
             rect = decor_rect(dec)
-            if decor_bounds.colliderect(rect):
+            if entity_bounds.colliderect(rect):
                 if rect.bottom >= entity_cutoff and player_rect(self.player.motion).colliderect(
                     rect
                 ):
@@ -367,8 +373,7 @@ class Game(Scene):
         player_render(self.player, surface, self.camera)
 
         # in front of player
-        while cutoff_decor:
-            dec = cutoff_decor.popleft()
+        for dec in cutoff_decor:
             decor_render(
                 dec,
                 surface,
@@ -376,21 +381,19 @@ class Game(Scene):
                 RenderLayer.PLAYER_FG,
                 self.global_stopwatch.elapsed,
             )
-        while cutoff_fg_tiles:
-            x, y, tile = cutoff_fg_tiles.popleft()
+        for x, y, tile in cutoff_fg_tiles:
             tile_render(surface, self.camera, x, y, tile)
-        for entity in self.entities:
-            if entity_bounds.colliderect(entity.get_hitbox()):
-                entity_render(
-                    entity,
-                    surface,
-                    self.camera,
-                    (
-                        RenderLayer.PLAYER_FG
-                        if entity.get_terrain_cutoff() >= entity_cutoff
-                        else RenderLayer.FOREGROUND
-                    ),
-                )
+        for ent in self.entities_in_bounds:
+            entity_render(
+                ent,
+                surface,
+                self.camera,
+                (
+                    RenderLayer.PLAYER_FG
+                    if ent.get_terrain_cutoff() >= entity_cutoff
+                    else RenderLayer.FOREGROUND
+                ),
+            )
 
         # hitboxes
         if g.show_hitboxes:

@@ -33,12 +33,12 @@ class SignEntity(Entity):
 
     @staticmethod
     def from_json(js):
-        entity = SignEntity()
-        entity.motion.position = pygame.Vector2(js["pos"])
-        entity.scene_name = js.get("scene_name", "DEFAULT SIGN")
-        entity.color = js.get("color", 0)
-        entity.floor = js.get("floor", False)
-        return entity
+        ent = SignEntity()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.scene_name = js.get("scene_name", "DEFAULT SIGN")
+        ent.color = js.get("color", 0)
+        ent.floor = js.get("floor", False)
+        return ent
 
     def reset(self) -> None:
         self.show_arrow = False
@@ -56,7 +56,7 @@ class SignEntity(Entity):
             player.interaction = PlayerInteraction(
                 self.scene_name, True, None if self.floor else Direction.N
             )
-        else:
+        elif self.show_arrow:
             self.show_arrow = False
             if player.interaction.scene_name == self.scene_name:
                 player.interaction.scene_name = None

@@ -17,9 +17,9 @@ class LakeEnemy(Entity):
         # small hitboxes are good! but make sure to patch any holes as a result.
         return pygame.Rect(
             self.motion.position.x + 5,
-            self.motion.position.y + 5,
+            self.motion.position.y + 3,
             c.TILE_SIZE * self.w - 10,
-            c.TILE_SIZE * self.h - 10,
+            c.TILE_SIZE * self.h - 6,
         )
 
     def to_json(self):
@@ -27,10 +27,10 @@ class LakeEnemy(Entity):
 
     @staticmethod
     def from_json(js):
-        entity = LakeEnemy()
-        entity.motion.position = pygame.Vector2(js["pos"])
-        entity.w, entity.h = js.get("w", 1), js.get("h", 1)
-        return entity
+        ent = LakeEnemy()
+        ent.motion.position = pygame.Vector2(js["pos"])
+        ent.w, ent.h = js.get("w", 1), js.get("h", 1)
+        return ent
 
     def reset(self) -> None:
         pass

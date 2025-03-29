@@ -119,12 +119,3 @@ class ZombieEnemy(Entity):
                 animator_get_frame(self.animator),
                 camera_to_screen_shake(camera, *self.motion.position),
             )
-
-        if layer in PLAYER_OR_FG and g.show_hitboxes:
-            pygame.draw.circle(
-                surface,
-                c.RED,
-                camera_to_screen_shake(camera, *(self.movement_center + pygame.Vector2(16, 30))),
-                self.movement_radius,
-                1,
-            )

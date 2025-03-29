@@ -129,7 +129,7 @@ class DialogueCameraPanPacket:
 class DialogueSystem:
     queue: deque = None
     char_index: int = 0
-    font: pygame.Font = None
+    font: pygame.font.Font = None
     rect: pygame.Rect = None
     text: str = None
     script_scenes: dict[str, list[str]] = None
@@ -205,7 +205,7 @@ def dialogue_execute_script_scene(dialogue: DialogueSystem, scene_name: str) -> 
         print(f"ERROR: Scene {scene_name} does not exist in dialogue scenes")
         return
 
-    print(f"Executing script scene {scene_name.upper()}")
+    # print(f"Executing script scene {scene_name.upper()}")
     dialogue_reset_queue(dialogue)
     dialogue.executed_scenes.add(scene_name)
 

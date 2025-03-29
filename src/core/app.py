@@ -25,7 +25,7 @@ def run() -> None:
 
 
 async def game_loop(
-    surface: pygame.Surface, clock: pygame.Clock, scene_manager: StateMachine
+    surface: pygame.Surface, clock: pygame.time.Clock, scene_manager: StateMachine
 ) -> None:
     mouse_buffer: t.InputBuffer = [t.InputState.NOTHING for _ in t.MouseButton]
 
