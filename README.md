@@ -1,7 +1,6 @@
 ![banner](https://github.com/user-attachments/assets/60378b38-7776-4bed-a78b-9c3d6e0fd507)
 ## Made for the Pirate Software - Game Jam 16
 
-#### `console` branch - use me when experimenting with new game content
 #### Play [BURNER PHONE DX](https://codefizz.itch.io/burner-phone-dx) in your browser!  
 #### Our required [Game Design Document](https://docs.google.com/document/d/1SHjlmuTUBG7k_oTGKtTy5QzmAeL_i38akRReEu16uHc/edit?usp=sharing) for submission
 
