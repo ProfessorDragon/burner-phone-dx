@@ -12,14 +12,14 @@ from components.statemachine import (
     statemachine_initialise,
     statemachine_execute,
 )
-import scenes.scenemapping as scene
+from scenes.scenemapping import SCENE_MAPPING, SceneState
 
 
 def run() -> None:
     pygame.display.set_caption(c.CAPTION)
     pygame.display.set_icon(a.ICON)
     scene_manager = StateMachine()
-    statemachine_initialise(scene_manager, scene.SCENE_MAPPING, scene.SceneState.MENU)
+    statemachine_initialise(scene_manager, SCENE_MAPPING, SceneState.MENU)
     asyncio.run(game_loop(setup.window, setup.clock, scene_manager))
 
 

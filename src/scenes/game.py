@@ -66,14 +66,10 @@ from components.camera import (
     camera_reset,
 )
 from components.settings import Settings, settings_update, settings_render, settings_load
-
-import scenes.scenemapping as scene
-from scenes.scene import RenderLayer, Scene
 from components.statemachine import StateMachine, statemachine_change_state
 
-
-def _tile_size_rect(x: float, y: float, w: float = 1, h: float = 1) -> pygame.Rect:
-    return pygame.Rect(x * c.TILE_SIZE, y * c.TILE_SIZE, w * c.TILE_SIZE, h * c.TILE_SIZE)
+from scenes import scenemapping
+from scenes.scene import Scene, RenderLayer
 
 
 def _tile_size_vec(x: float, y: float) -> pygame.Vector2:
@@ -442,8 +438,8 @@ class Game(Scene):
         _add_timer(self, random.uniform(0.2, 0.6), self.finale_explosion)
 
     def exit_to_credits(self) -> None:
-        self.statemachine.states[scene.SceneState.MENU].should_show_credits = True
-        statemachine_change_state(self.statemachine, scene.SceneState.MENU)
+        self.statemachine.states[scenemapping.SceneState.MENU].should_show_credits = True
+        statemachine_change_state(self.statemachine, scenemapping.SceneState.MENU)
 
     def story_progression_logic(self) -> None:
         if self.player.progression.main_story == MainStoryProgress.INTRO:

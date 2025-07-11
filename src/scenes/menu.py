@@ -1,6 +1,4 @@
 from components.statemachine import StateMachine, statemachine_change_state
-from scenes.scene import Scene
-import scenes.scenemapping as scene
 from components.settings import Settings, settings_render, settings_update, settings_load
 from components.animation import (
     Animator,
@@ -23,9 +21,6 @@ from components.fade import (
     fade_start,
     fade_update,
 )
-from enum import IntEnum, auto
-import pygame
-
 from components.timer import Timer, timer_reset, timer_update
 from components.ui import (
     BUTTON_SIZE,
@@ -34,6 +29,13 @@ from components.ui import (
     ui_list_render,
     ui_list_update_selection,
 )
+
+from scenes import scenemapping
+from scenes.scene import Scene
+
+from enum import IntEnum, auto
+import pygame
+
 import core.input as t
 import core.assets as a
 import core.constants as c
@@ -202,7 +204,9 @@ class Menu(Scene):
                     fade_start(
                         self.fade,
                         False,
-                        lambda: statemachine_change_state(self.statemachine, scene.SceneState.GAME),
+                        lambda: statemachine_change_state(
+                            self.statemachine, scenemapping.SceneState.GAME
+                        ),
                     )
 
         elif self.screen == MenuScreen.SETTINGS:
