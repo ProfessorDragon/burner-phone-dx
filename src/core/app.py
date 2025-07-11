@@ -7,7 +7,6 @@ import core.constants as c
 import core.input as t
 import core.globals as g
 
-from components.audio import AudioChannel
 from components.statemachine import (
     StateMachine,
     statemachine_initialise,
